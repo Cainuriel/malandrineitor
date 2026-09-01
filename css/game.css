@@ -4,6 +4,7 @@
 @media (max-width: 1100px) { .game { grid-template-columns: 1fr; } }
 
 .hud { display: grid; grid-template-columns: 1fr auto 1fr; gap: 14px; align-items: center; margin-bottom: 16px; }
+.hud > * { min-width: 0; }   /* los elementos de rejilla no bajan de su contenido si no se fuerza */
 .hud .player { padding: 12px 16px; border-radius: var(--radius); background: var(--panel); border: 1px solid var(--line); }
 .hud .player.me { border-color: color-mix(in srgb, var(--accent) 50%, var(--line)); }
 .hud .player .who { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
@@ -96,6 +97,7 @@
   .hud .player { padding: 8px 12px; }
   .hud .player .rep { font-size: 22px; }
   .hud .player .who { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hud .center .small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ticket { padding: 14px 14px 14px 18px; }
   .ticket h2 { font-size: 19px; }
   .ticket .situation { font-size: 14px; }
@@ -104,8 +106,9 @@
   .hand { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; gap: 10px; padding: 10px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
   .hand-item { scroll-snap-align: center; flex: none; }
   .hand-wrap .hand-title { flex-direction: column; align-items: flex-start; gap: 2px; }
-  .actions { position: sticky; bottom: 0; padding: 10px 0 12px; background: linear-gradient(180deg, transparent, var(--bg) 40%); z-index: 5; }
-  .actions button.primary { width: 100%; padding: 14px; font-size: 16px; }
+  /* Solo la barra de acciones de la partida se queda fija abajo; el resto de paneles, normal. */
+  .game .actions { position: sticky; bottom: 0; padding: 10px 0 12px; background: linear-gradient(180deg, transparent, var(--bg) 40%); z-index: 5; }
+  .game .actions button.primary, .endgame .actions button.primary { width: 100%; padding: 14px; font-size: 16px; }
   .log { position: static; max-height: none; }
   .endgame { padding: 24px 6px; }
   .endgame h1 { font-size: 32px; }
@@ -152,12 +155,17 @@
 .story-nav { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 0 0 18px; }
 .story-nav button.active { border-color: var(--accent); color: var(--accent); }
 .story-nav .coins { margin-left: auto; color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); font-size: 14px; }
-.story-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
-.chapter-card { grid-column: span 2; background: linear-gradient(180deg, var(--panel-2), var(--panel)); }
+.story-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; align-items: start; }
+.story-cols { display: grid; grid-template-columns: 1.35fr 1fr; gap: 16px; align-items: start; }
+.story-col { display: grid; gap: 16px; align-content: start; }
+@media (max-width: 900px) { .story-cols { grid-template-columns: 1fr; } }
+.chapter-card { background: linear-gradient(180deg, var(--panel-2), var(--panel)); }
 .chapter-card .tag { font-size: 11px; color: var(--muted); letter-spacing: .14em; text-transform: uppercase; }
 .chapter-card h2 { font-size: 26px; margin: 4px 0 6px; }
 .chapter-row { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
 .chapter-row.done b { color: var(--ok); } .chapter-row.now b { color: var(--accent); } .chapter-row.locked { opacity: .5; }
+.chapter-row.cp { border-bottom-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.chapter-row.cp b::before { content: "\25C6"; color: var(--accent); margin-right: .45em; font-size: .8em; vertical-align: 1px; }
 .entry.small { padding: 5px 0; border-bottom: 1px solid var(--line); color: var(--text-2); }
 .summary { border-color: var(--accent); margin-bottom: 16px; }
 .opening { margin-bottom: 16px; border-color: var(--rar-epica); }

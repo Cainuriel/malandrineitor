@@ -113,7 +113,7 @@ docs/               Documentación de diseño (reglas, fórmula, guía de cartas
 - **Cuenta**: al primer arranque se pide el nombre y se crea `profile.tag = nombre#NNNN` (cuatro dígitos aleatorios). Es el identificador que aparece en partidas y ficheros. No se vuelve a pedir el nombre en ningún modo.
 - **Puntos malandrín** (`js/scoring.js`, valores en `config.scoring`): se calculan por ticket (resuelto, campeón, giro superado, criptonita desafiada, viernes perfecto, ticket gordo, paga, racha, rescate) y por sprint (sin burnout, pleno de pagas, victoria/empate), con multiplicador por nivel de la máquina. Se acumulan en `profile.points`. En dos jugadores los calcula `match.resolve` para ambos roles.
 - **Rescate del calabozo** (habilidad activa de Daniel Primo): `engine.canRescue(hand, burnout, used)`. En pantalla aparece "Rescatar del calabozo" sobre las cartas quemadas cuando procede; se registra en `plays[i].rescue` y `match.resolve` lo reproduce con las mismas condiciones. Boluda lo usa automáticamente sobre su carta quemada de mayor rareza.
-- **Modo historia** (`js/story.js`): estado `{ coins, owned:{id:n}, seen:{id:true}, chapter, wins:{}, opened, sprints, log, lastSquad }`. Sobres en `config.story.packs` (rango de cartas y pesos por rareza; `hidden: true` para los que no se venden en la tienda). Las repetidas **se conservan** y se venden a mano desde la colección por `config.story.sellPrice` (nunca la última copia). Los sobres gratuitos (bienvenida, emergencia) evitan repetidas. Diez capítulos en `config.story.chapters`: nivel de Boluda, rango de dificultad de los tickets (`minDifficulty`/`maxDifficulty`) y rarezas de su mano. Ganar el capítulo en curso desbloquea el siguiente; **perder devuelve al capítulo 1** (`config.story.onLoss: 'restart'`) conservando colección y malandricoins. La partida se juega con `MI.game.newStoryGame({hand, oppHand, tickets, level, onFinish})`; `onFinish(summary)` aplica `reward` y vuelve a la oficina.
+- **Modo historia** (`js/story.js`): estado `{ coins, owned:{id:n}, seen:{id:true}, chapter, wins:{}, opened, sprints, log, lastSquad }`. Sobres en `config.story.packs` (rango de cartas y pesos por rareza; `hidden: true` para los que no se venden en la tienda). Las repetidas **se conservan** y se venden a mano desde la colección por `config.story.sellPrice` (nunca la última copia). Los sobres gratuitos (bienvenida, emergencia) evitan repetidas. Diez capítulos en `config.story.chapters`: nivel de Boluda, rango de dificultad de los tickets (`minDifficulty`/`maxDifficulty`) y rarezas de su mano. Ganar el capítulo en curso desbloquea el siguiente; **perder devuelve al último punto de control** (`config.story.onLoss: 'checkpoint'`, puntos en `config.story.checkpoints`), conservando siempre colección y malandricoins. La partida se juega con `MI.game.newStoryGame({hand, oppHand, tickets, level, onFinish})`; `onFinish(summary)` aplica `reward` y vuelve a la oficina.
 - **Apertura de sobres**: `MI.story.cinematic(pack, onDone)` monta una capa a pantalla completa (`.opening-overlay`, fondo oscuro, sin scroll de fondo) con tres actos: el sobre (arte SVG generado por `MI.story.packSvg(packId)`, con temblor y rasgado), las cartas de una en una (destello radial por rareza, giro 3D de entrada, botón "Ver ficha" y "Siguiente carta") y el resumen final. Avanza con clic, Enter o espacio; Escape salta al resumen. **Toda apertura de sobre debe pasar por aquí**, incluida la de bienvenida y la de emergencia.
 - Otras habilidades implementadas en el motor: `reactionary` (+2 al dado si la tecnología es React), `autoscaling` (+1 al dado en dificultad 4-5), `agent_swarm` (sin burnout), `no_weakness` (ignora giros), `mentor` (campeón si el ticket pide Docencia), `craftsman` (mejorado cuenta como resuelto en dificultad 1-2), `researcher` (ignora el giro si el ticket pide I+D), `dungeon_master` (inmune a criptonita y burnout, rescate).
 
@@ -143,6 +143,18 @@ docs/               Documentación de diseño (reglas, fórmula, guía de cartas
 ## Pendiente conocido / no hacer todavía
 
 Ver `PLAN.md`. En particular: el LLM opcional y los retratos NO están implementados y no deben empezarse sin cerrar la fase en curso. Los avatares procedurales son provisionales: al final del proyecto se sustituirán por retratos inspirados en cada persona (con su permiso), usando `card.portrait`.
+
+## Equilibrio de la campaña
+
+Medido con simulaciones de la campaña completa (200 partidas, jugador que compra el mejor sobre que puede pagar y manda siempre a su mejor carta). Sprints necesarios para superar los diez capítulos según `config.story.onLoss`:
+
+| onLoss | mediana | media | p90 | máximo |
+|---|---|---|---|---|
+| `retry` (repetir capítulo) | 12 | 13,0 | 17 | 25 |
+| `checkpoint` (por defecto) | 16 | 18,4 | 28 | 52 |
+| `restart` (volver al 1) | 42 | 59,2 | 129 | 337 |
+
+`restart` se descartó: encadenar diez capítulos sin fallar tiene una probabilidad del orden del 0,2 % con una colección pequeña, así que la campaña se convertía en repetir los capítulos fáciles decenas de veces. `checkpoint` mantiene la tensión (perder cuesta) sin castigar de forma desproporcionada. Si se retoca la dificultad de los capítulos o la economía, **rehacer esta medición**: el guion de simulación no está en el repositorio, pero se reconstruye llamando a `MI.story.reward` y a `MI.engine.resolve` en bucle desde Node, como en `tests/run.js`.
 
 ## Git y despliegue
 

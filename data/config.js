@@ -74,7 +74,12 @@ MI.data.config = {
     starterPack: 'bienvenida',
     rewards: { resolved: 8, improved: 3, complicated: 0, pay: 2, win: 30, chapterFirstWin: 50 },
     sellPrice: { comun: 4, rara: 10, epica: 25, legendaria: 80 },   // venta manual de una carta repetida
-    onLoss: 'restart',       // 'restart': perder un sprint devuelve al capítulo 1 (colección y malandricoins se conservan). 'retry': se repite el capítulo.
+    // Qué pasa al perder un sprint (la colección y los malandricoins se conservan siempre):
+    //   'checkpoint' -> vuelves al último punto de control alcanzado (config.story.checkpoints)
+    //   'restart'    -> vuelves al capítulo 1
+    //   'retry'      -> repites el mismo capítulo
+    onLoss: 'checkpoint',
+    checkpoints: [1, 4, 7],   // capítulos que actúan como punto de control al superarlos
     packs: {
       bienvenida: { name: 'Sobre de bienvenida', price: 0, cards: [5, 5], weights: { comun: 70, rara: 28, epica: 2, legendaria: 0 }, hidden: true, desc: 'Cinco cartas distintas para empezar. Cortesía de recepción.' },
       basico:   { name: 'Sobre básico',   price: 30,  cards: [1, 2], weights: { comun: 72, rara: 25, epica: 3,  legendaria: 0 }, desc: 'Una o dos cartas. Lo que hay en el cajón de recepción.' },

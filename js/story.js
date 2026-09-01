@@ -96,6 +96,14 @@ MI.story = (function () {
 
   /* ---------- Campaña ---------- */
   function chapter(s) { const list = cfg().chapters; return list[Math.min(s.chapter, list.length) - 1]; }
+  // Último punto de control igual o anterior al capítulo dado.
+  function checkpointFor(n) {
+    const cps = (cfg().checkpoints || [1]).slice().sort((a, b) => a - b);
+    let back = cps[0] || 1;
+    cps.forEach((c) => { if (c <= n) back = c; });
+    return back;
+  }
+  function isCheckpoint(n) { return (cfg().checkpoints || []).includes(n); }
 
   function chapterTickets(ch, rng) {
     const all = MI.data.challenges.filter((t) => t.difficulty <= (ch.maxDifficulty || 5) && t.difficulty >= (ch.minDifficulty || 1));
@@ -120,9 +128,22 @@ MI.story = (function () {
       s.wins[ch.id] = (s.wins[ch.id] || 0) + 1;
       if (s.chapter === ch.id && s.chapter < cfg().chapters.length) s.chapter++;
       else if (s.chapter === ch.id) { s.finished = (s.finished || 0) + 1; note = 'Has superado la auditoría final. La historia se puede volver a jugar desde el principio con toda tu colección.'; }
-    } else if (summary.result === 'loss' && cfg().onLoss === 'restart' && s.chapter > 1) {
-      s.chapter = 1;
-      note = 'Boluda S.A. se ha quedado con el contrato. Vuelves al capítulo 1; la colección y los malandricoins se conservan.';
+    } else if (summary.result === 'loss' && s.chapter > 1) {
+      const mode = cfg().onLoss;
+      if (mode === 'restart') {
+        s.chapter = 1;
+        note = 'Boluda S.A. se queda el contrato. Vuelves al capítulo 1; la colección y los malandricoins se conservan.';
+      } else if (mode === 'checkpoint') {
+        const back = checkpointFor(s.chapter);
+        if (back < s.chapter) {
+          s.chapter = back;
+          note = 'Boluda S.A. se queda el contrato. Vuelves al punto de control (capítulo ' + back + '); la colección y los malandricoins se conservan.';
+        } else {
+          note = 'Boluda S.A. se queda el contrato, pero estás en un punto de control: repites capítulo.';
+        }
+      } else {
+        note = 'Boluda S.A. se queda el contrato. Repites el capítulo.';
+      }
     }
     s.coins += coins; s.sprints++;
     s.log.unshift({ date: new Date().toISOString(), text: `${ch.name}: ${({ win: 'victoria', loss: 'derrota', draw: 'empate' })[summary.result]} · +${coins} malandricoins` + (note ? ' · ' + note : '') });
@@ -272,7 +293,7 @@ MI.story = (function () {
       el('p', { class: 'lead', text: 'Acabas de entrar en Malandriner S.A. con un sobre de bienvenida y cuatro duros. Gana sprints contra Boluda S.A., cobra malandricoins, compra sobres, descubre el álbum y llega a la auditoría final.' }),
       el('div', { class: 'panel' }, [
         el('h2', { text: 'Cómo funciona' }),
-        el('p', { class: 'small muted', text: 'Cada capítulo es un sprint de cinco tickets con tu plantilla (cinco malandrines de tu colección). Boluda mejora de capítulo en capítulo: ' + cfg().chapters.length + ' capítulos hasta la auditoría. Si pierdes un sprint, vuelves al capítulo 1, pero conservas la colección y los malandricoins. Las cartas repetidas se pueden vender. El álbum solo muestra las cartas que has tenido alguna vez.' }),
+        el('p', { class: 'small muted', text: 'Cada capítulo es un sprint de cinco tickets con tu plantilla (cinco malandrines de tu colección). Boluda mejora de capítulo en capítulo: ' + cfg().chapters.length + ' capítulos hasta la auditoría, con puntos de control en el ' + (cfg().checkpoints || [1]).join(', el ') + '. Si pierdes un sprint vuelves al último punto de control, pero conservas la colección y los malandricoins. Las cartas repetidas se pueden vender. El álbum solo muestra las cartas que has tenido alguna vez.' }),
         el('div', { class: 'actions' }, [el('button', { class: 'primary', text: 'Fichar por Malandriner S.A.', onclick: () => { const r = start(); view = 'dashboard'; cinematic(r.pack, () => render()); } })])
       ])
     ]));
@@ -296,35 +317,42 @@ MI.story = (function () {
     c.appendChild(storyNav(s, 'dashboard'));
     if (s.tampered) c.appendChild(el('p', { class: 'small', style: { color: 'var(--bad)' }, text: 'La partida guardada no supera la comprobación de integridad y se ha reiniciado.' }));
     if (lastSummary) { c.appendChild(renderSummary(lastSummary)); lastSummary = null; }
-    c.appendChild(el('div', { class: 'story-grid' }, [
-      el('div', { class: 'panel chapter-card' }, [
-        el('div', { class: 'tag', text: 'Capítulo ' + ch.id + ' de ' + cfg().chapters.length }),
-        el('h2', { text: ch.name }),
-        el('p', { class: 'muted', text: ch.desc }),
-        el('div', { class: 'row small' }, [el('span', { class: 'pill', text: 'Boluda: ' + ch.level }), el('span', { class: 'pill', text: 'Dificultad ' + (ch.minDifficulty || 1) + ' a ' + (ch.maxDifficulty || 5) }), s.wins[ch.id] ? el('span', { class: 'pill', text: 'Superado ' + s.wins[ch.id] + ' veces' }) : null]),
-        el('div', { class: 'actions', style: { justifyContent: 'flex-start' } }, [
-          el('button', { class: 'primary', text: owned.length >= N ? 'Elegir plantilla y jugar' : 'Necesitas ' + N + ' cartas', disabled: owned.length >= N ? null : 'disabled', onclick: () => go('squad') }),
-          owned.length < N && s.coins < cfg().packs.basico.price ? el('button', { text: 'Pedir un sobre de emergencia', onclick: () => { const st = load(); const pk = openPack(st, 'basico', true); st.log.unshift({ date: new Date().toISOString(), text: 'Sobre de emergencia. Recepción te mira raro.' }); save(st); cinematic(pk, () => render()); } }) : null
-        ])
-      ]),
-      el('div', { class: 'panel' }, [
-        el('h2', { text: 'Estado' }),
-        el('div', { class: 'stats' }, [
-          stat(s.coins, 'malandricoins'), stat(owned.length + ' / ' + total, 'cartas distintas'), stat(s.opened, 'sobres abiertos'), stat(s.sprints, 'sprints jugados')
-        ]),
-        el('div', { class: 'row', style: { marginTop: '10px' } }, [el('button', { text: 'Tienda de sobres', onclick: () => go('shop') }), el('button', { text: 'Ver colección', onclick: () => go('collection') })])
-      ]),
-      el('div', { class: 'panel' }, [
-        el('h2', { text: 'Capítulos' }),
-        ...cfg().chapters.map((x) => el('div', { class: 'chapter-row ' + (x.id < s.chapter ? 'done' : (x.id === s.chapter ? 'now' : 'locked')) }, [el('b', { text: x.id + '. ' + x.name }), el('span', { class: 'small muted', text: x.id < s.chapter ? 'superado' : (x.id === s.chapter ? 'en curso' : (s.wins[x.id] ? 'superado antes' : 'bloqueado')) })]))
-      ]),
-      el('div', { class: 'panel' }, [
-        el('h2', { text: 'Diario de la oficina' }),
-        ...(s.log.length ? s.log.slice(0, 8).map((e) => el('div', { class: 'entry small', text: e.date.slice(0, 10) + ' · ' + e.text })) : [el('p', { class: 'muted small', text: 'Nada todavía.' })]),
-        el('div', { class: 'actions', style: { justifyContent: 'flex-start', marginTop: '14px' } }, [el('button', { class: 'ghost small-btn', text: 'Reiniciar la historia', onclick: () => { if (confirm('¿Borrar la historia y empezar de cero? La colección se pierde.')) { reset(); render(); } } })])
+    const chapterCard = el('div', { class: 'panel chapter-card' }, [
+      el('div', { class: 'tag', text: 'Capítulo ' + ch.id + ' de ' + cfg().chapters.length }),
+      el('h2', { text: ch.name }),
+      el('p', { class: 'muted', text: ch.desc }),
+      el('div', { class: 'row small' }, [el('span', { class: 'pill', text: 'Boluda: ' + ch.level }), el('span', { class: 'pill', text: 'Dificultad ' + (ch.minDifficulty || 1) + ' a ' + (ch.maxDifficulty || 5) }), s.wins[ch.id] ? el('span', { class: 'pill', text: 'Superado ' + s.wins[ch.id] + ' veces' }) : null]),
+      el('div', { class: 'actions', style: { justifyContent: 'flex-start' } }, [
+        el('button', { class: 'primary', text: owned.length >= N ? 'Elegir plantilla y jugar' : 'Necesitas ' + N + ' cartas', disabled: owned.length >= N ? null : 'disabled', onclick: () => go('squad') }),
+        owned.length < N && s.coins < cfg().packs.basico.price ? el('button', { text: 'Pedir un sobre de emergencia', onclick: () => { const st = load(); const pk = openPack(st, 'basico', true); st.log.unshift({ date: new Date().toISOString(), text: 'Sobre de emergencia. Recepción te mira raro.' }); save(st); cinematic(pk, () => render()); } }) : null
       ])
+    ]);
+    const stateCard = el('div', { class: 'panel' }, [
+      el('h2', { text: 'Estado' }),
+      el('div', { class: 'stats' }, [
+        stat(s.coins, 'malandricoins'), stat(owned.length + ' / ' + total, 'cartas distintas'), stat(s.opened, 'sobres abiertos'), stat(s.sprints, 'sprints jugados')
+      ]),
+      el('div', { class: 'row', style: { marginTop: '10px' } }, [el('button', { text: 'Tienda de sobres', onclick: () => go('shop') }), el('button', { text: 'Ver colección', onclick: () => go('collection') })])
+    ]);
+    const chaptersCard = el('div', { class: 'panel' }, [
+      el('h2', { text: 'Capítulos' }),
+      ...cfg().chapters.map((x) => el('div', { class: 'chapter-row ' + (x.id < s.chapter ? 'done' : (x.id === s.chapter ? 'now' : 'locked')) + (isCheckpoint(x.id) ? ' cp' : '') }, [
+        el('b', { text: x.id + '. ' + x.name }),
+        el('span', { class: 'small muted', text: (isCheckpoint(x.id) ? 'punto de control · ' : '') + (x.id < s.chapter ? 'superado' : (x.id === s.chapter ? 'en curso' : (s.wins[x.id] ? 'superado antes' : 'bloqueado'))) })
+      ])),
+      el('p', { class: 'small muted', style: { marginTop: '10px' }, text: 'Si pierdes un sprint vuelves al último punto de control. La colección y los malandricoins no se pierden nunca.' })
+    ]);
+    const diaryCard = el('div', { class: 'panel' }, [
+      el('h2', { text: 'Diario de la oficina' }),
+      ...(s.log.length ? s.log.slice(0, 8).map((e) => el('div', { class: 'entry small', text: e.date.slice(0, 10) + ' · ' + e.text })) : [el('p', { class: 'muted small', text: 'Nada todavía.' })]),
+      el('div', { class: 'actions', style: { justifyContent: 'flex-start', marginTop: '14px' } }, [el('button', { class: 'ghost small-btn', text: 'Reiniciar la historia', onclick: () => { if (confirm('¿Borrar la historia y empezar de cero? La colección se pierde.')) { reset(); render(); } } })])
+    ]);
+    c.appendChild(el('div', { class: 'story-cols' }, [
+      el('div', { class: 'story-col' }, [chapterCard, stateCard]),
+      el('div', { class: 'story-col' }, [chaptersCard, diaryCard])
     ]));
   }
+
   function stat(v, l) { return el('div', { class: 'stat' }, [el('b', { text: String(v) }), el('span', { text: l })]); }
 
   function renderSummary(sum) {
@@ -429,5 +457,5 @@ MI.story = (function () {
     MI.app.go('game');
   }
 
-  return { render, load, save, start, reset, openPack, sell, ownedCards, chapter, go, discovered, revealAll, setRevealAll, packSvg, cinematic };
+  return { render, load, save, start, reset, openPack, sell, ownedCards, chapter, checkpointFor, reward, go, discovered, revealAll, setRevealAll, packSvg, cinematic };
 })();

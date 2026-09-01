@@ -72,7 +72,7 @@ Decisión de Fernando: el arcade se queda como está (5 tickets, mano de 5); má
 
 - [x] 115 tickets (85 nuevos) por categorías: incidente, desarrollo, migración, seguridad, datos/IA, negocio, formación e I+D. Distribución por dificultad 4/28/54/25/4 y 38 con giro.
 - [x] Vocabulario: eliminada la palabra "marrón" de todos los textos; la interfaz ya no menciona ficheros ni rutas del proyecto.
-- [x] Campaña de 10 capítulos; perder un sprint devuelve al capítulo 1 conservando colección y malandricoins.
+- [x] Campaña de 10 capítulos con puntos de control (1, 4 y 7); perder devuelve al último alcanzado, conservando colección y malandricoins. Regla elegida tras medir las tres alternativas por simulación (ver `CLAUDE.md`, "Equilibrio de la campaña").
 - [x] Las repetidas se conservan y se venden desde la colección según rareza (4 / 10 / 25 / 80). Nunca la última copia.
 - [x] Arte de sobres en SVG: tira de apertura, trama, brillo animado, sello con el número de cartas y destellos en el sobre calabozo.
 - [x] Apertura cinematográfica a pantalla completa: sobre que tiembla y se rasga, cartas de una en una con destello radial por rareza y giro 3D, ficha consultable en cada carta, resumen final.

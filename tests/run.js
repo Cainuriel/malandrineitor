@@ -138,5 +138,22 @@ check(worst.burnout === false, 'Daniel Primo nunca entra en burnout');
   check(st.sell(single, 'holtrix') === 0 && single.owned.holtrix === 1, 'la última copia no se vende');
 }
 
+// 10. Campaña: puntos de control al perder y avance al ganar
+{
+  const st = MI.story, C = MI.data.config.story;
+  check(st.checkpointFor(1) === 1 && st.checkpointFor(3) === 1 && st.checkpointFor(4) === 4 && st.checkpointFor(6) === 4 && st.checkpointFor(10) === 7,
+    'los puntos de control (' + C.checkpoints.join(', ') + ') se resuelven hacia atrás');
+  const base = () => ({ coins: 0, owned: {}, seen: {}, chapter: 6, wins: { 1: 1, 2: 1, 3: 1, 4: 1, 5: 1 }, opened: 0, sprints: 0, log: [] });
+  const ch = C.chapters[5];
+  const lose = base(); st.reward(lose, ch, { result: 'loss', resolved: 0, improved: 2, pays: 1 });
+  check(lose.chapter === 4, 'perder en el capítulo 6 devuelve al punto de control 4');
+  check(Object.keys(lose.owned).length === 0 && lose.coins >= 0, 'perder no quita cartas ni deja el saldo en negativo');
+  const win = base(); st.reward(win, ch, { result: 'win', resolved: 4, improved: 1, pays: 3 });
+  check(win.chapter === 7 && win.coins > 0, 'ganar avanza al capítulo siguiente y paga');
+  const last = base(); last.chapter = C.chapters.length;
+  st.reward(last, C.chapters[C.chapters.length - 1], { result: 'win', resolved: 5, improved: 0, pays: 5 });
+  check(last.chapter === C.chapters.length && last.finished === 1, 'ganar la auditoría final marca la campaña como terminada');
+}
+
 console.log(failures === 0 ? '\nTodo correcto.' : `\n${failures} fallo(s).`);
 process.exit(failures === 0 ? 0 : 1);

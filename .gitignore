@@ -1,0 +1,5 @@
+node_modules/
+package-lock.json
+package.json
+# Capturas de verificación: se regeneran con tests/screenshots.js y pesan más que el proyecto
+docs/img/

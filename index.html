@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>¡MALANDRINEITOR! — Malandriner S.A.</title>
+  <meta name="description" content="Juego de cartas homenaje a la comunidad de Web Reactiva. Malandriner S.A., especialistas en todo tipo de software.">
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/cards.css">
+  <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <a class="brand" href="#menu">
+        <span class="logo">¡MALANDRINEITOR!</span>
+        <span class="company">Malandriner S.A.</span>
+      </a>
+      <nav class="nav">
+        <button data-view="menu">Inicio</button>
+        <button data-view="story">Historia</button>
+        <button data-view="game">Arcade</button>
+        <button data-view="album">Álbum</button>
+        <button data-view="rules">Normas</button>
+        <button data-view="perfil">Perfil</button>
+      </nav>
+    </header>
+    <main id="view" class="view"></main>
+  </div>
+
+  <!-- Datos (orden libre entre ellos) -->
+  <script src="data/config.js"></script>
+  <script src="data/skills.js"></script>
+  <script src="data/techs.js"></script>
+  <script src="data/cards.js"></script>
+  <script src="data/challenges.js"></script>
+  <script src="data/optout.js"></script>
+  <!-- Motor y vistas (este orden importa) -->
+  <script src="js/util.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/scoring.js"></script>
+  <script src="js/match.js"></script>
+  <script src="js/avatar.js"></script>
+  <script src="js/card.js"></script>
+  <script src="js/album.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/story.js"></script>
+  <script src="js/rules.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

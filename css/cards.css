@@ -1,0 +1,180 @@
+/* Anatomía de la carta. Proporción 63:88 (naipe estándar). Ancho base 280px; escalable con --card-w. */
+.card {
+  --card-w: 280px;
+  --rar: var(--rar-comun);
+  --rar-2: var(--rar-comun-2);
+  --mx: 50%; --my: 50%;    /* posición del ratón para el brillo */
+  --rx: 0deg; --ry: 0deg;  /* inclinación 3D */
+  width: var(--card-w);
+  aspect-ratio: 63 / 88;
+  perspective: 1000px;
+  position: relative;
+  user-select: none;
+  font-size: calc(var(--card-w) / 28);
+}
+.card.rarity-rara       { --rar: var(--rar-rara);       --rar-2: var(--rar-rara-2); }
+.card.rarity-epica      { --rar: var(--rar-epica);      --rar-2: var(--rar-epica-2); }
+.card.rarity-legendaria { --rar: var(--rar-legendaria); --rar-2: var(--rar-legendaria-2); }
+
+.card-inner {
+  position: absolute; inset: 0;
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+  transform-style: preserve-3d;
+  transition: transform .12s ease-out, box-shadow .2s ease;
+  border-radius: calc(var(--card-w) / 18);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  background: linear-gradient(160deg, var(--rar) 0%, var(--rar-2) 45%, #0b1020 100%);
+  padding: calc(var(--card-w) / 30);
+}
+.card.selectable { cursor: pointer; }
+.card.selectable:hover .card-inner, .card.selected .card-inner { box-shadow: 0 0 0 3px var(--accent), 0 24px 50px rgba(0,0,0,.6); }
+.card.selected { transform: translateY(-10px); }
+.card.dimmed { opacity: .55; filter: grayscale(.5); pointer-events: none; }
+.card.burnout .card-inner { filter: grayscale(1) brightness(.6); }
+.card.burnout::after {
+  content: "BURNOUT"; position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%) rotate(-18deg);
+  font-weight: 900; font-size: 2.2em; letter-spacing: .1em; color: var(--bad);
+  border: .15em solid var(--bad); padding: .1em .4em; border-radius: .2em; background: rgba(11,16,32,.7);
+}
+
+.card-frame {
+  position: relative; height: 100%;
+  border-radius: calc(var(--card-w) / 24);
+  background: linear-gradient(180deg, #151d3a 0%, #0f1530 100%);
+  display: flex; flex-direction: column;
+  padding: calc(var(--card-w) / 34);
+  gap: calc(var(--card-w) / 60);
+  overflow: hidden;
+}
+.card-frame::before {
+  /* borde interior fino */
+  content: ""; position: absolute; inset: 4px; border-radius: inherit; pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--rar) 55%, transparent);
+}
+
+/* Cabecera */
+.card-head { display: flex; align-items: center; gap: .5em; }
+.card-name {
+  font-weight: 900; font-size: 1.28em; letter-spacing: -0.02em; line-height: 1.05;
+  color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,.6);
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.card-gem {
+  width: 1.5em; height: 1.5em; flex: none; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0%, var(--rar) 30%, var(--rar-2) 100%);
+  box-shadow: 0 0 .6em color-mix(in srgb, var(--rar) 70%, transparent);
+  display: grid; place-items: center; font-size: .7em; font-weight: 900; color: #0b1020;
+}
+
+/* Arte */
+.card-art {
+  position: relative; border-radius: calc(var(--card-w) / 30); overflow: hidden;
+  aspect-ratio: 5 / 4; background: #0b1020;
+  border: 1px solid color-mix(in srgb, var(--rar) 40%, #000);
+}
+.card-art svg, .card-art img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.card-art .ribbon {
+  position: absolute; left: 0; bottom: 0; right: 0;
+  padding: .35em .6em; font-size: .78em;
+  background: linear-gradient(90deg, rgba(11,16,32,.95), rgba(11,16,32,.6) 70%, transparent);
+  display: flex; align-items: center; gap: .5em;
+}
+.card-art .ribbon .lbl { color: var(--accent); font-weight: 800; letter-spacing: .1em; text-transform: uppercase; font-size: .8em; }
+.card-art .ribbon .val { color: #fff; font-weight: 700; }
+.card-art .rarity-tag {
+  position: absolute; top: .5em; right: .5em; font-size: .68em; letter-spacing: .14em; text-transform: uppercase;
+  padding: .2em .55em; border-radius: 999px; background: rgba(11,16,32,.75); color: var(--rar); border: 1px solid color-mix(in srgb, var(--rar) 60%, transparent);
+  font-weight: 800;
+}
+
+.card-title { font-size: .78em; color: var(--text-2); line-height: 1.25; min-height: 2.5em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Insignias */
+.card-badges { display: flex; gap: .4em; font-size: .72em; }
+.badge { display: inline-flex; align-items: center; gap: .35em; padding: .25em .55em; border-radius: .5em; border: 1px solid var(--line); background: rgba(255,255,255,.03); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.badge svg { width: 1.1em; height: 1.1em; flex: none; }
+.badge.kryptonite { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 40%, transparent); }
+.badge.kryptonite.none { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 40%, transparent); }
+
+/* Habilidades */
+.card-skills { display: grid; gap: .28em; font-size: .74em; margin-top: .1em; }
+.skill { display: grid; grid-template-columns: 4.6em 1fr 1.6em; align-items: center; gap: .5em; }
+.skill .k { font-family: var(--mono); font-size: .9em; letter-spacing: .04em; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skill .bar { height: .5em; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; }
+.skill .bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--sk, var(--rar)), color-mix(in srgb, var(--sk, var(--rar)) 50%, #fff)); }
+.skill .v { text-align: right; font-family: var(--mono); font-weight: 700; color: #fff; }
+/* Resaltado de las habilidades que pide el ticket: fila naranja, barra dorada, el resto atenuado */
+.skill.hl { position: relative; }
+.skill.hl::before { content: ""; position: absolute; left: -.45em; top: -.12em; bottom: -.12em; right: -.35em; border-radius: .35em; background: color-mix(in srgb, var(--accent) 16%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); }
+.skill.hl > * { position: relative; }
+.skill.hl .k { color: var(--accent); font-weight: 800; }
+.skill.hl .bar { background: rgba(255, 183, 3, .15); }
+.skill.hl .bar i { background: linear-gradient(90deg, var(--accent), #fff); box-shadow: 0 0 .5em color-mix(in srgb, var(--accent) 70%, transparent); }
+.skill.hl .v { color: var(--accent); }
+.card.has-hl .skill:not(.hl) { opacity: .6; }
+
+/* Habilidad especial y frase */
+.card-ability { font-size: .7em; line-height: 1.25; padding: .5em .6em; border-radius: .5em; background: color-mix(in srgb, var(--rar) 14%, transparent); border-left: .25em solid var(--rar); }
+.card-ability b { color: #fff; display: block; margin-bottom: .1em; }
+.card-quote { margin-top: auto; font-size: .7em; font-style: italic; color: var(--text-2); line-height: 1.25; }
+.card-foot { display: flex; justify-content: space-between; align-items: center; font-size: .6em; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; }
+.card-foot .id { font-family: var(--mono); letter-spacing: 0; text-transform: none; }
+
+/* Brillo dinámico (todas) y holográfico (épica y legendaria) */
+.card-shine {
+  position: absolute; inset: 0; pointer-events: none; mix-blend-mode: soft-light; opacity: 0;
+  background: radial-gradient(circle at var(--mx) var(--my), rgba(255,255,255,.9) 0%, rgba(255,255,255,.25) 25%, transparent 60%);
+  transition: opacity .2s ease;
+}
+.card:hover .card-shine, .card.holo-on .card-shine { opacity: 1; }
+.card.rarity-epica .card-holo, .card.rarity-legendaria .card-holo {
+  position: absolute; inset: 0; pointer-events: none; mix-blend-mode: color-dodge; opacity: .0;
+  background:
+    linear-gradient(115deg, transparent 20%, rgba(255,255,255,.25) 35%, transparent 50%),
+    conic-gradient(from calc(var(--mx) * 1deg) at var(--mx) var(--my), #ff004c, #ffb703, #80ed99, #4cc9f0, #c77dff, #ff004c);
+  background-blend-mode: overlay;
+  transition: opacity .25s ease;
+}
+.card.rarity-epica:hover .card-holo, .card.rarity-epica.holo-on .card-holo { opacity: .28; }
+.card.rarity-legendaria:hover .card-holo, .card.rarity-legendaria.holo-on .card-holo { opacity: .45; }
+.card.rarity-legendaria .card-inner {
+  background: linear-gradient(160deg, #fff3b0 0%, var(--rar) 25%, var(--rar-2) 55%, #7a3e00 80%, #0b1020 100%);
+}
+.card.rarity-legendaria .card-frame::after {
+  /* destellos lentos permanentes en la legendaria */
+  content: ""; position: absolute; inset: -50%; pointer-events: none; opacity: .12;
+  background: conic-gradient(from 0deg, transparent 0 40%, #fff 50%, transparent 60% 100%);
+  animation: spin 9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Dorso */
+.card-back .card-inner { background: linear-gradient(160deg, #2a365f, #0b1020); display: grid; place-items: center; }
+.card-back .back-frame {
+  width: 88%; height: 92%; border-radius: calc(var(--card-w) / 24); border: 2px solid var(--line);
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.04) 0 6px, transparent 6px 14px),
+    linear-gradient(180deg, #151d3a, #0f1530);
+  display: grid; place-items: center; text-align: center; padding: 1em;
+}
+.card-back .back-logo { font-weight: 900; font-size: 1.4em; letter-spacing: -0.03em; line-height: 1;
+  background: linear-gradient(135deg, var(--accent), #ff5d73); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.card-back .back-company { font-size: .6em; color: var(--muted); letter-spacing: .18em; text-transform: uppercase; margin-top: .6em; }
+
+/* Tamaños (con tope por ancho de pantalla) */
+.card.size-s { --card-w: 180px; }
+.card.size-m { --card-w: 240px; }
+.card.size-l { --card-w: 340px; }
+@media (max-width: 720px) {
+  .card { --card-w: min(280px, calc(100vw - 40px)); }
+  .card.size-s { --card-w: 160px; }
+  .card.size-m { --card-w: min(240px, calc(50vw - 24px)); }
+  .card.size-l { --card-w: min(320px, calc(100vw - 40px)); }
+}
+@media (hover: none) {
+  /* En táctil no hay hover: el brillo se muestra fijo y suave */
+  .card .card-shine { opacity: .5; }
+  .card.rarity-epica .card-holo { opacity: .18; }
+  .card.rarity-legendaria .card-holo { opacity: .3; }
+}

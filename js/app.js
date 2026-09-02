@@ -143,16 +143,16 @@ MI.app = (function () {
         const n = story.owned[card.id];
         const cs = stats[card.id] || { sent: 0, resolved: 0, burnouts: 0 };
         const price = cfg.story.sellPrice[card.rarity] || 0;
-        const st = (story.strikes || {})[card.id] || 0;      // desgaste de la campaña en curso
         const limit = cfg.story.burnoutLimit;
-        return el('div', { class: 'squad-row rarity-' + card.rarity + (st ? ' at-risk' : (cs.burnouts ? ' burned' : '')) }, [
+        const st = (story.strikes || {})[card.id] || 0;      // desgaste de la campaña en curso
+        return el('div', { class: 'squad-row rarity-' + card.rarity + (st >= limit - 1 ? ' at-risk' : (st || cs.burnouts ? ' burned' : '')) }, [
           el('span', { class: 'sq-gem' }),
           el('span', { class: 'sq-name', text: card.name }),
           el('span', { class: 'sq-rar', text: cfg.rarities[card.rarity].name }),
           el('span', { class: 'sq-n', text: n > 1 ? '×' + n : '' }),
           el('span', { class: 'sq-stats', text: cs.sent ? `${cs.sent} envíos · ${cs.resolved} resueltos` : 'sin jugar' }),
           el('span', { class: 'sq-burn' + (st ? ' risk' : (cs.burnouts ? ' on' : '')), title: cs.burnouts ? cs.burnouts + ' burnouts en total' : '',
-            text: st ? st + ' de ' + limit + ' · en la cuerda floja' : (cs.burnouts ? cs.burnouts + (cs.burnouts === 1 ? ' burnout' : ' burnouts') : '') }),
+            text: st ? st + ' de ' + limit + (st >= limit - 1 ? ' · en la cuerda floja' : '') : (cs.burnouts ? cs.burnouts + (cs.burnouts === 1 ? ' burnout' : ' burnouts') : '') }),
           el('span', { class: 'sq-act' }, n > 1
             ? el('button', { class: 'small-btn sell', text: 'Vender una (+' + price + ')', onclick: () => { const st = MI.story.load(); MI.story.sell(st, card.id); MI.story.save(st); go('perfil'); toast('Vendida una copia de ' + card.name + '.'); } })
             : el('button', { class: 'ghost small-btn', text: 'Ver ficha', onclick: () => MI.album.openDetail(card) }))

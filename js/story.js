@@ -407,7 +407,7 @@ MI.story = (function () {
         el('b', { text: sum.wear.lost.length === 1 ? 'Deja la empresa' : 'Dejan la empresa' }),
         el('p', { class: 'small', text: sum.wear.lost.map((x) => x.card.name + (x.copiesLeft > 0 ? ' (te queda otra copia)' : '')).join(', ') + '. ' + (cfg().burnoutLimit) + ' burnouts son demasiados para cualquiera.' })
       ]) : null,
-      sum.wear && sum.wear.warn.length ? el('p', { class: 'small', style: { color: 'var(--bad)' }, text: 'En la cuerda floja: ' + sum.wear.warn.map((x) => x.card.name + ' (' + x.strikes + ' de ' + cfg().burnoutLimit + ')').join(', ') + '.' }) : null
+      sum.wear && sum.wear.warn.length ? el('p', { class: 'small', style: { color: 'var(--warn)' }, text: (sum.wear.warn.some((x) => x.strikes >= cfg().burnoutLimit - 1) ? 'En la cuerda floja: ' : 'Con algún burnout: ') + sum.wear.warn.map((x) => x.card.name + ' (' + x.strikes + ' de ' + cfg().burnoutLimit + ')').join(', ') + '.' }) : null
     ]);
   }
 

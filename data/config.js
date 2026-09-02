@@ -74,6 +74,13 @@ MI.data.config = {
     starterPack: 'bienvenida',
     rewards: { resolved: 8, improved: 3, complicated: 0, pay: 2, win: 30, chapterFirstWin: 50 },
     sellPrice: { comun: 4, rara: 10, epica: 25, legendaria: 80 },   // venta manual de una carta repetida
+
+    // Desgaste: un malandrín que se quema demasiadas veces deja la empresa (se pierde una copia).
+    // burnoutReset: true -> el contador vuelve a cero si termina un sprint sin quemarse.
+    //   Con false (contador de por vida) la atrición se dispara: medido, hasta 34 cartas perdidas
+    //   en una campaña mala frente a 8 con reset. Ver CLAUDE.md, "Desgaste de las cartas".
+    burnoutLimit: 3,
+    burnoutReset: true,
     // Qué pasa al perder un sprint (la colección y los malandricoins se conservan siempre):
     //   'checkpoint' -> vuelves al último punto de control alcanzado (config.story.checkpoints)
     //   'restart'    -> vuelves al capítulo 1

@@ -168,6 +168,28 @@ Hay tres capas que ocupan la ventana entera: la apertura de sobres (`.opening-ov
 - Ambos respetan `prefers-reduced-motion`: la clase `fx-still` y una regla de medios desactivan las animaciones.
 - La tipografía es una pila de sistema con Impact a la cabeza (`--fx-font`): no se descargan fuentes, el juego debe funcionar sin red.
 
+## Desgaste de las cartas
+
+En el modo historia, un malandrín que termina un ticket en "complicado" suma un burnout. Al llegar a `config.story.burnoutLimit` (3) **deja la empresa**: se pierde una copia de la carta. Implementado en `MI.story.wearAndTear(state, summary)`, que se llama desde `reward()` al terminar el sprint.
+
+Decisiones y por qué:
+
+- **Se aplica al final del sprint, nunca durante.** Quitar una carta de la mano a media partida dejaría al jugador sin poder jugarla y sin explicación; además ya está en burnout el resto del sprint.
+- **Se pierde una copia, no la carta entera.** Con dos copias te queda una, así que los repetidos valen como seguro además de como venta.
+- **`config.story.burnoutReset: true`**: el contador vuelve a cero si el malandrín termina un sprint entero sin quemarse. Es lo que convierte la regla en estrategia en vez de en una cuenta atrás inevitable. Medido sobre 200 campañas completas:
+
+  | política | cartas perdidas por campaña (mediana) | p90 | máximo | campañas con alguna baja |
+  |---|---|---|---|---|
+  | 3 burnouts, contador de por vida | 1 | 3 | **34** | 68 % |
+  | 3 burnouts, contador a cero al sobrevivir | 0 | 2 | 8 | 38 % |
+  | 2 burnouts, contador a cero al sobrevivir | 1 | 3 | 7 | 73 % |
+
+  Con contador de por vida la atrición se dispara al final de la campaña (cada carta se queda clavada en 2 y muere al siguiente tropiezo). Con reinicio, la amenaza es constante pero acotada. El simulador juega de forma óptima, así que una persona perderá algo más.
+- **El aviso es parte de la mecánica**: la colección y el panel "Tu plantilla" del perfil muestran a cuántos burnouts está cada uno ("2 de 3 · en la cuerda floja"), y el resumen del sprint avisa de quién se acerca al límite. Sin ese aviso la regla sería castigo aleatorio, no decisión.
+- **Daniel Primo es inmune al burnout**, así que nunca se va.
+- El texto dice **"deja Malandriner S.A."**, no "destruida": son personas reales de la comunidad y el tono importa.
+- Solo aplica al modo historia. El arcade reparte manos aleatorias y no tiene colección que desgastar.
+
 ## Equilibrio de la campaña
 
 Medido con simulaciones de la campaña completa (200 partidas, jugador que compra el mejor sobre que puede pagar y manda siempre a su mejor carta). Sprints necesarios para superar los diez capítulos según `config.story.onLoss`:

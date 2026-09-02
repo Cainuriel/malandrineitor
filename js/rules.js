@@ -30,6 +30,11 @@ MI.rules = (function () {
         'Los dos jugadores empiezan con ' + cfg.points.startReputation + ' de <b>reputación</b> y mandan un malandriner al mismo ticket. Resolver suma (de ' + cfg.points.resolved[1] + ' a ' + cfg.points.resolved[5] + ' según dificultad), mejorar suma menos y complicar resta. Quien obtiene mayor total en el ticket <b>se lleva la paga</b>: +' + cfg.points.payBonus + '.',
         'Un sprint son ' + cfg.arcade.tickets + ' tickets con una mano de ' + cfg.arcade.handSize + ' malandrines. Gana quien acaba con más reputación. Contra la máquina, quien llega a cero queda eliminado en el acto.'
       ]),
+      sec('Desgaste: el burnout se paga', [
+        'En el modo historia, cada vez que un malandrín acaba un ticket en <b>complicado</b> se le apunta un burnout. Al <b>' + cfg.story.burnoutLimit + '</b>, deja Malandriner S.A. y pierdes esa copia de la carta. Si tenías dos, te queda una; si era la única, se va del todo y hay que volver a conseguirla en un sobre.',
+        'El contador <b>vuelve a cero</b> cuando ese malandrín termina un sprint entero sin quemarse, así que no es una cuenta atrás inevitable: es una señal de que lo estás mandando a sitios donde no debería estar. En la colección y en tu perfil aparece a cuántos burnouts está cada uno, para que puedas darle descanso a tiempo. Daniel Primo no se quema nunca, así que no se va jamás.',
+        'En el modo arcade no se pierde nada: las manos son aleatorias y no hay colección que desgastar.'
+      ]),
       sec('El amo del calabozo', [
         'Daniel Primo es la carta legendaria. Es inmune a la criptonita y al burnout y, si está en tu mano y no está quemado, puedes usar una vez por partida <b>Rescatar del calabozo</b> sobre un malandrín en burnout para devolverlo a la mano antes de elegir carta. ' + cfg.rival.name + ' también lo hace si le toca.'
       ]),

@@ -345,7 +345,12 @@ MI.game = (function () {
 
   /* ---------- Render: finales ---------- */
   function summaryOf(st) {
-    return { result: st.over === 'me' ? 'win' : (st.over === 'opp' ? 'loss' : 'draw'), resolved: st.stats.resolved, improved: st.stats.improved, pays: st.stats.pays, points: st.points, rep: st.rep.me };
+    return {
+      result: st.over === 'me' ? 'win' : (st.over === 'opp' ? 'loss' : 'draw'),
+      resolved: st.stats.resolved, improved: st.stats.improved, pays: st.stats.pays, points: st.points, rep: st.rep.me,
+      // Para el desgaste del modo historia: quién jugó y quién se quemó.
+      hand: st.hands.me.map((c) => c.id), cards: st.stats.cards
+    };
   }
 
   // El pantallazo se muestra una sola vez por partida, antes del resumen.

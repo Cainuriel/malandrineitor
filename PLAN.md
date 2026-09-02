@@ -107,6 +107,7 @@ Pendiente de la fase, aplazado a propósito:
 - [x] Corregido: en las partidas a dos, quien recibía el fichero resuelto veía ganar a la empresa de la máquina en lugar de a su rival humano, porque las frases de derrota llevaban el nombre escrito a mano.
 - [x] Acceso a la tienda de sobres desde el álbum y desde el perfil.
 - [x] Panel "Tu plantilla" en el perfil: cartas en propiedad, copias, envíos, resueltos, burnouts acumulados y venta de repetidas.
+- [x] Desgaste de las cartas: tres burnouts y el malandrín deja la empresa, con contador que se reinicia al sobrevivir un sprint y avisos de "cuerda floja". Política elegida tras medir tres variantes (ver `CLAUDE.md`, "Desgaste de las cartas").
 - [ ] Poner `config.demo.revealAllButton` a `false` para la versión de la comunidad.
 
 ---

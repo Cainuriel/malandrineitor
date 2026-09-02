@@ -166,5 +166,42 @@ check(worst.burnout === false, 'Daniel Primo nunca entra en burnout');
   check(fill(ph.loss.title[0], 'Dani#1234') === 'Dani#1234 SE LLEVA EL SPRINT', 'el marcador se sustituye por el rival de la partida');
 }
 
+// 12. Desgaste: tres burnouts y el malandrín deja la empresa
+{
+  const st = MI.story, C = MI.data.config.story, L = C.burnoutLimit;
+  const base = () => ({ coins: 0, owned: { 'holtrix': 1, 'vicent-perez': 2, 'daniel-primo': 1 }, seen: {}, strikes: {}, chapter: 1, wins: {}, opened: 0, sprints: 0, log: [] });
+  const hand = ['holtrix', 'vicent-perez', 'daniel-primo'];
+
+  // Se quema una vez por sprint: al llegar al límite, fuera
+  let s = base(), r;
+  for (let i = 1; i <= L; i++) r = st.wearAndTear(s, { hand, cards: { 'holtrix': { burnouts: 1 } } });
+  check(!s.owned['holtrix'] || s.owned['holtrix'] === 0, `a los ${L} burnouts la carta deja la empresa`);
+  check(r.lost.length === 1 && r.lost[0].card.id === 'holtrix', 'el resumen informa de quién se va');
+
+  // Con dos copias solo se pierde una
+  s = base();
+  for (let i = 1; i <= L; i++) st.wearAndTear(s, { hand, cards: { 'vicent-perez': { burnouts: 1 } } });
+  check(s.owned['vicent-perez'] === 1, 'con dos copias solo se pierde una');
+
+  // El contador vuelve a cero si termina un sprint sin quemarse
+  s = base();
+  st.wearAndTear(s, { hand, cards: { 'holtrix': { burnouts: L - 1 } } });
+  check((s.strikes['holtrix'] || 0) === L - 1, 'el desgaste se acumula dentro de la campaña');
+  const warn = st.wearAndTear(s, { hand, cards: {} });
+  check(!s.strikes['holtrix'] && s.owned['holtrix'] === 1, 'sobrevivir un sprint entero pone el contador a cero');
+  check(warn.lost.length === 0, 'sin burnouts no se pierde a nadie');
+
+  // Aviso de cuerda floja
+  s = base();
+  const w = st.wearAndTear(s, { hand, cards: { 'holtrix': { burnouts: L - 1 } } });
+  check(w.warn.some((x) => x.card.id === 'holtrix' && x.strikes === L - 1), 'avisa de quién está en la cuerda floja');
+
+  // El amo del calabozo no se quema nunca, así que nunca se va
+  const dp = MI.data.cards.find((c) => c.id === 'daniel-primo');
+  const hard = MI.data.challenges.find((c) => c.id === 'db-breach');
+  const res = engine.resolve(dp, hard, { withTwist: true, rng: () => 0 }, cfg);
+  check(res.burnout === false, 'Daniel Primo nunca se quema, así que nunca deja la empresa');
+}
+
 console.log(failures === 0 ? '\nTodo correcto.' : `\n${failures} fallo(s).`);
 process.exit(failures === 0 ? 0 : 1);

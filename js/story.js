@@ -16,13 +16,13 @@ MI.story = (function () {
   const rivalName = () => MI.data.config.rival.name;
 
   /* ---------- Estado ---------- */
-  function empty() { return { coins: cfg().startCoins, owned: {}, seen: {}, chapter: 1, wins: {}, opened: 0, sprints: 0, log: [] }; }
+  function empty() { return { coins: cfg().startCoins, owned: {}, seen: {}, strikes: {}, chapter: 1, wins: {}, opened: 0, sprints: 0, log: [] }; }
   function load() {
     try {
       const raw = localStorage.getItem(KEY); if (!raw) return null;
       const s = JSON.parse(raw);
       if (!MI.match.verify(s)) { const e = empty(); e.tampered = true; return e; }
-      delete s.sig; s.seen = s.seen || {}; return s;
+      delete s.sig; s.seen = s.seen || {}; s.strikes = s.strikes || {}; return s;
     } catch (e) { return null; }
   }
   function save(s) {
@@ -117,7 +117,39 @@ MI.story = (function () {
     return rng.shuffle(pool).slice(0, MI.data.config.arcade.handSize);
   }
 
-  // Recompensa de un sprint terminado. summary: { result, resolved, improved, pays }
+  /* Desgaste: suma los quemados de este sprint, retira a quien llegue al límite y pone el
+     contador a cero a quien haya aguantado el sprint entero sin quemarse. Devuelve
+     { lost: [{card, copiesLeft}], warn: [{card, strikes}] } para avisar en el resumen.
+     Se aplica al terminar el sprint, no durante: quitar una carta de la mano a media partida
+     dejaría al jugador sin poder jugarla y sin explicación. */
+  function wearAndTear(s, summary) {
+    const limit = cfg().burnoutLimit, cards = lk().cards;
+    const out = { lost: [], warn: [] };
+    if (!limit) return out;
+    s.strikes = s.strikes || {};
+    const played = summary.cards || {};
+    Object.keys(played).forEach((id) => {
+      const burns = played[id].burnouts || 0;
+      if (!burns || !s.owned[id]) return;
+      s.strikes[id] = (s.strikes[id] || 0) + burns;
+      if (s.strikes[id] >= limit) {
+        s.owned[id]--;
+        s.strikes[id] = 0;
+        const card = cards[id];
+        out.lost.push({ card, copiesLeft: s.owned[id] });
+        s.log.unshift({ date: new Date().toISOString(), text: card.name + ' deja Malandriner S.A. tras quemarse ' + limit + ' veces.' + (s.owned[id] > 0 ? ' Te queda otra copia en plantilla.' : '') });
+      }
+    });
+    // El contador se reinicia para quien terminó el sprint sin quemarse
+    if (cfg().burnoutReset) (summary.hand || []).forEach((id) => { if (!played[id] || !played[id].burnouts) delete s.strikes[id]; });
+    (summary.hand || []).forEach((id) => {
+      const n = s.strikes[id] || 0;
+      if (n > 0 && n < limit && s.owned[id]) out.warn.push({ card: cards[id], strikes: n });
+    });
+    return out;
+  }
+
+  // Recompensa de un sprint terminado. summary: { result, resolved, improved, pays, hand, cards }
   function reward(s, ch, summary) {
     const r = cfg().rewards;
     let coins = summary.resolved * r.resolved + summary.improved * r.improved + summary.pays * r.pay;
@@ -146,10 +178,11 @@ MI.story = (function () {
         note = rivalName() + ' se queda el contrato. Repites el capítulo.';
       }
     }
+    const wear = wearAndTear(s, summary);
     s.coins += coins; s.sprints++;
     s.log.unshift({ date: new Date().toISOString(), text: `${ch.name}: ${({ win: 'victoria', loss: 'derrota', draw: 'empate' })[summary.result]} · +${coins} malandricoins` + (note ? ' · ' + note : '') });
     s.log = s.log.slice(0, 30);
-    return { coins, items, note };
+    return { coins, items, note, wear };
   }
 
   /* ---------- Arte de los sobres (SVG) ---------- */
@@ -369,7 +402,12 @@ MI.story = (function () {
       el('h2', { text: sum.title }),
       el('div', { class: 'row' }, sum.items.filter((i) => i.coins).map((i) => el('span', { class: 'pill', text: i.label + ': +' + i.coins }))),
       el('p', { class: 'small', style: { color: 'var(--accent)', marginTop: '8px' }, text: '+' + sum.coins + ' malandricoins · +' + sum.points + ' puntos malandrín' }),
-      sum.note ? el('p', { class: 'small', style: { color: 'var(--warn)' }, text: sum.note }) : null
+      sum.note ? el('p', { class: 'small', style: { color: 'var(--warn)' }, text: sum.note }) : null,
+      sum.wear && sum.wear.lost.length ? el('div', { class: 'wear-lost' }, [
+        el('b', { text: sum.wear.lost.length === 1 ? 'Deja la empresa' : 'Dejan la empresa' }),
+        el('p', { class: 'small', text: sum.wear.lost.map((x) => x.card.name + (x.copiesLeft > 0 ? ' (te queda otra copia)' : '')).join(', ') + '. ' + (cfg().burnoutLimit) + ' burnouts son demasiados para cualquiera.' })
+      ]) : null,
+      sum.wear && sum.wear.warn.length ? el('p', { class: 'small', style: { color: 'var(--bad)' }, text: 'En la cuerda floja: ' + sum.wear.warn.map((x) => x.card.name + ' (' + x.strikes + ' de ' + cfg().burnoutLimit + ')').join(', ') + '.' }) : null
     ]);
   }
 
@@ -405,10 +443,12 @@ MI.story = (function () {
         const n = s.owned[card.id] || 0;
         const node = n ? MI.card.render(card, { selectable: true, onSelect: (cd) => MI.album.openDetail(cd) }) : MI.card.renderHidden(card);
         const price = cfg().sellPrice[card.rarity] || 0;
+        const st = s.strikes[card.id] || 0;
         return el('div', { class: 'hand-item' }, [node,
           el('div', { class: 'row', style: { gap: '6px', justifyContent: 'center' } }, [
             el('span', { class: 'pill', text: n ? 'x' + n : 'No la tienes' }),
-            n > 1 ? el('button', { class: 'small-btn sell', text: 'Vender una (+' + price + ')', onclick: () => { const st = load(); sell(st, card.id); save(st); render(); } }) : null
+            st ? el('span', { class: 'pill strikes', text: st + ' de ' + cfg().burnoutLimit + ' burnouts' }) : null,
+            n > 1 ? el('button', { class: 'small-btn sell', text: 'Vender una (+' + price + ')', onclick: () => { const stt = load(); sell(stt, card.id); save(stt); render(); } }) : null
           ])]);
       }));
     c.appendChild(grid);
@@ -460,12 +500,12 @@ MI.story = (function () {
         const st = load();
         const rw = reward(st, ch, summary);
         save(st);
-        lastSummary = { title: summary.result === 'win' ? 'Sprint ganado: ' + ch.name : (summary.result === 'draw' ? 'Empate en ' + ch.name : rivalName() + ' gana ' + ch.name), items: rw.items, coins: rw.coins, points: summary.points, note: rw.note };
+        lastSummary = { title: summary.result === 'win' ? 'Sprint ganado: ' + ch.name : (summary.result === 'draw' ? 'Empate en ' + ch.name : rivalName() + ' gana ' + ch.name), items: rw.items, coins: rw.coins, points: summary.points, note: rw.note, wear: rw.wear };
         view = 'dashboard';
       }
     });
     MI.app.go('game');
   }
 
-  return { render, load, save, start, reset, openPack, sell, ownedCards, chapter, checkpointFor, reward, go, openView, discovered, revealAll, setRevealAll, packSvg, cinematic };
+  return { render, load, save, start, reset, openPack, sell, ownedCards, chapter, checkpointFor, reward, wearAndTear, go, openView, discovered, revealAll, setRevealAll, packSvg, cinematic };
 })();

@@ -352,3 +352,12 @@
   .sq-act { grid-column: 1 / -1; justify-self: stretch; }
   .sq-act button { width: 100%; }
 }
+
+/* Desgaste de las cartas */
+.pill.strikes { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); }
+.squad-row.at-risk { border-color: var(--bad); box-shadow: inset 3px 0 0 var(--bad); }
+.sq-burn.risk { color: var(--bad); font-weight: 800; }
+.wear-lost { margin-top: 10px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--bad);
+  background: color-mix(in srgb, var(--bad) 12%, transparent); }
+.wear-lost b { color: var(--bad); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+.wear-lost p { margin: 4px 0 0; }

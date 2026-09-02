@@ -7,6 +7,7 @@ MI.game = (function () {
   let S = null;          // estado de la partida en curso
   let container = null;
   let screen = 'setup';  // setup | play | end | export | resolved
+  let pendingShared = null;
 
   const fmt = (n) => (Math.round(n * 10) / 10).toFixed(1);
   const sign = (n) => (n >= 0 ? '+' : '') + n;
@@ -184,15 +185,38 @@ MI.game = (function () {
     document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   }
 
-  function loadMatchText(text, name) {
-    let match;
-    try { match = MI.match.importText(text); } catch (e) { alert(e.message); return; }
+  function matchUrl(match) {
+    const base = location.protocol === 'file:' ? MI.data.config.shareBaseUrl : location.href.split('#')[0];
+    return base + '#match=' + MI.match.toUrlPayload(match);
+  }
+
+  async function shareMatch(match, button) {
+    const url = matchUrl(match);
+    if (navigator.share) {
+      try { await navigator.share({ title: 'Partida de ¡MALANDRINEITOR!', text: 'Continúa esta partida arcade:', url }); return; } catch (e) { if (e.name === 'AbortError') return; }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      button.textContent = 'Enlace copiado';
+      MI.app.toast('Enlace de partida copiado.');
+    } catch (e) {
+      prompt('Copia este enlace para compartir la partida:', url);
+    }
+  }
+
+  function loadMatch(match, name) {
     if (match.status === 'resolved') { S = { mode: 'p2p', match, role: MI.match.role.get(match.id) }; if (S.role) recordP2p(match, S.role); screen = 'resolved'; render(); return; }
     if (match.status === 'A-done') {
       if (MI.match.role.get(match.id) === 'A') { alert('Esta partida la creaste tú. Tiene que jugarla tu rival.'); return; }
       newP2pGame(match, 'B', name); render(); return;
     }
     alert('Esta partida está en estado "' + match.status + '" y no se puede continuar desde aquí.');
+  }
+
+  function loadMatchText(text, name) {
+    let match;
+    try { match = MI.match.importText(text); } catch (e) { alert(e.message); return; }
+    loadMatch(match, name);
   }
 
   /* ---------- Render: configuración ---------- */
@@ -206,6 +230,15 @@ MI.game = (function () {
 
     c.appendChild(el('div', { class: 'setup' }, [
       el('h1', { text: 'Modo arcade' }),
+      pendingShared ? el('div', { class: 'panel shared-match' }, [
+        el('h2', { text: 'Te han enviado una partida' }),
+        el('p', { class: 'small muted', text: 'Abre el enlace para jugar tu turno o consultar el resultado.' }),
+        el('button', { class: 'primary', text: 'Abrir partida recibida', onclick: () => {
+          if (!ensureName()) return;
+          const payload = pendingShared; pendingShared = null;
+          try { loadMatch(MI.match.fromUrlPayload(payload), name); } catch (e) { alert(e.message); }
+        } })
+      ]) : null,
       el('p', { class: 'lead', text: `Se reparten ${cfg.arcade.handSize} malandrines a cada jugador. Durante ${cfg.arcade.tickets} tickets, los dos mandáis un malandriner para el mismo ticket; quien obtiene mejor resultado se lleva la paga. Gana quien acaba con más reputación.` }),
       el('div', { class: 'row' }, [el('span', { class: 'pill', text: 'Juegas como ' + name }), el('span', { class: 'pill', text: (prof.points || 0) + ' puntos malandrín' }), el('button', { class: 'ghost small-btn', text: 'Ver perfil', onclick: () => MI.app.go('perfil') })]),
       el('h2', { style: { marginTop: '22px' }, text: 'Contra ' + cfg.rival.name }),
@@ -219,9 +252,9 @@ MI.game = (function () {
         el('div', { class: 'opt' }, [el('label', { text: 'Semilla (opcional)' }), el('input', { placeholder: 'Misma semilla, mismo reparto', oninput: (e) => { seed = e.target.value; } })]),
         el('div', { class: 'actions' }, [el('button', { class: 'primary', text: 'Repartir cartas', onclick: () => { if (ensureName()) { newAiGame({ level, seed: seed || undefined }); render(); } } })])
       ]),
-      el('h2', { style: { marginTop: '22px' }, text: 'A dos jugadores (por fichero)' }),
+      el('h2', { style: { marginTop: '22px' }, text: 'A dos jugadores' }),
       el('div', { class: 'panel' }, [
-        el('p', { class: 'small muted', text: 'Uno crea la partida y juega sus tickets a ciegas. Exporta el fichero y se lo pasa al rival, que juega los mismos tickets y resuelve la partida. Devuelve el fichero resuelto y los dos ven el resultado. Las jugadas van ofuscadas y firmadas.' }),
+        el('p', { class: 'small muted', text: 'Uno crea la partida y juega sus tickets a ciegas. Comparte un enlace con su rival, que juega los mismos tickets y devuelve otro enlace con el resultado. Las jugadas van ofuscadas y firmadas.' }),
         el('div', { class: 'actions', style: { justifyContent: 'flex-start' } }, [
           el('button', { class: 'primary', text: 'Crear partida y jugar primero', onclick: () => { if (ensureName()) { const m = MI.match.create(name, null, MI.album.activeCards(), MI.data.challenges); newP2pGame(m, 'A', name); render(); } } })
         ]),
@@ -294,7 +327,7 @@ MI.game = (function () {
     const ch = current();
     const R = S.lastResult;
     c.innerHTML = '';
-    const left = el('div', {});
+    const left = el('div', { class: 'game-main' });
     left.appendChild(renderHud());
     left.appendChild(renderTicket(ch, S.phase === 'reveal'));
 
@@ -335,7 +368,7 @@ MI.game = (function () {
       hand
     ]));
     const lastOne = S.ticket + 1 >= S.tickets.length || S.over;
-    left.appendChild(el('div', { class: 'actions' }, S.phase === 'choose'
+    left.appendChild(el('div', { class: 'actions game-actionbar' }, S.phase === 'choose'
       ? [el('button', { class: 'primary', text: S.selected ? 'Enviar a ' + S.selected.name : (available('me').length ? 'Elige un malandrín' : 'Nadie disponible: asumir el golpe'), disabled: (!S.selected && available('me').length) ? 'disabled' : null, onclick: play })]
       : [el('button', { class: 'primary', text: lastOne ? (S.mode === 'ai' ? 'Ver resultado final' : (S.role === 'A' ? 'Terminar y exportar' : 'Resolver la partida')) : 'Siguiente ticket', onclick: next })]));
 
@@ -383,9 +416,8 @@ MI.game = (function () {
     c.appendChild(el('div', { class: 'endgame' }, [
       el('h1', { text: 'Sprint terminado' }),
       el('div', { class: 'score', text: `Has acabado con ${S.rep.me} de reputación. Ahora le toca a tu rival.` }),
-      el('p', { class: 'lead', style: { margin: '0 auto 18px' }, text: 'Descarga el fichero y pásaselo por donde quieras. Tus jugadas van ofuscadas: tu rival no puede verlas hasta que termine las suyas. Cuando te devuelva el fichero resuelto, cárgalo en "Modo arcade" para ver quién gana.' }),
-      el('div', { class: 'actions' }, [el('button', { class: 'primary', text: 'Descargar ' + fname, onclick: () => download(text, fname) }), el('button', { text: 'Copiar al portapapeles', onclick: (e) => { navigator.clipboard.writeText(text).then(() => { e.target.textContent = 'Copiado'; }); } })]),
-      el('textarea', { class: 'export-box', readonly: 'readonly', rows: '8', text }),
+      el('p', { class: 'lead', style: { margin: '0 auto 18px' }, text: 'Comparte el enlace con tu rival. Tus jugadas van ofuscadas: no podrá verlas hasta que termine las suyas. Después te devolverá otro enlace con el resultado.' }),
+      el('div', { class: 'actions' }, [el('button', { class: 'primary', text: 'Compartir enlace', onclick: (e) => shareMatch(S.match, e.currentTarget) }), el('button', { text: 'Descargar copia JSON', onclick: () => download(text, fname) })]),
       el('div', { class: 'actions' }, [el('button', { text: 'Volver al inicio', onclick: () => { S = null; screen = 'setup'; render(); } })])
     ]));
   }
@@ -423,9 +455,10 @@ MI.game = (function () {
       el('div', { class: 'score', text: `${A} ${r.rep.A} · ${B} ${r.rep.B}. ${mine}` }),
       role && r.points && r.points[role] ? renderPoints(r.points[role].items, r.points[role].total) : null,
       el('div', { class: 'res-table' }, [el('div', { class: 'res-row head' }, [el('div', { text: '' }), el('div', { text: A }), el('div', { text: B }), el('div', { text: '' })]), ...rows]),
-      role === 'B' ? el('p', { class: 'lead', style: { margin: '18px auto' }, text: 'Devuélvele el fichero resuelto a ' + A + ' para que vea el resultado.' }) : null,
+      role === 'B' ? el('p', { class: 'lead', style: { margin: '18px auto' }, text: 'Comparte el enlace resuelto con ' + A + ' para que vea el resultado.' }) : null,
       el('div', { class: 'actions' }, [
-        role === 'B' ? el('button', { class: 'primary', text: 'Descargar ' + fname, onclick: () => download(text, fname) }) : null,
+        role === 'B' ? el('button', { class: 'primary', text: 'Compartir resultado', onclick: (e) => shareMatch(m, e.currentTarget) }) : null,
+        role === 'B' ? el('button', { text: 'Descargar copia JSON', onclick: () => download(text, fname) }) : null,
         el('button', { text: 'Volver al inicio', onclick: () => { S = null; screen = 'setup'; render(); } })
       ])
     ]));
@@ -437,5 +470,14 @@ MI.game = (function () {
     ({ setup: renderSetup, play: renderPlay, end: renderEnd, export: renderExport, resolved: renderResolved })[screen](container);
   }
 
-  return { render, newStoryGame, state: () => S };
+  function openShared(payload) {
+    const profile = MI.match.profile.load();
+    const name = profile.tag || profile.name;
+    pendingShared = payload;
+    if (!name) { render(); return; }
+    pendingShared = null;
+    try { loadMatch(MI.match.fromUrlPayload(payload), name); } catch (e) { alert(e.message); }
+  }
+
+  return { render, newStoryGame, openShared, state: () => S };
 })();

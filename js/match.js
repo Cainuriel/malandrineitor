@@ -163,6 +163,24 @@
     return obj;
   };
 
+  M.toUrlPayload = function (match) {
+    const bytes = enc().encode(JSON.stringify(JSON.parse(M.exportText(match))));
+    let binary = '';
+    bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  };
+  M.fromUrlPayload = function (payload) {
+    try {
+      const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+      const binary = atob(base64 + '='.repeat((4 - base64.length % 4) % 4));
+      const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+      return M.importText(dec().decode(bytes));
+    } catch (e) {
+      if (e.message && (e.message.includes('partida') || e.message.includes('firma'))) throw e;
+      throw new Error('El enlace de partida no es válido o está incompleto.');
+    }
+  };
+
   /* ---------- Perfil de jugador (localStorage) ---------- */
   const PROFILE_KEY = 'mi.profile';
   const ROLE_KEY = 'mi.match.';

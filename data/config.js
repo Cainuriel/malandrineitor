@@ -5,6 +5,7 @@ MI.data = MI.data || {};
 MI.data.config = {
   company: { name: 'Malandriner S.A.', tagline: 'Especialistas en todo tipo de software' },
   rival:   { name: 'Caballerosos S.A.', tagline: 'Software fino como seda medieval' },   // la empresa de la máquina
+  shareBaseUrl: 'https://cainuriel.github.io/malandrineitor/',
 
   // Semilla fija para ofuscar partidas a dos jugadores y firmar el perfil. No es seguridad: evita trampas triviales.
   secret: 'malandrineitor-v1-calabozo',

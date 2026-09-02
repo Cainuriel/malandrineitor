@@ -101,6 +101,8 @@ Pendiente de la fase, aplazado a propósito:
 ## Fase 6 — Publicación y correcciones `[~]`
 
 - [x] Publicado en GitHub Pages como *project site* (`.nojekyll` en la raíz).
+- [x] Partidas arcade a dos jugadores compartibles por URL, con el JSON como respaldo.
+- [x] Barra de acción flotante durante la partida en ordenador y móvil.
 - [x] Panel "Por modo de juego" en el perfil, con recuento exacto en `profile.byMode`.
 - [x] Corregido: la recompensa del modo historia se aplica al terminar el sprint, no al pulsar el botón de la pantalla final. Antes, cerrar la pestaña ahí hacía perder monedas y avance de capítulo.
 - [x] La empresa rival pasa a llamarse Caballerosos S.A., "Software fino como seda medieval". El nombre vive solo en `config.rival` y las frases lo insertan con `{rival}`.

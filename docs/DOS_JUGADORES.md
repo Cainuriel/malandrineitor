@@ -1,13 +1,15 @@
-# Partidas a dos jugadores por fichero
+# Partidas a dos jugadores por enlace
 
-Protocolo asíncrono sin servidor. Implementado en `js/match.js`; la pantalla está en `js/game.js`.
+Protocolo asíncrono sin servidor. La partida firmada se codifica en el fragmento `#match=…` de la URL, que el navegador no envía al servidor. El fichero JSON sigue disponible como copia de respaldo. Implementado en `js/match.js`; la pantalla está en `js/game.js`.
 
 ## Flujo
 
 1. **A crea la partida.** Se genera `seed`. De `seed` salen, de forma determinista, las dos manos (A: primeras N cartas del mazo barajado; B: las N siguientes) y la lista de tickets. Se guarda en `localStorage['mi.match.<id>'] = 'A'`.
-2. **A juega a ciegas** sus tickets. En cada uno ve su propio resultado (giro incluido) pero no el del rival. Al terminar, sus jugadas `[{cardId, die}]` se ofuscan y se escriben en `players.A.blob`. `status = 'A-done'`. A descarga o copia el fichero.
-3. **B carga el fichero** (subiéndolo o pegándolo). Se comprueba la firma. B juega a ciegas con la mano B. Al terminar, se ofuscan sus jugadas, se revelan las de A y `MI.match.resolve` recalcula los cinco tickets, la paga de cada uno y la reputación final. `status = 'resolved'`, `result` queda en el fichero. B ve la tabla y descarga el fichero resuelto.
-4. **A carga el fichero resuelto** y ve la misma tabla. Su navegador sabe que es A por `localStorage`.
+2. **A juega a ciegas** sus tickets. En cada uno ve su propio resultado (giro incluido) pero no el del rival. Al terminar, sus jugadas `[{cardId, die}]` se ofuscan y se escriben en `players.A.blob`. `status = 'A-done'`. A comparte el enlace generado.
+3. **B abre el enlace.** Se comprueba la firma y, si todavía no tiene cuenta, completa el alta antes de abrir la partida. B juega a ciegas con la mano B. Al terminar, se ofuscan sus jugadas, se revelan las de A y `MI.match.resolve` recalcula los cinco tickets, la paga de cada uno y la reputación final. `status = 'resolved'`, `result` queda en la partida. B ve la tabla y comparte el enlace resuelto.
+4. **A abre el enlace resuelto** y ve la misma tabla. Su navegador sabe que es A por `localStorage`.
+
+Como alternativa, ambos estados se pueden descargar y cargar como JSON. El contenido y la validación son idénticos en los dos transportes.
 
 ## Formato
 

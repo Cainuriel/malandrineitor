@@ -382,7 +382,7 @@ MI.story = (function () {
         el('b', { text: x.id + '. ' + x.name }),
         el('span', { class: 'small muted', text: (isCheckpoint(x.id) ? 'punto de control · ' : '') + (x.id < s.chapter ? 'superado' : (x.id === s.chapter ? 'en curso' : (s.wins[x.id] ? 'superado antes' : 'bloqueado'))) })
       ])),
-      el('p', { class: 'small muted', style: { marginTop: '10px' }, text: 'Si pierdes un sprint vuelves al último punto de control. La colección y los malandricoins no se pierden nunca.' })
+      el('p', { class: 'small muted', style: { marginTop: '10px' }, text: 'Si pierdes un sprint vuelves al último punto de control. Las cartas se pierden si acumulan tres burnouts y los malandricoins no se pierden nunca.' })
     ]);
     const diaryCard = el('div', { class: 'panel' }, [
       el('h2', { text: 'Diario de la oficina' }),

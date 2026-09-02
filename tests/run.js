@@ -74,6 +74,8 @@ check(worst.burnout === false, 'Daniel Primo nunca entra en burnout');
   check(!text.includes(playsA[0].cardId) || text.indexOf(playsA[0].cardId) < text.indexOf('"blob"'), 'las jugadas de A no aparecen en claro en el fichero exportado');
   const m2 = Mx.importText(text);
   check(m2.status === 'A-done' && m2.id === m.id, 'importación verifica la firma y conserva el estado');
+  const linked = Mx.fromUrlPayload(Mx.toUrlPayload(m));
+  check(linked.status === 'A-done' && linked.id === m.id, 'enlace comparte una partida firmada y conserva el estado');
   let tampered = false; try { Mx.importText(text.replace('"Ana"', '"Eva"')); } catch (e) { tampered = true; }
   check(tampered, 'un fichero manipulado se rechaza por firma');
   const playsB = m2.tickets.map((t, i) => ({ cardId: m2.hands.B[(i + 1) % m2.hands.B.length], die: 6 }));

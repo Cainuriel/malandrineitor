@@ -44,7 +44,7 @@ js/avatar.js        Generador de avatares SVG
 js/card.js          renderCard(card, opts) y renderCardBack()
 js/engine.js        Cálculo de puntuación y resolución de un ticket (puro, sin DOM)
 js/ai.js            Elección de carta por parte de la máquina
-js/match.js         Partidas a dos jugadores por JSON (reparto, ofuscación, firma, resolución) y perfil en localStorage
+js/match.js         Partidas a dos jugadores por URL/JSON (reparto, ofuscación, firma, resolución) y perfil en localStorage
 js/scoring.js       Puntos malandrín (elementos que puntúan además de la reputación), puro
 js/story.js         Modo historia: economía, sobres y su arte SVG, apertura cinematográfica, colección, descubrimiento y capítulos
 js/fx.js            Efectos de tebeo: sello de resultado por ticket y pantallazo de fin de sprint
@@ -104,7 +104,7 @@ docs/               Documentación de diseño (reglas, fórmula, guía de cartas
 
 ## Partidas a dos jugadores y perfil (`js/match.js`; detalle en `docs/DOS_JUGADORES.md`)
 
-- Fichero JSON con `hands`, `tickets`, `players.A/B` y `status` (`A-playing` → `A-done` → `resolved`). Manos y tickets se derivan de `seed` con `MI.match.deal`, así cualquier navegador reconstruye la partida.
+- La partida firmada se comparte normalmente en el fragmento `#match=…` de una URL; el JSON descargable es el respaldo. Ambos contienen `hands`, `tickets`, `players.A/B` y `status` (`A-playing` → `A-done` → `resolved`). Manos y tickets se derivan de `seed` con `MI.match.deal`, así cualquier navegador reconstruye la partida.
 - Las jugadas de cada jugador (`{cardId, die}` por ticket) se guardan ofuscadas con un flujo XOR derivado de `config.secret + id de partida + rol`, en base64 (`blob`). El fichero completo lleva `sig` (doble FNV sobre el JSON canónico + secret). No es criptografía seria; evita trampas triviales y detecta manipulaciones accidentales.
 - `MI.match.resolve` reproduce ambas jugadas de forma determinista (el dado se toma del fichero, las habilidades se reaplican) y comprueba legalidad (carta en mano y no quemada).
 - Perfil en `localStorage['mi.profile']` firmado con la misma función; si la firma no cuadra, se reinicia y se avisa. `localStorage['mi.match.<id>']` recuerda si este navegador es A o B en cada partida.

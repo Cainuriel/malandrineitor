@@ -16,9 +16,9 @@ Abre `index.html` en el navegador. No necesita servidor, red ni instalación. Si
 - Resultado frente al umbral de dificultad: resuelto, mejorado o complicado. Complicado manda al malandrín a burnout dos tickets.
 - Los dos jugadores mandan un malandriner al mismo ticket; el mejor total se lleva la paga. Gana quien acaba el sprint con más reputación (contra la máquina, quien llega a cero queda eliminado).
 
-## Dos jugadores por fichero
+## Dos jugadores por enlace
 
-Uno crea la partida y juega sus cinco tickets a ciegas; descarga el fichero JSON y se lo pasa al rival. El rival lo carga, juega los mismos tickets con su propia mano y la partida se resuelve. Devuelve el fichero resuelto al primero para que vea el resultado. Las jugadas van ofuscadas y el fichero firmado; no es seguridad, es para que no sea trivial hacer trampas. Detalle en `docs/DOS_JUGADORES.md`.
+Uno crea la partida y juega sus cinco tickets a ciegas; comparte el enlace generado con su rival. El rival lo abre, juega los mismos tickets con su propia mano y devuelve otro enlace con la partida resuelta. Las jugadas van ofuscadas y la partida firmada; no es seguridad, es para que no sea trivial hacer trampas. El JSON se puede descargar como respaldo. Detalle en `docs/DOS_JUGADORES.md`.
 
 ## Cuenta, puntos y modo historia
 

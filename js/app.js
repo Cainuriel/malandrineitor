@@ -28,7 +28,7 @@ MI.app = (function () {
     ]));
     c.appendChild(el('div', { class: 'menu-grid' }, [
       el('button', { class: 'menu-card', onclick: () => go('story') }, [el('div', { class: 'tag', text: 'Campaña' }), el('h3', { text: 'Modo historia' }), el('p', { text: 'Ficha por Malandriner S.A., cobra, compra sobres y completa el álbum. ' + cfg.story.chapters.length + ' capítulos contra ' + cfg.rival.name + '.' })]),
-      el('button', { class: 'menu-card', onclick: () => go('game') }, [el('div', { class: 'tag', text: 'Rápido' }), el('h3', { text: 'Modo arcade' }), el('p', { text: `Mano aleatoria, ${cfg.arcade.tickets} tickets contra la máquina o contra otra persona por fichero.` })]),
+      el('button', { class: 'menu-card', onclick: () => go('game') }, [el('div', { class: 'tag', text: 'Rápido' }), el('h3', { text: 'Modo arcade' }), el('p', { text: `Mano aleatoria, ${cfg.arcade.tickets} tickets contra la máquina o contra otra persona.` })]),
       el('button', { class: 'menu-card', onclick: () => go('album') }, [el('div', { class: 'tag', text: 'Colección' }), el('h3', { text: 'Álbum' }), el('p', { text: `${n} malandrines en plantilla. Habilidades, campeones y criptonitas.` })]),
       el('button', { class: 'menu-card', onclick: () => go('rules') }, [el('div', { class: 'tag', text: 'Manual' }), el('h3', { text: 'Normas' }), el('p', { text: 'Cómo se resuelve un ticket, qué es la paga, el burnout, el giro y el amo del calabozo.' })])
     ]));

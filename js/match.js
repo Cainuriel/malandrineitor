@@ -169,7 +169,7 @@
   function storage() { try { return root.localStorage; } catch (e) { return null; } }
 
   M.profile = {
-    empty: () => ({ name: '', tag: '', points: 0, games: 0, wins: 0, losses: 0, draws: 0, bestRep: 0, byMode: {}, history: [] }),
+    empty: () => ({ name: '', tag: '', points: 0, games: 0, wins: 0, losses: 0, draws: 0, bestRep: 0, byMode: {}, cardStats: {}, history: [] }),
     load() {
       const s = storage(); if (!s) return M.profile.empty();
       try {
@@ -211,6 +211,21 @@
       p.tag = name + '#' + String(Math.floor(1000 + Math.random() * 9000));
       p.created = new Date().toISOString();
       M.profile.save(p); return p;
+    },
+    // Acumula estadísticas por carta: veces enviada, resuelta y quemada.
+    // map: { idCarta: { sent, resolved, burnouts } }
+    recordCards(map) {
+      if (!map || !Object.keys(map).length) return;
+      const p = M.profile.load();
+      p.cardStats = p.cardStats || {};
+      for (const id in map) {
+        const c = p.cardStats[id] = p.cardStats[id] || { sent: 0, resolved: 0, burnouts: 0 };
+        c.sent += map[id].sent || 0;
+        c.resolved += map[id].resolved || 0;
+        c.burnouts += map[id].burnouts || 0;
+      }
+      M.profile.save(p);
+      return p;
     },
     setName(name) { const p = M.profile.load(); p.name = name; if (!p.tag) p.tag = name + '#' + String(Math.floor(1000 + Math.random() * 9000)); M.profile.save(p); return p; },
     exportText() { const p = M.profile.load(); const c = Object.assign({}, p); c.sig = M.sign(c); return JSON.stringify(c, null, 2); },

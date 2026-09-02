@@ -9,6 +9,8 @@ MI.fx = (function () {
     try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; }
   }
   function pick(list) { return list && list.length ? list[Math.floor(Math.random() * list.length)] : ''; }
+  // {rival} lo rellena quien llama: la empresa de la máquina o el nombre del otro jugador.
+  function fill(text, rival) { return (text || '').replace(/\{rival\}/g, rival || MI.data.config.rival.name); }
 
   const WORD = { resolved: 'RESUELTO', improved: 'MEJORADO', complicated: 'COMPLICADO' };
 
@@ -29,12 +31,15 @@ MI.fx = (function () {
     return node;
   }
 
-  /* Pantallazo de fin de sprint. kind: 'win' | 'loss' | 'draw'. Llama a onDone al cerrarse. */
+  /* Pantallazo de fin de sprint. kind: 'win' | 'loss' | 'draw'.
+     opts.rival: nombre del rival de ESTA partida; sustituye {rival} en título y frase.
+     Sin él, en las partidas a dos aparecería el nombre de la empresa de la máquina. */
   function splash(kind, opts) {
     opts = opts || {};
     const P = (MI.data.phrases || {})[kind] || {};
-    const title = opts.title || pick(P.title || []) || '';
-    const phrase = opts.phrase || pick(P.phrase || []) || '';
+    const rival = opts.rival;
+    const title = fill(opts.title || pick(P.title || []), rival);
+    const phrase = fill(opts.phrase || pick(P.phrase || []), rival);
     let closed = false;
     const close = () => {
       if (closed) return; closed = true;

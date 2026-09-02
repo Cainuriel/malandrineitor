@@ -4,7 +4,7 @@ MI.data = MI.data || {};
 
 MI.data.config = {
   company: { name: 'Malandriner S.A.', tagline: 'Especialistas en todo tipo de software' },
-  rival:   { name: 'Boluda S.A.', tagline: 'Si compila, se factura' },   // la empresa de la máquina
+  rival:   { name: 'Caballerosos S.A.', tagline: 'Software fino como seda medieval' },   // la empresa de la máquina
 
   // Semilla fija para ofuscar partidas a dos jugadores y firmar el perfil. No es seguridad: evita trampas triviales.
   secret: 'malandrineitor-v1-calabozo',
@@ -87,16 +87,16 @@ MI.data.config = {
       calabozo: { name: 'Sobre calabozo', price: 120, cards: [3, 3], weights: { comun: 0,  rara: 55, epica: 37, legendaria: 8 }, desc: 'Tres cartas, ninguna común. Huele a mazmorra y a café.' }
     },
     chapters: [
-      { id: 1,  name: 'Prácticas en Malandriner S.A.',       level: 'junior', maxDifficulty: 2, boludaRarity: ['comun'],                 desc: 'Boluda S.A. manda becarios. Tú también.' },
-      { id: 2,  name: 'Primer cliente serio',                level: 'junior', maxDifficulty: 3, boludaRarity: ['comun', 'rara'],         desc: 'Tickets con giro. Boluda ha contratado a alguien con barba.' },
-      { id: 3,  name: 'La tienda de los 40.000 productos',   level: 'senior', maxDifficulty: 3, boludaRarity: ['comun', 'rara'],         desc: 'Nadie sabe dónde está el ERP. Boluda tampoco.' },
-      { id: 4,  name: 'Semana de incidentes',                level: 'senior', maxDifficulty: 4, boludaRarity: ['rara'],                  desc: 'Todo se cae a la vez. Boluda ha fichado seniors.' },
-      { id: 5,  name: 'El cliente que paga tarde',           level: 'senior', minDifficulty: 2, maxDifficulty: 4, boludaRarity: ['rara', 'epica'], desc: 'Mucho alcance, poco presupuesto y una servilleta.' },
-      { id: 6,  name: 'La migración imposible',              level: 'cto',    minDifficulty: 3, maxDifficulty: 5, boludaRarity: ['rara', 'epica'], desc: 'Symfony 2.8, Java 8 y un COBOL que nadie confiesa.' },
-      { id: 7,  name: 'Guardia de agosto',                   level: 'cto',    minDifficulty: 3, maxDifficulty: 5, boludaRarity: ['epica'],          desc: 'Toda la oficina de vacaciones. Todos los servidores despiertos.' },
-      { id: 8,  name: 'Fuga de datos',                       level: 'cto',    minDifficulty: 3, maxDifficulty: 5, boludaRarity: ['epica'],          desc: 'Seguridad, cumplimiento y una llamada de la AEPD.' },
-      { id: 9,  name: 'La startup del cuñado',               level: 'cto',    minDifficulty: 4, maxDifficulty: 5, boludaRarity: ['epica', 'legendaria'], desc: 'Tres pivotes, algo con IA y una demo el lunes.' },
-      { id: 10, name: 'La auditoría final',                  level: 'cto',    minDifficulty: 4, maxDifficulty: 5, boludaRarity: ['epica', 'legendaria'], desc: 'El CTO de Boluda juega en persona. Trae su propio calabozo.' }
+      { id: 1,  name: 'Prácticas en Malandriner S.A.',       level: 'junior', maxDifficulty: 2, rivalRarity: ['comun'],                 desc: 'Enfrente mandan becarios, pero con modales. Tú también mandas becarios.' },
+      { id: 2,  name: 'Primer cliente serio',                level: 'junior', maxDifficulty: 3, rivalRarity: ['comun', 'rara'],         desc: 'Tickets con giro. Los de enfrente han fichado a alguien con barba y con reverencia.' },
+      { id: 3,  name: 'La tienda de los 40.000 productos',   level: 'senior', maxDifficulty: 3, rivalRarity: ['comun', 'rara'],         desc: 'Nadie sabe dónde está el ERP. La competencia tampoco, aunque lo niega con elegancia.' },
+      { id: 4,  name: 'Semana de incidentes',                level: 'senior', maxDifficulty: 4, rivalRarity: ['rara'],                  desc: 'Todo se cae a la vez. Enfrente ya han mandado seniors y una nota manuscrita.' },
+      { id: 5,  name: 'El cliente que paga tarde',           level: 'senior', minDifficulty: 2, maxDifficulty: 4, rivalRarity: ['rara', 'epica'], desc: 'Mucho alcance, poco presupuesto y una servilleta por especificación.' },
+      { id: 6,  name: 'La migración imposible',              level: 'cto',    minDifficulty: 3, maxDifficulty: 5, rivalRarity: ['rara', 'epica'], desc: 'Symfony 2.8, Java 8 y un COBOL que nadie confiesa.' },
+      { id: 7,  name: 'Guardia de agosto',                   level: 'cto',    minDifficulty: 3, maxDifficulty: 5, rivalRarity: ['epica'],          desc: 'Toda la oficina de vacaciones. Todos los servidores despiertos.' },
+      { id: 8,  name: 'Fuga de datos',                       level: 'cto',    minDifficulty: 3, maxDifficulty: 5, rivalRarity: ['epica'],          desc: 'Seguridad, cumplimiento y una llamada de la AEPD.' },
+      { id: 9,  name: 'La startup del cuñado',               level: 'cto',    minDifficulty: 4, maxDifficulty: 5, rivalRarity: ['epica', 'legendaria'], desc: 'Tres pivotes, algo con IA y una demo el lunes.' },
+      { id: 10, name: 'La auditoría final',                  level: 'cto',    minDifficulty: 4, maxDifficulty: 5, rivalRarity: ['epica', 'legendaria'], desc: 'El CTO de la competencia juega en persona. Viene con su propio calabozo y con guantes.' }
     ]
   },
 

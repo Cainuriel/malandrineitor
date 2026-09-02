@@ -61,7 +61,7 @@ const { chromium } = require('playwright');
       }
     }
 
-    // Partida contra Boluda S.A.
+    // Partida contra la empresa rival
     await go(page, 'game');
     await page.fill('.setup input[placeholder="Misma semilla, mismo reparto"]', 'poc-2');
     await page.click('.setup button.primary');

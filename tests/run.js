@@ -12,7 +12,7 @@ vm.createContext(ctx);
 const load = (f) => vm.runInContext(fs.readFileSync(path.join(__dirname, '..', f), 'utf8'), ctx, { filename: f });
 ctx.localStorage = { _d: {}, getItem(k) { return this._d[k] ?? null; }, setItem(k, v) { this._d[k] = String(v); }, removeItem(k) { delete this._d[k]; } };
 ctx.TextEncoder = TextEncoder; ctx.TextDecoder = TextDecoder; ctx.btoa = btoa; ctx.atob = atob;
-['data/config.js', 'data/skills.js', 'data/techs.js', 'data/cards.js', 'data/challenges.js', 'data/optout.js', 'js/util.js', 'js/engine.js', 'js/ai.js', 'js/scoring.js', 'js/match.js', 'js/album.js', 'js/story.js'].forEach(load);
+['data/config.js', 'data/skills.js', 'data/techs.js', 'data/cards.js', 'data/challenges.js', 'data/optout.js', 'data/phrases.js', 'js/util.js', 'js/engine.js', 'js/ai.js', 'js/scoring.js', 'js/match.js', 'js/album.js', 'js/story.js'].forEach(load);
 
 const MI = ctx.window.MI;
 const cfg = MI.data.config;
@@ -153,6 +153,17 @@ check(worst.burnout === false, 'Daniel Primo nunca entra en burnout');
   const last = base(); last.chapter = C.chapters.length;
   st.reward(last, C.chapters[C.chapters.length - 1], { result: 'win', resolved: 5, improved: 0, pays: 5 });
   check(last.chapter === C.chapters.length && last.finished === 1, 'ganar la auditoría final marca la campaña como terminada');
+}
+
+// 11. Frases: nada del nombre del rival escrito a mano (rompía las partidas a dos)
+{
+  const ph = MI.data.phrases, rivalName = cfg.rival.name;
+  const all = [];
+  ['win', 'loss', 'draw'].forEach((k) => { (ph[k].title || []).forEach((t) => all.push(t)); (ph[k].phrase || []).forEach((t) => all.push(t)); });
+  check(!all.some((t) => t.includes(rivalName)), `ninguna frase lleva "${rivalName}" escrito a mano`);
+  check(all.some((t) => t.includes('{rival}')), 'las frases usan el marcador {rival}');
+  const fill = (t, r) => t.replace(/\{rival\}/g, r);
+  check(fill(ph.loss.title[0], 'Dani#1234') === 'Dani#1234 SE LLEVA EL SPRINT', 'el marcador se sustituye por el rival de la partida');
 }
 
 console.log(failures === 0 ? '\nTodo correcto.' : `\n${failures} fallo(s).`);

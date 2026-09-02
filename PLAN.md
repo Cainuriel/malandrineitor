@@ -44,7 +44,7 @@ Fuera de alcance en esta fase: persistencia, sonido, modo historia, responsive f
 - [x] Responsive (390px comprobado): mano con scroll horizontal, HUD compacto, botón principal fijo, modal de ficha apilado.
 - [x] Botón "Ver ficha" en la mano, con las habilidades del ticket resaltadas y el ticket en curso indicado.
 - [x] Resaltado fuerte de habilidades pedidas (fila naranja, barra dorada, resto atenuado).
-- [x] Empresa rival de la máquina: Boluda S.A. (`config.rival`).
+- [x] Empresa rival de la máquina, configurable en `config.rival`.
 - [x] Textos: "mandáis un malandriner para el mismo ticket", "se lleva la paga".
 - [x] Tono de humor tipo tebeo en los 30 tickets; ticket "¡es Vue!" con giro de tecnología; criptonita de José Manuel = Vue; habilidad "Reactionario".
 - [x] Arcade a dos jugadores por fichero JSON (A juega a ciegas → B juega y resuelve → A ve el resultado), con ofuscación y firma.
@@ -58,11 +58,11 @@ Decisión de Fernando: el arcade se queda como está (5 tickets, mano de 5); má
 - [x] Alta de cuenta al primer arranque: nombre#NNNN. No se vuelve a pedir el nombre.
 - [x] Puntos malandrín acumulables (`js/scoring.js`) con desglose por ticket y por sprint; multiplicador por nivel.
 - [x] Perfil con panel de puntuación, histórico de partidas (arcade, dos jugadores, historia), exportar/importar/borrar.
-- [x] Rescate del calabozo (Daniel Primo) como habilidad activa, también en dos jugadores y para Boluda.
+- [x] Rescate del calabozo (Daniel Primo) como habilidad activa, también en dos jugadores y para la máquina.
 - [x] Siete habilidades especiales más en el motor.
 - [x] 39 cartas nuevas del directorio público (50 en total), con tres épicas nuevas.
 - [x] Vista de normas.
-- [x] Modo historia: sobre de bienvenida (5 cartas), malandricoins, tienda con tres sobres (1-3 cartas, pesos por rareza), recortes por repetidas, sobre de emergencia, colección con cartas bloqueadas, plantilla de 5, seis capítulos con Boluda creciente, diario, reinicio.
+- [x] Modo historia: sobre de bienvenida (5 cartas), malandricoins, tienda con tres sobres (1-3 cartas, pesos por rareza), recortes por repetidas, sobre de emergencia, colección con cartas bloqueadas, plantilla de 5, capítulos con rival creciente, diario, reinicio.
 - [x] Animación de apertura de sobres.
 - [x] Corrección responsive: la barra superior con cinco pestañas desbordaba el ancho en móvil.
 
@@ -103,6 +103,10 @@ Pendiente de la fase, aplazado a propósito:
 - [x] Publicado en GitHub Pages como *project site* (`.nojekyll` en la raíz).
 - [x] Panel "Por modo de juego" en el perfil, con recuento exacto en `profile.byMode`.
 - [x] Corregido: la recompensa del modo historia se aplica al terminar el sprint, no al pulsar el botón de la pantalla final. Antes, cerrar la pestaña ahí hacía perder monedas y avance de capítulo.
+- [x] La empresa rival pasa a llamarse Caballerosos S.A., "Software fino como seda medieval". El nombre vive solo en `config.rival` y las frases lo insertan con `{rival}`.
+- [x] Corregido: en las partidas a dos, quien recibía el fichero resuelto veía ganar a la empresa de la máquina en lugar de a su rival humano, porque las frases de derrota llevaban el nombre escrito a mano.
+- [x] Acceso a la tienda de sobres desde el álbum y desde el perfil.
+- [x] Panel "Tu plantilla" en el perfil: cartas en propiedad, copias, envíos, resueltos, burnouts acumulados y venta de repetidas.
 - [ ] Poner `config.demo.revealAllButton` a `false` para la versión de la comunidad.
 
 ---

@@ -25,11 +25,16 @@ MI.album = (function () {
     const found = all.filter((c) => MI.story.discovered(c.id)).length;
     container.appendChild(el('h1', { text: 'Álbum de malandrines' }));
     container.appendChild(el('p', { class: 'lead', text: `Plantilla de ${cfg.company.name}. Has descubierto ${found} de ${all.length}. Las cartas se descubren consiguiéndolas en el modo historia; pasa el ratón para ver el brillo y haz clic para la ficha completa.` }));
+    const shopRow = el('div', { class: 'row demo-row' }, [
+      el('button', { class: 'primary', text: 'Tienda de sobres', onclick: () => MI.story.openView('shop') }),
+      el('span', { class: 'small muted', text: 'Las cartas se consiguen abriendo sobres en el modo historia.' })
+    ]);
     const demo = cfg.demo && cfg.demo.revealAllButton ? el('div', { class: 'row demo-row' }, [
       el('button', { class: MI.story.revealAll() ? '' : 'primary', text: MI.story.revealAll() ? 'Volver a ocultar las no descubiertas' : 'Descubrir toda la colección', onclick: () => { MI.story.setRevealAll(!MI.story.revealAll()); render(container); } }),
       el('span', { class: 'small muted', text: 'Botón de demostración. Se retirará al compartir el juego con la comunidad.' })
     ]) : null;
     container.appendChild(el('div', { class: 'album-toolbar' }, [filters, search]));
+    container.appendChild(shopRow);
     if (demo) container.appendChild(demo);
     container.appendChild(grid);
 

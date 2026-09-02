@@ -1,4 +1,4 @@
-/* Modo arcade: contra la máquina (Boluda S.A.) o a dos jugadores por fichero JSON.
+/* Modo arcade: contra la máquina (la empresa rival de config.rival) o a dos jugadores por fichero JSON.
    La lógica numérica está en engine.js, ai.js y match.js. Aquí solo estado de pantalla y render. */
 window.MI = window.MI || {};
 
@@ -31,9 +31,9 @@ MI.game = (function () {
   }
 
   function myTag() { const p = MI.match.profile.load(); return p.tag || p.name || 'Tú'; }
-  function newStats() { return { streak: 0, burnouts: 0, pays: 0, resolved: 0, improved: 0, items: [] }; }
+  function newStats() { return { streak: 0, burnouts: 0, pays: 0, resolved: 0, improved: 0, items: [], cards: {} }; }
 
-  // Modo historia: mano propia elegida, mano de Boluda, tickets del capítulo y callback al terminar.
+  // Modo historia: mano propia elegida, mano de la rival, tickets del capítulo y callback al terminar.
   function newStoryGame(opts) {
     const cfg = MI.data.config;
     S = {
@@ -90,7 +90,7 @@ MI.game = (function () {
 
     let opp = null, oppCard = null, pay = null;
     if (S.mode === 'ai') {
-      // Boluda usa el rescate en cuanto puede: rescata la carta quemada de más rareza.
+      // La rival usa el rescate en cuanto puede: rescata la carta quemada de más rareza.
       if (canRescue('opp')) { const burned = Object.keys(S.burnout.opp).map((id) => byId().cards[id]).sort((a, b) => ['comun', 'rara', 'epica', 'legendaria'].indexOf(b.rarity) - ['comun', 'rara', 'epica', 'legendaria'].indexOf(a.rarity)); if (burned[0]) rescue('opp', burned[0].id); }
       oppCard = MI.ai.choose(available('opp'), ch, S.level, S.rng, cfg, MI.engine);
       opp = oppCard ? MI.engine.resolve(oppCard, ch, { withTwist: true, rng: S.rng }, cfg) : noCard();
@@ -109,6 +109,12 @@ MI.game = (function () {
     if (pay === 'me') st.pays++;
     const ticketItems = MI.scoring.ticket(me, { challenge: ch, pay: pay === 'me', streak: st.streak, rescued: didRescue });
     st.items.push(...ticketItems);
+    if (mine) {   // estadísticas por carta, para el panel de plantilla del perfil
+      const cs = st.cards[mine.id] = st.cards[mine.id] || { sent: 0, resolved: 0, burnouts: 0 };
+      cs.sent++;
+      if (me.outcome === 'resolved') cs.resolved++;
+      if (me.burnout) cs.burnouts++;
+    }
 
     const logLine = (who, r, card, bonus) => ({
       cls: r.outcome === 'resolved' ? 'ok' : (r.outcome === 'complicated' ? 'bad' : ''),
@@ -132,6 +138,7 @@ MI.game = (function () {
   }
 
   function finish() {
+    MI.match.profile.recordCards(S.stats.cards);
     if (S.mode === 'ai') {
       if (!S.over) S.over = S.rep.me > S.rep.opp ? 'me' : (S.rep.opp > S.rep.me ? 'opp' : 'draw');
       const result = S.over === 'me' ? 'win' : (S.over === 'opp' ? 'loss' : 'draw');
@@ -346,7 +353,7 @@ MI.game = (function () {
     if (S.splashDone) return;
     S.splashDone = true;
     const kind = S.over === 'me' ? 'win' : (S.over === 'opp' ? 'loss' : 'draw');
-    MI.fx.splash(kind, { score: `${S.myName} ${S.rep.me} · ${S.oppName} ${S.rep.opp}` });
+    MI.fx.splash(kind, { rival: MI.data.config.rival.name, score: `${S.myName} ${S.rep.me} · ${S.oppName} ${S.rep.opp}` });
   }
 
   function renderEnd(c) {
@@ -387,7 +394,9 @@ MI.game = (function () {
     if (!S.splashDone) {
       S.splashDone = true;
       const kind = !role ? 'draw' : (r.winner === role ? 'win' : (r.winner === 'draw' ? 'draw' : 'loss'));
-      MI.fx.splash(kind, { title: role ? undefined : winnerText, score: `${A} ${r.rep.A} · ${B} ${r.rep.B}` });
+      // El rival es la otra persona, no la empresa de la máquina.
+      const rivalName = role ? m.players[role === 'A' ? 'B' : 'A'].name : null;
+      MI.fx.splash(kind, { rival: rivalName, title: role ? undefined : winnerText, score: `${A} ${r.rep.A} · ${B} ${r.rep.B}` });
     }
     const mine = role && r.winner === role ? 'Has ganado.' : (role && r.winner !== 'draw' ? 'Has perdido.' : '');
     const rows = r.tickets.map((t, i) => {

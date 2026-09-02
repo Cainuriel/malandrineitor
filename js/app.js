@@ -27,7 +27,7 @@ MI.app = (function () {
       p.tag ? el('p', { class: 'small muted', text: 'Juegas como ' + p.tag + ' · ' + (p.points || 0) + ' puntos malandrín' }) : null
     ]));
     c.appendChild(el('div', { class: 'menu-grid' }, [
-      el('button', { class: 'menu-card', onclick: () => go('story') }, [el('div', { class: 'tag', text: 'Campaña' }), el('h3', { text: 'Modo historia' }), el('p', { text: 'Ficha por Malandriner S.A., cobra, compra sobres y completa el álbum. Seis capítulos contra Boluda S.A.' })]),
+      el('button', { class: 'menu-card', onclick: () => go('story') }, [el('div', { class: 'tag', text: 'Campaña' }), el('h3', { text: 'Modo historia' }), el('p', { text: 'Ficha por Malandriner S.A., cobra, compra sobres y completa el álbum. ' + cfg.story.chapters.length + ' capítulos contra ' + cfg.rival.name + '.' })]),
       el('button', { class: 'menu-card', onclick: () => go('game') }, [el('div', { class: 'tag', text: 'Rápido' }), el('h3', { text: 'Modo arcade' }), el('p', { text: `Mano aleatoria, ${cfg.arcade.tickets} tickets contra la máquina o contra otra persona por fichero.` })]),
       el('button', { class: 'menu-card', onclick: () => go('album') }, [el('div', { class: 'tag', text: 'Colección' }), el('h3', { text: 'Álbum' }), el('p', { text: `${n} malandrines en plantilla. Habilidades, campeones y criptonitas.` })]),
       el('button', { class: 'menu-card', onclick: () => go('rules') }, [el('div', { class: 'tag', text: 'Manual' }), el('h3', { text: 'Normas' }), el('p', { text: 'Cómo se resuelve un ticket, qué es la paga, el burnout, el giro y el amo del calabozo.' })])
@@ -85,10 +85,20 @@ MI.app = (function () {
       stat(p.points || 0, 'puntos malandrín'), stat(p.games || 0, 'partidas'), stat(p.wins || 0, 'victorias'), stat(p.losses || 0, 'derrotas'), stat(p.draws || 0, 'empates'), stat(p.bestRep || 0, 'mejor reputación')
     ]));
     c.appendChild(renderByMode(p));
-    if (story) c.appendChild(el('div', { class: 'panel', style: { marginTop: '16px' } }, [
+    c.appendChild(el('div', { class: 'panel', style: { marginTop: '16px' } }, [
       el('h2', { text: 'Historia' }),
-      el('div', { class: 'row' }, [el('span', { class: 'pill', text: 'Capítulo ' + story.chapter }), el('span', { class: 'pill', text: story.coins + ' malandricoins' }), el('span', { class: 'pill', text: MI.story.ownedCards(story).length + ' cartas' }), el('span', { class: 'pill', text: story.sprints + ' sprints' })])
+      story
+        ? el('div', { class: 'row' }, [
+            el('span', { class: 'pill', text: 'Capítulo ' + story.chapter }), el('span', { class: 'pill', text: story.coins + ' malandricoins' }),
+            el('span', { class: 'pill', text: MI.story.ownedCards(story).length + ' cartas' }), el('span', { class: 'pill', text: story.sprints + ' sprints' })
+          ])
+        : el('p', { class: 'muted small', text: 'Todavía no has fichado por Malandriner S.A. Las cartas se consiguen abriendo sobres en el modo historia.' }),
+      el('div', { class: 'row', style: { marginTop: '10px' } }, [
+        el('button', { class: 'primary', text: 'Tienda de sobres', onclick: () => MI.story.openView('shop') }),
+        story ? el('button', { text: 'Ir a la oficina', onclick: () => MI.story.openView('dashboard') }) : null
+      ])
     ]));
+    c.appendChild(renderSquadPanel(story, p));
     const hist = p.history || [];
     c.appendChild(el('div', { class: 'panel', style: { marginTop: '16px' } }, [
       el('h2', { text: 'Histórico de partidas' }),
@@ -111,6 +121,41 @@ MI.app = (function () {
     ]));
   }
   function stat(v, l) { return el('div', { class: 'stat' }, [el('b', { text: String(v) }), el('span', { text: l })]); }
+
+  /* Tu plantilla: las cartas en propiedad, con las copias que tienes, las veces que se
+     han quemado y el botón de venta, que solo aparece a partir de la segunda copia
+     (la última nunca se vende). */
+  function renderSquadPanel(story, prof) {
+    const cfg = MI.data.config;
+    if (!story) return el('span');
+    const owned = MI.story.ownedCards(story)
+      .sort((a, b) => (story.owned[b.id] - story.owned[a.id]) || a.name.localeCompare(b.name));
+    const stats = prof.cardStats || {};
+    const dups = owned.reduce((a, c) => a + Math.max(0, story.owned[c.id] - 1), 0);
+    const burned = owned.filter((c) => (stats[c.id] || {}).burnouts).length;
+    return el('div', { class: 'panel', style: { marginTop: '16px' } }, [
+      el('h2', { text: 'Tu plantilla' }),
+      el('p', { class: 'small muted', text: owned.length
+        ? `${owned.length} malandrines en propiedad` + (dups ? ` · ${dups} repetida${dups === 1 ? '' : 's'} para vender` : '') + (burned ? ` · ${burned} con algún burnout a sus espaldas` : '')
+        : 'Todavía no tienes cartas. Abre un sobre en la tienda.' }),
+      owned.length ? el('div', { class: 'squad-list' }, owned.map((card) => {
+        const n = story.owned[card.id];
+        const cs = stats[card.id] || { sent: 0, resolved: 0, burnouts: 0 };
+        const price = cfg.story.sellPrice[card.rarity] || 0;
+        return el('div', { class: 'squad-row rarity-' + card.rarity + (cs.burnouts ? ' burned' : '') }, [
+          el('span', { class: 'sq-gem' }),
+          el('span', { class: 'sq-name', text: card.name }),
+          el('span', { class: 'sq-rar', text: cfg.rarities[card.rarity].name }),
+          el('span', { class: 'sq-n', text: n > 1 ? '×' + n : '' }),
+          el('span', { class: 'sq-stats', text: cs.sent ? `${cs.sent} envíos · ${cs.resolved} resueltos` : 'sin jugar' }),
+          el('span', { class: 'sq-burn' + (cs.burnouts ? ' on' : ''), text: cs.burnouts ? cs.burnouts + (cs.burnouts === 1 ? ' burnout' : ' burnouts') : '' }),
+          el('span', { class: 'sq-act' }, n > 1
+            ? el('button', { class: 'small-btn sell', text: 'Vender una (+' + price + ')', onclick: () => { const st = MI.story.load(); MI.story.sell(st, card.id); MI.story.save(st); go('perfil'); toast('Vendida una copia de ' + card.name + '.'); } })
+            : el('button', { class: 'ghost small-btn', text: 'Ver ficha', onclick: () => MI.album.openDetail(card) }))
+        ]);
+      })) : null
+    ]);
+  }
 
   // Desglose por modo. Se usa el recuento exacto del perfil; los perfiles antiguos
   // se reconstruyen a partir del historial, que basta porque aún son cortos.

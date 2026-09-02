@@ -24,7 +24,7 @@ Uno crea la partida y juega sus cinco tickets a ciegas; descarga el fichero JSON
 
 Al abrir el juego por primera vez se te pide un nombre de malandrín; se le añade un número (nombre#1234) para que no coincida con nadie. Todo lo demás (puntos malandrín acumulados, histórico de partidas, progreso de la historia) se guarda en ese navegador, firmado, y se puede exportar e importar desde "Perfil".
 
-En el modo historia fichas por Malandriner S.A. con un sobre de bienvenida y unos pocos malandricoins, juegas capítulos contra Boluda S.A. con una plantilla de cinco cartas de tu colección, cobras por ticket y por sprint, compras sobres (básico, pro y calabozo) y completas el álbum. Las normas completas están en la pestaña "Normas".
+En el modo historia fichas por Malandriner S.A. con un sobre de bienvenida y unos pocos malandricoins, juegas capítulos contra la empresa rival con una plantilla de cinco cartas de tu colección, cobras por ticket y por sprint, compras sobres (básico, pro y calabozo) y completas el álbum. Las normas completas están en la pestaña "Normas".
 
 ## Añadir o editar contenido
 

@@ -1,5 +1,5 @@
 /* Modo historia: economía de malandricoins, sobres, colección, descubrimiento de cartas y campaña por capítulos
-   contra Boluda S.A. Estado firmado en localStorage['mi.story']. La partida en sí la lleva js/game.js (newStoryGame). */
+   contra la empresa rival. Estado firmado en localStorage['mi.story']. La partida en sí la lleva js/game.js (newStoryGame). */
 window.MI = window.MI || {};
 
 MI.story = (function () {
@@ -13,6 +13,7 @@ MI.story = (function () {
   const cfg = () => MI.data.config.story;
   const lk = () => ({ cards: MI.util.byId(MI.data.cards) });
   const ORDER = ['comun', 'rara', 'epica', 'legendaria'];
+  const rivalName = () => MI.data.config.rival.name;
 
   /* ---------- Estado ---------- */
   function empty() { return { coins: cfg().startCoins, owned: {}, seen: {}, chapter: 1, wins: {}, opened: 0, sprints: 0, log: [] }; }
@@ -109,9 +110,9 @@ MI.story = (function () {
     const all = MI.data.challenges.filter((t) => t.difficulty <= (ch.maxDifficulty || 5) && t.difficulty >= (ch.minDifficulty || 1));
     return rng.shuffle(all).slice(0, MI.data.config.arcade.tickets);
   }
-  function boludaHand(ch, rng, exclude) {
+  function rivalHand(ch, rng, exclude) {
     const active = MI.album.activeCards().filter((c) => !exclude.includes(c.id));
-    let pool = active.filter((c) => ch.boludaRarity.includes(c.rarity));
+    let pool = active.filter((c) => ch.rivalRarity.includes(c.rarity));
     if (pool.length < MI.data.config.arcade.handSize) pool = active;
     return rng.shuffle(pool).slice(0, MI.data.config.arcade.handSize);
   }
@@ -132,17 +133,17 @@ MI.story = (function () {
       const mode = cfg().onLoss;
       if (mode === 'restart') {
         s.chapter = 1;
-        note = 'Boluda S.A. se queda el contrato. Vuelves al capítulo 1; la colección y los malandricoins se conservan.';
+        note = rivalName() + ' se queda el contrato. Vuelves al capítulo 1; la colección y los malandricoins se conservan.';
       } else if (mode === 'checkpoint') {
         const back = checkpointFor(s.chapter);
         if (back < s.chapter) {
           s.chapter = back;
-          note = 'Boluda S.A. se queda el contrato. Vuelves al punto de control (capítulo ' + back + '); la colección y los malandricoins se conservan.';
+          note = rivalName() + ' se queda el contrato. Vuelves al punto de control (capítulo ' + back + '); la colección y los malandricoins se conservan.';
         } else {
-          note = 'Boluda S.A. se queda el contrato, pero estás en un punto de control: repites capítulo.';
+          note = rivalName() + ' se queda el contrato, pero estás en un punto de control: repites capítulo.';
         }
       } else {
-        note = 'Boluda S.A. se queda el contrato. Repites el capítulo.';
+        note = rivalName() + ' se queda el contrato. Repites el capítulo.';
       }
     }
     s.coins += coins; s.sprints++;
@@ -289,14 +290,19 @@ MI.story = (function () {
     ({ dashboard: renderDashboard, shop: renderShop, collection: renderCollection, squad: renderSquad })[view](container, s);
   }
   function go(v) { view = v; render(); }
+  // Entrada desde fuera del modo historia (álbum, perfil): fija la vista y navega.
+  function openView(v) {
+    view = load() ? v : 'dashboard';   // sin partida empezada, la pantalla de alta
+    MI.app.go('story');
+  }
 
   function renderIntro(c) {
     c.appendChild(el('div', { class: 'setup' }, [
       el('h1', { text: 'Modo historia' }),
-      el('p', { class: 'lead', text: 'Acabas de entrar en Malandriner S.A. con un sobre de bienvenida y cuatro duros. Gana sprints contra Boluda S.A., cobra malandricoins, compra sobres, descubre el álbum y llega a la auditoría final.' }),
+      el('p', { class: 'lead', text: 'Acabas de entrar en Malandriner S.A. con un sobre de bienvenida y cuatro duros. Gana sprints contra ' + rivalName() + ', cobra malandricoins, compra sobres, descubre el álbum y llega a la auditoría final.' }),
       el('div', { class: 'panel' }, [
         el('h2', { text: 'Cómo funciona' }),
-        el('p', { class: 'small muted', text: 'Cada capítulo es un sprint de cinco tickets con tu plantilla (cinco malandrines de tu colección). Boluda mejora de capítulo en capítulo: ' + cfg().chapters.length + ' capítulos hasta la auditoría, con puntos de control en el ' + (cfg().checkpoints || [1]).join(', el ') + '. Si pierdes un sprint vuelves al último punto de control, pero conservas la colección y los malandricoins. Las cartas repetidas se pueden vender. El álbum solo muestra las cartas que has tenido alguna vez.' }),
+        el('p', { class: 'small muted', text: 'Cada capítulo es un sprint de cinco tickets con tu plantilla (cinco malandrines de tu colección). ' + rivalName() + ' mejora de capítulo en capítulo: ' + cfg().chapters.length + ' capítulos hasta la auditoría, con puntos de control en el ' + (cfg().checkpoints || [1]).join(', el ') + '. Si pierdes un sprint vuelves al último punto de control, pero conservas la colección y los malandricoins. Las cartas repetidas se pueden vender. El álbum solo muestra las cartas que has tenido alguna vez.' }),
         el('div', { class: 'actions' }, [el('button', { class: 'primary', text: 'Fichar por Malandriner S.A.', onclick: () => { const r = start(); view = 'dashboard'; cinematic(r.pack, () => render()); } })])
       ])
     ]));
@@ -324,7 +330,7 @@ MI.story = (function () {
       el('div', { class: 'tag', text: 'Capítulo ' + ch.id + ' de ' + cfg().chapters.length }),
       el('h2', { text: ch.name }),
       el('p', { class: 'muted', text: ch.desc }),
-      el('div', { class: 'row small' }, [el('span', { class: 'pill', text: 'Boluda: ' + ch.level }), el('span', { class: 'pill', text: 'Dificultad ' + (ch.minDifficulty || 1) + ' a ' + (ch.maxDifficulty || 5) }), s.wins[ch.id] ? el('span', { class: 'pill', text: 'Superado ' + s.wins[ch.id] + ' veces' }) : null]),
+      el('div', { class: 'row small' }, [el('span', { class: 'pill', text: rivalName() + ': ' + ch.level }), el('span', { class: 'pill', text: 'Dificultad ' + (ch.minDifficulty || 1) + ' a ' + (ch.maxDifficulty || 5) }), s.wins[ch.id] ? el('span', { class: 'pill', text: 'Superado ' + s.wins[ch.id] + ' veces' }) : null]),
       el('div', { class: 'actions', style: { justifyContent: 'flex-start' } }, [
         el('button', { class: 'primary', text: owned.length >= N ? 'Elegir plantilla y jugar' : 'Necesitas ' + N + ' cartas', disabled: owned.length >= N ? null : 'disabled', onclick: () => go('squad') }),
         owned.length < N && s.coins < cfg().packs.basico.price ? el('button', { text: 'Pedir un sobre de emergencia', onclick: () => { const st = load(); const pk = openPack(st, 'basico', true); st.log.unshift({ date: new Date().toISOString(), text: 'Sobre de emergencia. Recepción te mira raro.' }); save(st); cinematic(pk, () => render()); } }) : null
@@ -443,7 +449,7 @@ MI.story = (function () {
     const rng = MI.util.rng(Math.random() * 1e9);
     const cards = lk().cards;
     const myHand = squadIds.map((id) => cards[id]);
-    const oppHand = boludaHand(ch, rng, squadIds);
+    const oppHand = rivalHand(ch, rng, squadIds);
     const tickets = chapterTickets(ch, rng);
     MI.game.newStoryGame({
       hand: myHand, oppHand, tickets, level: ch.level,
@@ -454,12 +460,12 @@ MI.story = (function () {
         const st = load();
         const rw = reward(st, ch, summary);
         save(st);
-        lastSummary = { title: summary.result === 'win' ? 'Sprint ganado: ' + ch.name : (summary.result === 'draw' ? 'Empate en ' + ch.name : 'Boluda gana ' + ch.name), items: rw.items, coins: rw.coins, points: summary.points, note: rw.note };
+        lastSummary = { title: summary.result === 'win' ? 'Sprint ganado: ' + ch.name : (summary.result === 'draw' ? 'Empate en ' + ch.name : rivalName() + ' gana ' + ch.name), items: rw.items, coins: rw.coins, points: summary.points, note: rw.note };
         view = 'dashboard';
       }
     });
     MI.app.go('game');
   }
 
-  return { render, load, save, start, reset, openPack, sell, ownedCards, chapter, checkpointFor, reward, go, discovered, revealAll, setRevealAll, packSvg, cinematic };
+  return { render, load, save, start, reset, openPack, sell, ownedCards, chapter, checkpointFor, reward, go, openView, discovered, revealAll, setRevealAll, packSvg, cinematic };
 })();

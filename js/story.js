@@ -207,9 +207,9 @@ MI.story = (function () {
     const overlay = el('div', { class: 'opening-overlay' });
     const stage = el('div', { class: 'opening-stage' });
     overlay.appendChild(stage);
+    MI.util.lockScroll();
     document.body.appendChild(overlay);
-    document.body.classList.add('no-scroll');
-    const cleanup = () => { document.body.classList.remove('no-scroll'); overlay.remove(); document.removeEventListener('keydown', onKey); if (onDone) onDone(); };
+    const cleanup = () => { overlay.remove(); MI.util.unlockScroll(); document.removeEventListener('keydown', onKey); if (onDone) onDone(); };
     const onKey = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); advance(); } if (e.key === 'Escape') { showSummary(); } };
     document.addEventListener('keydown', onKey);
 
@@ -249,7 +249,6 @@ MI.story = (function () {
         el('div', { class: 'op-status ' + (x.isNew ? 'new' : 'dup'), text: x.isNew ? '¡Nueva en tu colección!' : 'Repetida: puedes venderla en la colección' })
       ]));
       stage.appendChild(el('div', { class: 'op-actions' }, [
-        el('button', { text: 'Ver ficha', onclick: () => MI.album.openDetail(x.card) }),
         el('button', { class: 'primary op-btn', text: i + 1 < total ? 'Siguiente carta' : 'Ver todas', onclick: advance })
       ]));
       requestAnimationFrame(() => { burst.classList.add('go'); cardNode.classList.add('go'); });
@@ -261,11 +260,15 @@ MI.story = (function () {
       stage.innerHTML = '';
       stage.appendChild(el('div', { class: 'op-title', text: pack.pack.name + ': ' + total + (total === 1 ? ' carta' : ' cartas') }));
       stage.appendChild(el('div', { class: 'op-grid' }, pack.cards.map((x, i) => {
-        const node = MI.card.render(x.card, { size: 's', selectable: true, onSelect: (c) => MI.album.openDetail(c) });
+        const node = MI.card.render(x.card, { size: 's', tilt: false });
         node.classList.add('flip-in'); node.style.animationDelay = (i * 0.12) + 's';
         return el('div', { class: 'hand-item' }, [node, el('span', { class: 'pill ' + (x.isNew ? 'new' : ''), text: x.isNew ? 'Nueva' : 'Repetida' })]);
       })));
-      stage.appendChild(el('div', { class: 'op-actions' }, [el('button', { class: 'primary op-btn', text: 'Cerrar', onclick: cleanup })]));
+      stage.appendChild(el('p', { class: 'op-hint', text: 'Las fichas completas están en la colección.' }));
+      stage.appendChild(el('div', { class: 'op-actions' }, [
+        el('button', { class: 'primary op-btn', text: 'Cerrar', onclick: cleanup }),
+        el('button', { class: 'op-btn', text: 'Ver la colección', onclick: () => { view = 'collection'; cleanup(); } })
+      ]));
     }
 
     function advance() {

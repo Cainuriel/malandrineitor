@@ -1,0 +1,105 @@
+/* Auditoría de maquetación: recorre las vistas en cuatro anchos y comprueba que
+   no hay desbordamiento horizontal, que las capas a pantalla completa se pueden
+   recorrer enteras y que no hay errores de consola.
+   Uso: CHROME_PATH=/ruta/a/chrome node tests/layout.js */
+const path = require('path');
+const { chromium } = require('playwright');
+
+const FORMATS = [
+  { name: 'móvil',        width: 390,  height: 844,  mobile: true },
+  { name: 'móvil apaisado', width: 844, height: 390, mobile: true },
+  { name: 'tablet',       width: 820,  height: 1180, mobile: true },
+  { name: 'portátil',     width: 1440, height: 900,  mobile: false },
+  { name: 'pantalla grande', width: 2560, height: 1440, mobile: false }
+];
+
+let failures = 0;
+function check(ok, msg) { console.log((ok ? 'ok   ' : 'FALLO: ') + msg); if (!ok) failures++; }
+
+(async () => {
+  const url = 'file://' + path.join(__dirname, '..', 'index.html');
+  const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined });
+
+  for (const f of FORMATS) {
+    const ctx = await browser.newContext({ viewport: { width: f.width, height: f.height }, isMobile: f.mobile, hasTouch: f.mobile, deviceScaleFactor: 1 });
+    const page = await ctx.newPage();
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(String(e)));
+    page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+    page.on('dialog', (d) => d.dismiss());
+
+    const overflow = async () => page.evaluate(() => ({
+      sw: document.documentElement.scrollWidth, iw: window.innerWidth,
+      culprits: [...document.querySelectorAll('body *')]
+        .filter((e) => e.getBoundingClientRect().right > window.innerWidth + 1 && e.getBoundingClientRect().width > 0)
+        .slice(0, 3).map((e) => e.tagName.toLowerCase() + '.' + (e.className || '').toString().split(' ')[0])
+    }));
+
+    await page.goto(url + '#menu'); await page.waitForTimeout(300);
+    await page.fill('.modal.onboarding input', 'Fernando');
+    await page.click('.modal.onboarding button.primary'); await page.waitForTimeout(200);
+
+    for (const view of ['menu', 'album', 'rules', 'perfil', 'game']) {
+      await page.goto(url + '#' + view); await page.waitForTimeout(300);
+      const o = await overflow();
+      check(o.sw <= o.iw + 1, `${f.name} · vista ${view} sin desbordamiento horizontal` + (o.sw > o.iw + 1 ? ` (${o.sw} > ${o.iw}: ${o.culprits.join(', ')})` : ''));
+    }
+
+    // Ficha ampliada: se debe poder llegar al principio y al final del contenido
+    await page.goto(url + '#album'); await page.waitForTimeout(250);
+    await page.click('text=Descubrir toda la colección'); await page.waitForTimeout(250);
+    await page.click('.album-grid .card'); await page.waitForTimeout(350);
+    const modal = await page.evaluate(() => {
+      const m = document.querySelector('.modal'); if (!m) return null;
+      const body = m.querySelector('.modal-body');
+      return { top: body.getBoundingClientRect().top, scrollable: m.scrollHeight > m.clientHeight, hidden: body.getBoundingClientRect().top < -1 };
+    });
+    check(modal && !modal.hidden, `${f.name} · la ficha ampliada no queda recortada por arriba`);
+    await page.click('.modal .close'); await page.waitForTimeout(200);
+    const restored = await page.evaluate(() => getComputedStyle(document.body).position);
+    check(restored !== 'fixed', `${f.name} · el scroll del fondo se restaura al cerrar la ficha`);
+
+    // Apertura de sobre: la escena debe ser recorrible entera
+    await page.goto(url + '#story'); await page.waitForTimeout(250);
+    await page.click('text=Fichar por Malandriner S.A.'); await page.waitForTimeout(600);
+    const stage = await page.evaluate(() => {
+      const ov = document.querySelector('.opening-overlay'); if (!ov) return null;
+      const st = ov.querySelector('.opening-stage');
+      return { stageTop: st.getBoundingClientRect().top, canScroll: ov.scrollHeight > ov.clientHeight, scrollTop: ov.scrollTop, fits: st.scrollHeight <= ov.scrollHeight + 1 };
+    });
+    check(stage && stage.stageTop >= -1 && stage.fits, `${f.name} · la escena del sobre no se recorta por arriba`);
+    check(await page.locator('.opening-overlay .op-actions button', { hasText: 'Ver ficha' }).count() === 0, `${f.name} · la cinemática no ofrece la ficha`);
+
+    let guard = 0;
+    while (await page.locator('.opening-overlay').count() && guard++ < 12) {
+      const o = await overflow();
+      if (o.sw > o.iw + 1) check(false, `${f.name} · la capa del sobre desborda (${o.sw} > ${o.iw}: ${o.culprits.join(', ')})`);
+      await page.click('.opening-overlay .op-btn >> nth=0'); await page.waitForTimeout(950);
+    }
+    const after = await page.evaluate(() => getComputedStyle(document.body).position);
+    check(after !== 'fixed', `${f.name} · el scroll del fondo se restaura al cerrar el sobre`);
+
+    // Partida: sello de resultado y desbordamiento durante el juego
+    await page.goto(url + '#story'); await page.waitForTimeout(250);
+    await page.evaluate(() => { const s = MI.story.load(); s.coins = 400; MI.story.save(s); MI.story.go('squad'); });
+    await page.waitForTimeout(250);
+    if (await page.locator('text=Elegir automáticamente').count()) {
+      await page.click('text=Elegir automáticamente'); await page.waitForTimeout(200);
+      if (!(await page.locator('.actions button.primary').isDisabled())) {
+        await page.click('.actions button.primary'); await page.waitForTimeout(400);
+        const og = await overflow();
+        check(og.sw <= og.iw + 1, `${f.name} · pantalla de partida sin desbordamiento` + (og.sw > og.iw + 1 ? ` (${og.culprits.join(', ')})` : ''));
+        await page.locator('.hand .card.selectable').first().click();
+        await page.click('.actions button.primary'); await page.waitForTimeout(600);
+        check(await page.locator('.fx-stamp').count() > 0, `${f.name} · aparece el sello de resultado del ticket`);
+      }
+    }
+
+    check(errors.length === 0, `${f.name} · sin errores de consola` + (errors.length ? ': ' + errors[0] : ''));
+    await ctx.close();
+  }
+
+  await browser.close();
+  console.log(failures === 0 ? '\nMaquetación correcta.' : `\n${failures} fallo(s) de maquetación.`);
+  process.exit(failures ? 1 : 0);
+})();

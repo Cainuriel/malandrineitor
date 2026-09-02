@@ -204,12 +204,14 @@
 .card-hidden .hidden-rarity { font-size: .7em; letter-spacing: .16em; text-transform: uppercase; color: var(--rar); font-weight: 800; }
 .card-hidden .hidden-text { font-size: .7em; color: var(--muted); }
 
-/* Apertura cinematográfica */
-body.no-scroll { overflow: hidden; }
-.opening-overlay { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; overflow: auto;
+/* Apertura cinematográfica.
+   La capa es un bloque con scroll propio y la escena, un flex de altura mínima 100 %:
+   centrar con place-items en un contenedor con scroll recorta el contenido más alto que la ventana. */
+.opening-overlay { position: fixed; inset: 0; z-index: 80; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
   background: radial-gradient(900px 600px at 50% 40%, #1b2a5a 0%, #0b1020 55%, #05070f 100%); animation: fadeIn .4s ease; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.opening-stage { position: relative; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 30px 16px; width: 100%; max-width: 900px; min-height: 100%; justify-content: center; }
+.opening-stage { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  padding: 30px 16px; width: 100%; max-width: 900px; margin: 0 auto; min-height: 100%; box-sizing: border-box; }
 .op-title { font-size: 26px; font-weight: 900; letter-spacing: -0.02em; text-align: center; }
 .op-hint { color: var(--text-2); margin: 0; }
 .op-counter { position: absolute; top: 16px; right: 20px; font-family: var(--mono); color: var(--muted); font-size: 13px; }
@@ -251,4 +253,71 @@ body.no-scroll { overflow: hidden; }
   .op-burst { width: 600px; height: 600px; margin: -300px 0 0 -300px; }
   .opening-stage { padding: 20px 10px; gap: 10px; }
   .op-card { --card-w: min(300px, calc(100vw - 60px)); }
+}
+
+/* ---------- Efectos de tebeo ---------- */
+:root { --fx-font: Impact, "Haettenschweiler", "Arial Black", "Segoe UI Black", "Franklin Gothic Bold", sans-serif; }
+
+/* Sello sobre la carta enviada */
+.slot { position: relative; }
+.fx-stamp { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: .2em; pointer-events: none; text-align: center; transition: opacity .6s ease, transform .6s ease; --fx-c: var(--ok); }
+.fx-stamp.fx-improved { --fx-c: var(--warn); }
+.fx-stamp.fx-complicated { --fx-c: var(--bad); }
+.fx-stamp.fade { opacity: 0; transform: scale(1.15); }
+.fx-rays { position: absolute; left: 50%; top: 50%; width: 460px; height: 460px; margin: -230px 0 0 -230px; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--fx-c) 45%, transparent) 0deg 7deg, transparent 7deg 20deg);
+  -webkit-mask: radial-gradient(circle, #000 12%, transparent 62%); mask: radial-gradient(circle, #000 12%, transparent 62%);
+  animation: fxRays 1.6s cubic-bezier(.15,.8,.2,1) both; }
+@keyframes fxRays { 0% { transform: scale(.1) rotate(-30deg); opacity: 0; } 25% { opacity: .95; } 100% { transform: scale(1) rotate(14deg); opacity: .35; } }
+.fx-word { position: relative; font-family: var(--fx-font); font-size: clamp(30px, 8vw, 54px); line-height: .95; letter-spacing: .02em;
+  color: #fff; -webkit-text-stroke: 3px #0b1020; paint-order: stroke fill;
+  text-shadow: 0 0 22px color-mix(in srgb, var(--fx-c) 85%, transparent), 4px 5px 0 var(--fx-c);
+  transform: rotate(-6deg); animation: fxPop .5s cubic-bezier(.2,1.5,.3,1) both, fxShake .45s .5s ease-in-out; }
+@keyframes fxPop { 0% { transform: rotate(-24deg) scale(3.2); opacity: 0; } 55% { transform: rotate(-3deg) scale(.9); opacity: 1; } 100% { transform: rotate(-6deg) scale(1); opacity: 1; } }
+@keyframes fxShake { 0%, 100% { margin-left: 0; } 25% { margin-left: -5px; } 75% { margin-left: 5px; } }
+.fx-bang { position: relative; font-family: var(--fx-font); font-size: clamp(16px, 3.4vw, 24px); color: var(--fx-c);
+  -webkit-text-stroke: 2px #0b1020; paint-order: stroke fill; transform: rotate(5deg); animation: fxPop .45s .18s cubic-bezier(.2,1.5,.3,1) both; }
+.fx-tag { position: relative; font-family: var(--fx-font); font-size: 14px; letter-spacing: .12em; color: #1a1200;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)); padding: .15em .7em; border-radius: 999px;
+  transform: rotate(-3deg); animation: fxPop .45s .34s cubic-bezier(.2,1.5,.3,1) both; }
+.fx-kicker { position: relative; max-width: 90%; font-size: 12px; color: var(--text); background: rgba(11, 16, 32, .82);
+  border: 1px solid color-mix(in srgb, var(--fx-c) 45%, transparent); border-radius: 8px; padding: .35em .6em;
+  animation: reveal .4s .5s both; }
+.fx-stamp.fx-still .fx-rays, .fx-stamp.fx-still .fx-word, .fx-stamp.fx-still .fx-bang, .fx-stamp.fx-still .fx-tag, .fx-stamp.fx-still .fx-kicker { animation: none; }
+
+/* Pantallazo de fin de sprint */
+.fx-splash { position: fixed; inset: 0; z-index: 90; overflow-y: auto; overscroll-behavior: contain; cursor: pointer;
+  background: radial-gradient(800px 600px at 50% 45%, #16233f 0%, #0b1020 60%, #05070f 100%); animation: fadeIn .3s ease; --fx-c: var(--ok); }
+.fx-splash.fx-loss { --fx-c: var(--bad); }
+.fx-splash.fx-draw { --fx-c: var(--warn); }
+.fx-splash.out { animation: fadeOut .3s ease forwards; }
+@keyframes fadeOut { to { opacity: 0; } }
+.fx-splash-rays { position: fixed; left: 50%; top: 45%; width: 1400px; height: 1400px; margin: -700px 0 0 -700px; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--fx-c) 30%, transparent) 0deg 5deg, transparent 5deg 16deg);
+  -webkit-mask: radial-gradient(circle, #000 8%, transparent 55%); mask: radial-gradient(circle, #000 8%, transparent 55%);
+  animation: fxRays 1.4s cubic-bezier(.15,.8,.2,1) both, fxSpin 40s 1.4s linear infinite; }
+@keyframes fxSpin { to { transform: scale(1) rotate(374deg); } }
+.fx-splash-box { position: relative; min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; padding: 40px 20px; box-sizing: border-box; text-align: center; cursor: auto; }
+.fx-splash-title { font-family: var(--fx-font); font-size: clamp(30px, 8.5vw, 86px); line-height: 1.06; color: #fff;
+  -webkit-text-stroke: 4px #0b1020; paint-order: stroke fill; max-width: 13ch; text-wrap: balance;
+  text-shadow: 0 0 40px color-mix(in srgb, var(--fx-c) 80%, transparent), 6px 7px 0 var(--fx-c);
+  transform: rotate(-3deg); animation: fxPop .6s cubic-bezier(.2,1.4,.3,1) both, fxShake .5s .6s ease-in-out; }
+.fx-splash-score { font-family: var(--mono); font-size: clamp(15px, 3vw, 20px); color: var(--text-2); animation: reveal .5s .5s both; }
+.fx-splash-phrase { max-width: 44ch; margin: 0; font-size: clamp(14px, 2.4vw, 18px); color: var(--text); animation: reveal .5s .7s both; }
+.fx-splash button { animation: reveal .5s .9s both; }
+.fx-splash.fx-still .fx-splash-rays, .fx-splash.fx-still .fx-splash-title, .fx-splash.fx-still .fx-splash-score,
+.fx-splash.fx-still .fx-splash-phrase, .fx-splash.fx-still button { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-rays, .fx-word, .fx-bang, .fx-tag, .fx-kicker, .fx-splash-rays, .fx-splash-title, .fx-splash-score, .fx-splash-phrase { animation: none !important; }
+  .op-pack.shake, .op-burst.go, .op-card.go, .flip-in { animation: none !important; opacity: 1 !important; transform: none !important; }
+}
+@media (max-width: 720px) {
+  .fx-rays { width: 320px; height: 320px; margin: -160px 0 0 -160px; }
+  .fx-kicker { font-size: 11px; }
+  /* Con títulos de varias líneas, la sombra desplazada se come el interlineado */
+  .fx-splash-title { line-height: 1.14; -webkit-text-stroke-width: 3px; text-shadow: 0 0 26px color-mix(in srgb, var(--fx-c) 80%, transparent), 4px 5px 0 var(--fx-c); }
+  .fx-word { -webkit-text-stroke-width: 2px; }
 }

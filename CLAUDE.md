@@ -38,6 +38,7 @@ data/techs.js       Catálogo de tecnologías (id, nombre, grupo, alias)
 data/cards.js       Cartas de malandrines
 data/challenges.js  Tickets/retos
 data/optout.js      Ids de cartas retiradas a petición de su titular
+data/phrases.js     Onomatopeyas de tebeo y frases de victoria, derrota y empate
 js/util.js          Hash determinista, RNG con semilla, utilidades DOM
 js/avatar.js        Generador de avatares SVG
 js/card.js          renderCard(card, opts) y renderCardBack()
@@ -46,6 +47,7 @@ js/ai.js            Elección de carta por parte de la máquina
 js/match.js         Partidas a dos jugadores por JSON (reparto, ofuscación, firma, resolución) y perfil en localStorage
 js/scoring.js       Puntos malandrín (elementos que puntúan además de la reputación), puro
 js/story.js         Modo historia: economía, sobres y su arte SVG, apertura cinematográfica, colección, descubrimiento y capítulos
+js/fx.js            Efectos de tebeo: sello de resultado por ticket y pantallazo de fin de sprint
 js/rules.js         Vista de normas (lee los números de config)
 js/album.js         Vista álbum
 js/game.js          Estado de partida y pantallas del modo arcade (contra la máquina y a dos jugadores)
@@ -114,7 +116,8 @@ docs/               Documentación de diseño (reglas, fórmula, guía de cartas
 - **Puntos malandrín** (`js/scoring.js`, valores en `config.scoring`): se calculan por ticket (resuelto, campeón, giro superado, criptonita desafiada, viernes perfecto, ticket gordo, paga, racha, rescate) y por sprint (sin burnout, pleno de pagas, victoria/empate), con multiplicador por nivel de la máquina. Se acumulan en `profile.points`. En dos jugadores los calcula `match.resolve` para ambos roles.
 - **Rescate del calabozo** (habilidad activa de Daniel Primo): `engine.canRescue(hand, burnout, used)`. En pantalla aparece "Rescatar del calabozo" sobre las cartas quemadas cuando procede; se registra en `plays[i].rescue` y `match.resolve` lo reproduce con las mismas condiciones. Boluda lo usa automáticamente sobre su carta quemada de mayor rareza.
 - **Modo historia** (`js/story.js`): estado `{ coins, owned:{id:n}, seen:{id:true}, chapter, wins:{}, opened, sprints, log, lastSquad }`. Sobres en `config.story.packs` (rango de cartas y pesos por rareza; `hidden: true` para los que no se venden en la tienda). Las repetidas **se conservan** y se venden a mano desde la colección por `config.story.sellPrice` (nunca la última copia). Los sobres gratuitos (bienvenida, emergencia) evitan repetidas. Diez capítulos en `config.story.chapters`: nivel de Boluda, rango de dificultad de los tickets (`minDifficulty`/`maxDifficulty`) y rarezas de su mano. Ganar el capítulo en curso desbloquea el siguiente; **perder devuelve al último punto de control** (`config.story.onLoss: 'checkpoint'`, puntos en `config.story.checkpoints`), conservando siempre colección y malandricoins. La partida se juega con `MI.game.newStoryGame({hand, oppHand, tickets, level, onFinish})`; `onFinish(summary)` aplica `reward` y vuelve a la oficina.
-- **Apertura de sobres**: `MI.story.cinematic(pack, onDone)` monta una capa a pantalla completa (`.opening-overlay`, fondo oscuro, sin scroll de fondo) con tres actos: el sobre (arte SVG generado por `MI.story.packSvg(packId)`, con temblor y rasgado), las cartas de una en una (destello radial por rareza, giro 3D de entrada, botón "Ver ficha" y "Siguiente carta") y el resumen final. Avanza con clic, Enter o espacio; Escape salta al resumen. **Toda apertura de sobre debe pasar por aquí**, incluida la de bienvenida y la de emergencia.
+- **Apertura de sobres**: `MI.story.cinematic(pack, onDone)` monta una capa a pantalla completa (`.opening-overlay`) con tres actos: el sobre (arte SVG generado por `MI.story.packSvg(packId)`, con temblor y rasgado), las cartas de una en una (destello radial por rareza y giro 3D de entrada) y el resumen final. Avanza con clic, Enter o espacio; Escape salta al resumen. **Toda apertura de sobre debe pasar por aquí**, incluida la de bienvenida y la de emergencia.
+  Durante la cinemática **no se ofrece la ficha de la carta**: decisión de producto de Fernando, porque interrumpe el ritmo (y además la ficha abría por debajo de la capa). Las fichas se consultan después, en la colección o en el álbum.
 - Otras habilidades implementadas en el motor: `reactionary` (+2 al dado si la tecnología es React), `autoscaling` (+1 al dado en dificultad 4-5), `agent_swarm` (sin burnout), `no_weakness` (ignora giros), `mentor` (campeón si el ticket pide Docencia), `craftsman` (mejorado cuenta como resuelto en dificultad 1-2), `researcher` (ignora el giro si el ticket pide I+D), `dungeon_master` (inmune a criptonita y burnout, rescate).
 
 ## Convenciones de código
@@ -131,6 +134,7 @@ docs/               Documentación de diseño (reglas, fórmula, guía de cartas
 - Abrir `index.html` en el navegador (doble clic o `npx serve .`).
 - Motor: `node tests/run.js` (comprueba validación de datos, regla de campeón, criptonita y reproducibilidad).
 - Capturas y flujo completo a dos jugadores: `CHROME_PATH=/ruta/a/chrome node tests/screenshots.js` (Playwright, opcional). Genera `docs/img/*.png` en escritorio y móvil y falla si hay errores de consola.
+- Maquetación en cinco formatos: `CHROME_PATH=/ruta/a/chrome node tests/layout.js`.
 
 ## Cómo añadir contenido
 
@@ -143,6 +147,23 @@ docs/               Documentación de diseño (reglas, fórmula, guía de cartas
 ## Pendiente conocido / no hacer todavía
 
 Ver `PLAN.md`. En particular: el LLM opcional y los retratos NO están implementados y no deben empezarse sin cerrar la fase en curso. Los avatares procedurales son provisionales: al final del proyecto se sustituirán por retratos inspirados en cada persona (con su permiso), usando `card.portrait`.
+
+## Capas a pantalla completa y scroll
+
+Hay tres capas que ocupan la ventana entera: la apertura de sobres (`.opening-overlay`), la ficha ampliada (`.modal`) y el pantallazo de fin de sprint (`.fx-splash`). Todas siguen el mismo patrón, y conviene respetarlo al añadir otra:
+
+- La capa es un bloque con `overflow-y: auto` y `overscroll-behavior: contain`; **el contenido se centra en un hijo** con `min-height: 100%` y `justify-content: center`. Centrar con `place-items: center` directamente en un contenedor con scroll recorta por arriba todo lo que sea más alto que la ventana, y esa parte ya no se puede alcanzar.
+- El scroll del fondo se bloquea con `MI.util.lockScroll()` / `unlockScroll()`, que llevan un contador de capas abiertas, fijan el body guardando la posición y la restauran al cerrar. No usar `body { overflow: hidden }` a pelo: pierde la posición de lectura y no funciona bien en iOS.
+- Los elementos de rejilla y flex que contengan texto largo necesitan `min-width: 0`; si no, no bajan del ancho de su contenido y desbordan (pasó con el marcador y con la mano de cartas).
+
+`tests/layout.js` recorre las vistas y estas capas en cinco formatos (móvil vertical y apaisado, tablet, portátil y pantalla grande) comprobando que no hay desbordamiento horizontal, que nada queda recortado por arriba, que el scroll del fondo se restaura y que no hay errores de consola. **Ejecutarlo tras cualquier cambio de maquetación.**
+
+## Efectos de tebeo (`js/fx.js`)
+
+- `MI.fx.stamp(outcome, { pay })` devuelve el sello que se superpone a la carta enviada al revelar un ticket: rayos, palabra grande (RESUELTO / MEJORADO / COMPLICADO), onomatopeya y coletilla, ambas sacadas al azar de `data/phrases.js`. Se desvanece solo a los 1,5 s para no tapar el desglose de puntuación y lleva `pointer-events: none`.
+- `MI.fx.splash(kind, { title, score, phrase, onDone })` es el pantallazo de fin de sprint (`win` / `loss` / `draw`), con título de tebeo, marcador, frase al azar y cierre por clic, Enter, Escape o a los 6 s. Se muestra una sola vez por partida (`S.splashDone`).
+- Ambos respetan `prefers-reduced-motion`: la clase `fx-still` y una regla de medios desactivan las animaciones.
+- La tipografía es una pila de sistema con Impact a la cabeza (`--fx-font`): no se descargan fuentes, el juego debe funcionar sin red.
 
 ## Equilibrio de la campaña
 

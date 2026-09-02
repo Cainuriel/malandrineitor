@@ -130,8 +130,9 @@ input, select {
 .rarity-filter .f-legendaria { color: var(--rar-legendaria); }
 
 /* Ficha ampliada (modal) */
-.modal { position: fixed; inset: 0; background: rgba(4, 6, 14, 0.8); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
-.modal .modal-body { display: flex; gap: 30px; align-items: flex-start; max-width: 960px; flex-wrap: wrap; justify-content: center; }
+.modal { position: fixed; inset: 0; background: rgba(4, 6, 14, 0.8); z-index: 50; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.modal .modal-body { display: flex; gap: 30px; align-items: center; justify-content: center; flex-wrap: wrap;
+  min-height: 100%; box-sizing: border-box; padding: 60px 20px 20px; margin: 0 auto; max-width: 1000px; }
 .modal .detail { flex: 1 1 380px; max-width: 520px; }
 .modal .detail h2 { font-size: 26px; margin: 0 0 4px; }
 .modal .close { position: absolute; top: 18px; right: 18px; z-index: 2; }
@@ -153,9 +154,8 @@ input, select {
   .rarity-filter button { padding: 7px 10px; font-size: 13px; }
   .album-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
   .album-grid .card { --card-w: calc(50vw - 18px); }
-  .modal { padding: 10px; flex-direction: column; align-items: stretch; overflow: auto; }
-  .modal .modal-body { gap: 14px; }
-  .modal .close { position: sticky; top: 0; align-self: flex-end; margin-bottom: 8px; }
+  .modal .modal-body { gap: 14px; padding: 54px 10px 16px; align-items: flex-start; }
+  .modal .close { top: 10px; right: 10px; }
   .hero { padding: 30px 10px 10px; }
   .menu-grid { grid-template-columns: 1fr; }
 }

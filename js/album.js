@@ -64,8 +64,10 @@ MI.album = (function () {
       el('td', { class: 'g', text: (groups[e.s.group] || {}).name || '' }),
       el('td', { text: String(e.v) })
     ])));
-    const modal = el('div', { class: 'modal', onclick: (e) => { if (e.target === modal) modal.remove(); } }, [
-      el('button', { class: 'close', text: 'Cerrar', onclick: () => modal.remove() }),
+    const close = () => { modal.remove(); MI.util.unlockScroll(); document.removeEventListener('keydown', onKey); };
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    const modal = el('div', { class: 'modal', onclick: (e) => { if (e.target === modal) close(); } }, [
+      el('button', { class: 'close', text: 'Cerrar', onclick: close }),
       el('div', { class: 'modal-body' }, [
         MI.card.render(card, { size: 'l', topSkills: 6, highlight: opts.highlight }),
         el('div', { class: 'detail panel' }, [
@@ -78,7 +80,9 @@ MI.album = (function () {
         ])
       ])
     ]);
+    MI.util.lockScroll();
     document.body.appendChild(modal);
+    document.addEventListener('keydown', onKey);
   }
 
   return { render, activeCards, openDetail };

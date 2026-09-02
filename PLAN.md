@@ -87,7 +87,18 @@ Pendiente de la fase, aplazado a propósito:
 
 ---
 
-## Fase 5 — LLM opcional, revelado por días y publicación `[ ]`
+## Fase 5 — Presentación y pulido `[x]`
+
+- [x] Sellos de tebeo al resolver cada ticket: rayos, palabra grande, onomatopeya y coletilla al azar.
+- [x] Pantallazo de fin de sprint con título, marcador y frase de victoria, derrota o empate.
+- [x] Retirada de la ficha durante la cinemática de sobres (decisión de Fernando) y corrección del fallo por el que abría por detrás de la capa.
+- [x] Revisión de maquetación y scroll en cinco formatos, con `tests/layout.js` como comprobación permanente.
+- [x] Bloqueo de scroll con contador y conservación de la posición.
+- [x] Abel Fernández: campeón de Vue, criptonita React.
+
+---
+
+## Fase 6 — LLM opcional, revelado por días y publicación `[ ]`
 
 - [ ] Oponente LLM opcional: endpoint compatible OpenAI (incluye Ollama local) y Anthropic; solo elige carta y comenta la jugada. La clave se guarda en `localStorage` y nunca sale del navegador salvo hacia el endpoint configurado.
 - [ ] Sonido opcional (Web Audio, sin ficheros externos).

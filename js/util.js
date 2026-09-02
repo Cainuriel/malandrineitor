@@ -68,5 +68,31 @@ MI.util = (function () {
     return m;
   }
 
-  return { hash, rng, clamp, round1, el, byId };
+  /* Bloqueo de scroll del fondo mientras hay una capa a pantalla completa.
+     Cuenta las capas abiertas y conserva la posición: fijar el body sin guardar
+     el desplazamiento hace que la página salte al principio al cerrarla. */
+  let lockCount = 0, lockedAt = 0;
+  function lockScroll() {
+    if (typeof document === 'undefined') return;
+    if (lockCount === 0) {
+      lockedAt = window.scrollY || window.pageYOffset || 0;
+      const bar = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.position = 'fixed';
+      document.body.style.top = -lockedAt + 'px';
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.width = '100%';
+      if (bar > 0) document.body.style.paddingRight = bar + 'px';   // evita el salto al ocultar la barra
+    }
+    lockCount++;
+  }
+  function unlockScroll() {
+    if (typeof document === 'undefined') return;
+    lockCount = Math.max(0, lockCount - 1);
+    if (lockCount > 0) return;
+    ['position', 'top', 'left', 'right', 'width', 'paddingRight'].forEach((k) => { document.body.style[k] = ''; });
+    window.scrollTo(0, lockedAt);
+  }
+
+  return { hash, rng, clamp, round1, el, byId, lockScroll, unlockScroll };
 })();

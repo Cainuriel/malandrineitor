@@ -297,6 +297,7 @@ MI.game = (function () {
     } else {
       mySlot.appendChild(R.myCard ? MI.card.render(R.myCard, { size: 'm', highlight: Object.keys(R.me.weights || ch.skills) }) : el('div', { class: 'placeholder', text: 'Sin carta' }));
       mySlot.appendChild(renderResult(R.me, R.pay === 'me' ? cfg.points.payBonus : 0));
+      if (!R.me.nobody) mySlot.appendChild(MI.fx.stamp(R.me.outcome, { pay: R.pay === 'me' }));
       if (S.mode === 'ai') {
         oppSlot.appendChild(R.oppCard ? MI.card.render(R.oppCard, { size: 'm', highlight: Object.keys(R.opp.weights || ch.skills) }) : el('div', { class: 'placeholder', text: 'Sin carta' }));
         oppSlot.appendChild(renderResult(R.opp, R.pay === 'opp' ? cfg.points.payBonus : 0));
@@ -333,9 +334,18 @@ MI.game = (function () {
   }
 
   /* ---------- Render: finales ---------- */
+  // El pantallazo se muestra una sola vez por partida, antes del resumen.
+  function maybeSplash() {
+    if (S.splashDone) return;
+    S.splashDone = true;
+    const kind = S.over === 'me' ? 'win' : (S.over === 'opp' ? 'loss' : 'draw');
+    MI.fx.splash(kind, { score: `${S.myName} ${S.rep.me} · ${S.oppName} ${S.rep.opp}` });
+  }
+
   function renderEnd(c) {
     c.innerHTML = '';
     const msg = { me: 'Has ganado el sprint', opp: S.oppName + ' gana el sprint', draw: 'Empate técnico' }[S.over];
+    maybeSplash();
     const summary = { result: S.over === 'me' ? 'win' : (S.over === 'opp' ? 'loss' : 'draw'), resolved: S.stats.resolved, improved: S.stats.improved, pays: S.stats.pays, points: S.points, rep: S.rep.me };
     c.appendChild(el('div', { class: 'endgame' }, [
       el('h1', { text: msg }),
@@ -368,6 +378,11 @@ MI.game = (function () {
     const role = S.role || MI.match.role.get(m.id);
     const A = m.players.A.name, B = m.players.B.name;
     const winnerText = r.winner === 'draw' ? 'Empate técnico' : (m.players[r.winner].name + ' gana el sprint');
+    if (!S.splashDone) {
+      S.splashDone = true;
+      const kind = !role ? 'draw' : (r.winner === role ? 'win' : (r.winner === 'draw' ? 'draw' : 'loss'));
+      MI.fx.splash(kind, { title: role ? undefined : winnerText, score: `${A} ${r.rep.A} · ${B} ${r.rep.B}` });
+    }
     const mine = role && r.winner === role ? 'Has ganado.' : (role && r.winner !== 'draw' ? 'Has perdido.' : '');
     const rows = r.tickets.map((t, i) => {
       const ch = lk.challenges[t.ticket];

@@ -32,7 +32,7 @@ const { chromium } = require('playwright');
   const openAll = async (page, shot) => {
     let guard = 0;
     while (await page.locator('.opening-overlay').count() && guard++ < 12) {
-      await page.click('.opening-overlay .op-btn');
+      await page.click('.opening-overlay .op-btn >> nth=0');
       await page.waitForTimeout(1100);
       if (shot && guard === 1) { await page.waitForTimeout(600); await page.screenshot({ path: shot }); }
     }

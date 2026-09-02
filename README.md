@@ -36,10 +36,6 @@ Todo está en `data/`: `cards.js` (cartas), `skills.js` (habilidades), `techs.js
 - `CHROME_PATH=/ruta/a/chrome node tests/layout.js` revisa la maquetación en móvil, móvil apaisado, tablet, portátil y pantalla grande.
 - `CHROME_PATH=/ruta/a/chrome node tests/screenshots.js` genera capturas y recorre el flujo a dos jugadores.
 
-## Publicar en GitHub Pages
-
-El juego es estático y sin build, así que se sirve tal cual. En Settings → Pages del repositorio: *Deploy from a branch*, rama `master`, carpeta `/ (root)`. Queda publicado en `https://<usuario>.github.io/malandrineitor`, que es una *project site* y no interfiere con la página personal de la cuenta. El fichero vacío `.nojekyll` de la raíz evita que GitHub pase el contenido por Jekyll.
-
 ## Antes de compartir el juego
 
 En `data/config.js`, poner `demo.revealAllButton` a `false`: es el botón "Descubrir toda la colección" del álbum, pensado solo para enseñar el juego sin tener que jugar la campaña entera.

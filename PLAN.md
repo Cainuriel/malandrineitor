@@ -126,6 +126,9 @@ Pendiente de la fase, aplazado a propósito:
 - [x] El desplegable de carga acepta un enlace pegado entero, no solo el JSON.
 - [x] Enlace de partida en formato binario: de 6.260 caracteres a 130-155. Sin `result`, sin doble base64, sin nombres de carta ni de ticket (se deducen de la semilla) y con las jugadas en un byte cada una. Con huella del catálogo y longitud declarada para distinguir un enlace cortado de uno manipulado. Los enlaces del formato anterior se siguen abriendo.
 - [x] `config.developer.enabled` a `false`: la versión pública no muestra el botón de descubrir la colección ni el campo de semilla.
+- [x] Botones de la partida por color: enviar en verde sobre texto negro, siguiente ticket en azul y cerrar el sprint en rojo, ambos sobre blanco. "Ver ficha completa" pasa a ser un botón con superficie propia y altura de dedo, lejos de la barra fija.
+- [x] Corregido: una carta retirada por `data/optout.js` seguía apareciendo en la plantilla y podía jugarse, aunque hubiera desaparecido del álbum.
+- [x] Documentado el procedimiento para añadir o retirar una carta y su efecto sobre los enlaces en curso (`CLAUDE.md`, "Cambiar el catálogo").
 
 ---
 

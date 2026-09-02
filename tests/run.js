@@ -284,6 +284,19 @@ check(powerOrder.join(',') === 'daniel-primo,yuri,jose-manuel-gomez,sergi-edo,an
   const w = st.wearAndTear(s, { hand, cards: { 'holtrix': { burnouts: L - 1 } } });
   check(w.warn.some((x) => x.card.id === 'holtrix' && x.strikes === L - 1), 'avisa de quién está en la cuerda floja');
 
+  // Una carta retirada del juego no puede seguir jugándose aunque esté en la colección.
+  {
+    const st2 = MI.story;
+    const s2 = { coins: 0, owned: {}, seen: {}, strikes: {}, chapter: 1, wins: {}, opened: 0, sprints: 0, log: [] };
+    const victima = MI.data.cards.find((c) => !(MI.data.optout || []).includes(c.id));
+    s2.owned[victima.id] = 1;
+    check(st2.ownedCards(s2).some((c) => c.id === victima.id), 'una carta en propiedad aparece en la plantilla');
+    const antes = MI.data.optout ? MI.data.optout.slice() : [];
+    MI.data.optout = antes.concat([victima.id]);
+    check(!st2.ownedCards(s2).some((c) => c.id === victima.id), 'una carta retirada por optout deja de poder jugarse aunque siga en la colección');
+    MI.data.optout = antes;
+  }
+
   // El amo del calabozo no se quema nunca, así que nunca se va
   const dp = MI.data.cards.find((c) => c.id === 'daniel-primo');
   const hard = MI.data.challenges.find((c) => c.id === 'db-breach');

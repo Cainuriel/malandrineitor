@@ -93,7 +93,13 @@ MI.story = (function () {
     return price;
   }
 
-  function ownedCards(s) { const c = lk().cards; return Object.keys(s.owned).filter((id) => s.owned[id] > 0).map((id) => c[id]).filter(Boolean); }
+  // Solo cartas activas: una retirada por data/optout.js deja de poder jugarse aunque
+  // siga en la colección guardada, y una borrada del catálogo desaparece sin romper
+  // nada (byId no la encuentra y filter(Boolean) la descarta).
+  function ownedCards(s) {
+    const activas = MI.util.byId(MI.album.activeCards());
+    return Object.keys(s.owned).filter((id) => s.owned[id] > 0).map((id) => activas[id]).filter(Boolean);
+  }
 
   /* ---------- Campaña ---------- */
   function chapter(s) { const list = cfg().chapters; return list[Math.min(s.chapter, list.length) - 1]; }

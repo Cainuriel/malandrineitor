@@ -408,8 +408,8 @@ MI.game = (function () {
     const deck = el('div', { class: 'deck', tabindex: '0' }, [prev, stage, nextBtn]);
     const dots = el('div', { class: 'deck-dots' }, cards.map((card, i) => el('i', { class: S.burnout.me[card.id] ? 'burnt' : '', title: card.name, onclick: () => setIndex(i) })));
     const meta = el('div', { class: 'deck-meta' });
-    const detailBtn = el('button', { class: 'ghost small-btn', text: 'Ver ficha', onclick: () => openCardDetail(cards[deckIndex], ch) });
-    const rescueBtn = el('button', { class: 'small-btn rescue', text: 'Rescatar del calabozo', onclick: () => { rescue('me', cards[deckIndex].id); render(); } });
+    const detailBtn = el('button', { class: 'deck-btn', text: 'Ver ficha completa', onclick: () => openCardDetail(cards[deckIndex], ch) });
+    const rescueBtn = el('button', { class: 'deck-btn rescue', text: 'Rescatar del calabozo', onclick: () => { rescue('me', cards[deckIndex].id); render(); } });
 
     function layout() {
       wraps.forEach((w, i) => {
@@ -531,9 +531,11 @@ MI.game = (function () {
     if (S.phase === 'choose' && canRescue('me')) left.appendChild(el('p', { class: 'small', style: { color: 'var(--ok)', textAlign: 'center' }, text: 'El amo del calabozo está en tu mano: puedes rescatar a un malandrín quemado (una vez por partida).' }));
 
     const lastOne = S.ticket + 1 >= S.tickets.length || S.over;
+    // Cada acción con su color: enviar en verde, avanzar en azul, cerrar el sprint en
+    // rojo. Son tres cosas distintas y el botón ocupa siempre el mismo sitio.
     left.appendChild(el('div', { class: 'actions game-actionbar' }, S.phase === 'choose'
-      ? [el('button', { class: 'primary', id: 'send-btn', text: sendLabel(), disabled: sendBlocked() ? 'disabled' : null, onclick: play })]
-      : [el('button', { class: 'primary', text: lastOne ? (S.mode === 'ai' ? 'Ver resultado final' : (S.role === 'A' ? 'Terminar y exportar' : 'Resolver la partida')) : 'Siguiente ticket', onclick: next })]));
+      ? [el('button', { class: 'primary btn-enviar', id: 'send-btn', text: sendLabel(), disabled: sendBlocked() ? 'disabled' : null, onclick: play })]
+      : [el('button', { class: 'primary ' + (lastOne ? 'btn-cerrar' : 'btn-siguiente'), text: lastOne ? (S.mode === 'ai' ? 'Ver resultado final' : (S.role === 'A' ? 'Terminar y exportar' : 'Resolver la partida')) : 'Siguiente ticket', onclick: next })]));
 
     const log = el('div', { class: 'panel log' }, [el('h3', { text: 'Registro del sprint' }), ...(S.log.length ? S.log.map((e) => el('div', { class: 'entry ' + e.cls, html: e.html })) : [el('div', { class: 'entry', text: 'Aún no ha pasado nada. Todo en verde. Sospechoso.' })])]);
     c.appendChild(el('div', { class: 'game' }, [left, log]));

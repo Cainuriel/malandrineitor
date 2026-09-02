@@ -40,9 +40,16 @@ Todo está en `data/`: `cards.js` (cartas), `skills.js` (habilidades), `techs.js
 
 El interruptor `developer.enabled`, en `data/config.js`. Con `true` aparecen el botón "Descubrir toda la colección" del álbum y el campo "Semilla (opcional)" del arcade, útiles para enseñar el juego sin jugarlo entero y para repetir un reparto concreto. La versión pública lo lleva a `false`.
 
-## Retirar una carta
+## Añadir o retirar una carta
 
-Los nombres proceden del directorio público de la comunidad; los retratos son avatares generados, no fotos. Si no quieres aparecer, añade tu `id` a `data/optout.js` (o pídeselo a Fernando) y la carta deja de mostrarse y de entrar en mazos.
+Los nombres proceden del directorio público de la comunidad; los retratos son avatares generados, no fotos. Si no quieres aparecer, añade tu `id` a `data/optout.js` (o pídeselo a Fernando): la carta deja de mostrarse, de entrar en los repartos y de poder jugarse, aunque alguien ya la tuviera. Para añadir una, basta con una entrada nueva en `data/cards.js` con un `id` único.
+
+Dos cosas a tener en cuenta:
+
+- El reparto de cada partida se deduce de su semilla recorriendo la lista de cartas activas, así que **al cambiar el catálogo dejan de abrirse los enlaces de partidas en curso**. El juego lo avisa y pide crearlas de nuevo; nada se corrompe y las partidas terminadas no se tocan. Conviene hacer los cambios cuando no haya sprints a medias.
+- **Nunca se cambia el `id` de una carta ya publicada**: es la clave con la que se guardan las colecciones, las estadísticas y las jugadas. Si cambia el nombre de la persona, se cambia `name`.
+
+Después de tocar `data/`, `node tests/run.js` valida el catálogo.
 
 ## Para continuar el desarrollo
 

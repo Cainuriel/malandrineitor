@@ -157,6 +157,32 @@ Hay tres capas que ocupan la ventana entera: la apertura de sobres (`.opening-ov
 
 - La capa es un bloque con `overflow-y: auto` y `overscroll-behavior: contain`; **el contenido se centra en un hijo** con `min-height: 100%` y `justify-content: center`. Centrar con `place-items: center` directamente en un contenedor con scroll recorta por arriba todo lo que sea más alto que la ventana, y esa parte ya no se puede alcanzar.
 - El scroll del fondo se bloquea con `MI.util.lockScroll()` / `unlockScroll()`, que llevan un contador de capas abiertas, fijan el body guardando la posición y la restauran al cerrar. No usar `body { overflow: hidden }` a pelo: pierde la posición de lectura y no funciona bien en iOS.
+## Cambiar el catálogo: añadir o retirar una carta
+
+El reparto de una partida se deduce de su semilla recorriendo la lista de cartas activas, así que **cualquier cambio en el catálogo cambia la huella** (`M.catalogFingerprint`, que cubre los identificadores de cartas activas, los de tickets y `arcade.handSize` y `arcade.tickets`). Consecuencia única e importante:
+
+> Los enlaces de partidas **en curso** creados antes del cambio dejan de abrirse. El juego lo dice con todas las letras ("se creó con otra versión del juego") y no reparte una partida distinta. Las partidas ya terminadas no se tocan: viven en el perfil como historial.
+
+Así que sí, basta con hacer los cambios cuando no haya partidas a medias, o avisar a quienes las tengan de que hay que crearlas de nuevo. No hay corrupción posible; como mucho, hay que repetir un sprint.
+
+### Añadir una carta
+
+1. Añadir la entrada en `data/cards.js` con un `id` nuevo y único.
+2. `node tests/run.js` valida el catálogo: esquema, habilidades y tecnologías existentes, rarezas.
+3. Publicar. El álbum pasa a tener un malandrín más ("has descubierto X de N") y nadie pierde nada de lo que tuviera.
+
+### Retirar una carta porque la persona lo pide
+
+1. **Vía recomendada: añadir su `id` a `data/optout.js`.** La carta sigue en `cards.js` pero desaparece del álbum, de los repartos, de los sobres y de la plantilla, y deja de poder jugarse aunque alguien ya la tuviera.
+2. Solo borrarla de `cards.js` si la persona pide que no quede ni el dato. Es menos seguro: una partida guardada o un JSON antiguo que la mencione tratará esas jugadas como "nadie disponible", porque la carta ya no existe para el motor. Con `optout` eso no pasa, porque el motor la sigue encontrando por su identificador.
+3. Quien la tuviera conserva la entrada en su partida guardada, pero no puede alinearla. El total del álbum baja.
+
+### Lo que no se debe hacer nunca
+
+**Cambiar el `id` de una carta que ya está publicada.** Los identificadores son las claves de `owned`, `seen`, `strikes` y `cardStats`, y las jugadas de los enlaces guardan posiciones dentro de una mano deducida de esos identificadores. Renombrar uno huérfana todo eso en silencio: la colección de la gente pierde la carta y las estadísticas se quedan colgando de un identificador que ya no existe. Si cambia el nombre de la persona, se cambia `name`, nunca `id`.
+
+Lo mismo vale para `arcade.handSize` y `arcade.tickets`: cambiarlos altera la huella y el tamaño del reparto.
+
 ## El enlace de la partida
 
 El enlace lleva la partida en el fragmento `#match=`, en base64 URL-safe. **No es JSON: es un formato binario** (`v2`) de unos 70 bytes, que da un enlace de **130-155 caracteres**. Antes eran 1.100 de ida y **6.260 de vuelta**, y algunas aplicaciones de mensajería solo hacen pulsable el principio de un enlace largo, así que al tocarlo llegaba cortado.

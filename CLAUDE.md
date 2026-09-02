@@ -16,11 +16,11 @@ Idioma del producto y de la documentación: **español**. Idioma de identificado
 4. **Sin NFTs ni blockchain en el núcleo.** Si algún día hay cartas exclusivas, será con códigos firmados en cliente. Fuera del alcance actual.
 5. **Todo configurable desde `data/`.** Añadir una habilidad, una tecnología, una carta o un reto es añadir una entrada a un fichero de datos. El motor no debe contener nombres de habilidades ni de tecnologías codificados.
 6. **Sin iconos emoji en la interfaz ni en la documentación.** Iconografía solo SVG inline.
-7. **Responsive obligatorio.** Cada pantalla nueva se comprueba a 390px y a 1400px (`tests/screenshots.js`). En móvil la mano es una fila con scroll horizontal y el botón principal queda fijo abajo.
+7. **Responsive obligatorio, con el móvil por delante.** Cada pantalla nueva se comprueba a 390px y a 1400px (`tests/screenshots.js`, y `tests/layout.js` en cinco formatos). El espacio vertical del móvil es el recurso escaso: nada de huecos reservados para contenido que todavía no existe. El botón principal queda fijo abajo.
 8. **Tono de los textos**: humor blanco tipo tebeo clásico (Mortadelo y Filemón), jerga técnica real, nunca ofensivo ni dirigido a personas reales. La empresa rival de la máquina está **solo** en `config.rival` (hoy **Caballerosos S.A.**, "Software fino como seda medieval"): ningún texto de interfaz ni de `data/phrases.js` puede llevar su nombre escrito a mano. Las frases usan el marcador `{rival}`, que `MI.fx.splash` sustituye por el rival de esa partida —la empresa en el modo máquina, el nombre de la otra persona en las partidas a dos—. Escribirlo a mano provocó que, al recibir el fichero resuelto, el jugador viese ganar a la empresa en vez de a su rival humano; hay una prueba en `tests/run.js` que lo vigila. La clave interna de las rarezas de su mano es `rivalRarity`.
 9. **Vocabulario fijo**: "ticket" (nunca "reto" ni "marrón" en la interfaz; la palabra "marrón" está prohibida en textos de juego y documentación), "mandar un malandriner", "se lleva la paga" (no "contrato"), "reputación", "burnout", "giro", "campeón", "criptonita".
 10. **La interfaz nunca menciona ficheros ni rutas del proyecto.** Nada de "edita data/cards.js" o "ver README" en pantalla: eso va en esta documentación, no en el juego.
-11. **El álbum solo muestra lo descubierto.** Una carta se descubre al conseguirla en el modo historia (basta haberla tenido una vez: `story.seen`). El arcade reparte al azar de toda la plantilla y es el único sitio donde se ve un malandrín sin descubrir. `config.demo.revealAllButton` añade en el álbum el botón "Descubrir toda la colección" (bandera `localStorage['mi.revealAll']`): **es solo para enseñar el juego; hay que ponerlo a `false` antes de compartirlo con la comunidad.**
+11. **El álbum solo muestra lo descubierto.** Una carta se descubre al conseguirla en el modo historia (basta haberla tenido una vez: `story.seen`). El arcade reparte al azar de toda la plantilla y es el único sitio donde se ve un malandrín sin descubrir. `config.developer.enabled` añade en el álbum el botón "Descubrir toda la colección" (bandera `localStorage['mi.revealAll']`): **es solo para enseñar el juego; hay que ponerlo a `false` antes de compartirlo con la comunidad.**
 
 ## Estructura
 
@@ -157,6 +157,18 @@ Hay tres capas que ocupan la ventana entera: la apertura de sobres (`.opening-ov
 
 - La capa es un bloque con `overflow-y: auto` y `overscroll-behavior: contain`; **el contenido se centra en un hijo** con `min-height: 100%` y `justify-content: center`. Centrar con `place-items: center` directamente en un contenedor con scroll recorta por arriba todo lo que sea más alto que la ventana, y esa parte ya no se puede alcanzar.
 - El scroll del fondo se bloquea con `MI.util.lockScroll()` / `unlockScroll()`, que llevan un contador de capas abiertas, fijan el body guardando la posición y la restauran al cerrar. No usar `body { overflow: hidden }` a pelo: pierde la posición de lectura y no funciona bien en iOS.
+## La pantalla de partida
+
+La mano **no** es una fila de cartas: es un **mazo** dentro del hueco "Tu malandrín" (`renderDeck` en `js/game.js`). La carta activa va delante y las demás asoman detrás, escaladas, giradas y oscurecidas. Se cambia de carta arrastrando (`pointerdown/move/up` con umbral de 40px), con las flechas del teclado, con los botones Anterior/Siguiente o pulsando una carta lateral.
+
+Decisiones que conviene no deshacer sin motivo:
+
+- **La carta activa es la que se envía.** No hay un paso de "seleccionar" separado: `layout()` fija `S.selected` y sincroniza el texto del botón (`sendLabel`, `syncSend`). En móvil ahorra un toque y elimina el estado "has elegido pero no se ve".
+- **El mazo se repinta solo, sin `render()` completo.** `layout()` mueve transformaciones y opacidades sobre nodos ya creados; llamar a `render()` en cada deslizamiento perdería la animación y recrearía cincuenta SVG.
+- **El hueco del rival no se dibuja mientras se elige.** En modo máquina aparece al enviar, con la carta ya visible (`.slot.opp-reveal`). En dos jugadores no aparece nunca: hasta resolver no hay nada que enseñar. En su lugar va `.opp-strip`, una franja de una línea. Antes eran dos huecos vacíos de 320px de alto: en móvil ocupaban una pantalla entera para no decir nada.
+- **Los bordes del mazo se difuminan** con `mask-image` en `.deck` en lugar de recortar en seco: se ve que el mazo continúa.
+- **Un malandrín quemado se puede tener delante** (para rescatarlo con Daniel Primo), pero el botón de enviar se bloquea y `play()` no lo acepta.
+
 - Los elementos de rejilla y flex que contengan texto largo necesitan `min-width: 0`; si no, no bajan del ancho de su contenido y desbordan (pasó con el marcador y con la mano de cartas).
 
 `tests/layout.js` recorre las vistas y estas capas en cinco formatos (móvil vertical y apaisado, tablet, portátil y pantalla grande) comprobando que no hay desbordamiento horizontal, que nada queda recortado por arriba, que el scroll del fondo se restaura y que no hay errores de consola. **Ejecutarlo tras cualquier cambio de maquetación.**
@@ -209,4 +221,4 @@ El proyecto es un repositorio git normal. No hay build: lo que está en el árbo
 - `.gitignore` excluye `node_modules/`, `package-lock.json` y `docs/img/` (las capturas se regeneran con `tests/screenshots.js` y pesan más que el resto del proyecto junto).
 - Para publicar en GitHub Pages: repositorio público `malandrineitor` y, en Settings → Pages, *Deploy from a branch* con la rama `master` y la carpeta `/ (root)`. Queda en `https://<usuario>.github.io/malandrineitor` como *project site*, que **no** interfiere con la *user site* (`<usuario>.github.io`): una cuenta tiene una sola user site pero tantas project sites como repositorios.
 - El fichero vacío `.nojekyll` en la raíz desactiva el paso de Jekyll: el despliegue es directo y ningún fichero o carpeta se ignora por convenciones ajenas al proyecto. No borrarlo.
-- Antes de publicar para la comunidad, poner `config.demo.revealAllButton` a `false`.
+- Antes de publicar para la comunidad, poner `config.developer.enabled` a `false`.

@@ -108,9 +108,12 @@ MI.data.config = {
     ]
   },
 
-  // Interruptores de demostración. Quitar antes de compartir con la comunidad.
-  demo: {
-    revealAllButton: true    // botón "Descubrir toda la colección" en el álbum
+  // Modo desarrollador: un único interruptor para todo lo que no debe ver la comunidad.
+  // Con enabled: true aparecen el botón "Descubrir toda la colección" del álbum y el campo
+  // "Semilla (opcional)" del modo arcade. Con enabled: false desaparecen los dos.
+  // PONER A false ANTES DE COMPARTIR EL JUEGO CON LA COMUNIDAD.
+  developer: {
+    enabled: true
   },
 
   ai: {

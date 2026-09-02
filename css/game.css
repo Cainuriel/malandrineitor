@@ -37,9 +37,51 @@
 .twist .lbl { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--warn); margin-right: 8px; }
 
 .table { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 18px 0; }
+.table.single { grid-template-columns: 1fr; }
+.table > * { min-width: 0; }
 .slot { padding: 14px; border-radius: var(--radius); border: 1px dashed var(--line); min-height: 320px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .slot .slot-title { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); align-self: flex-start; }
 .slot .placeholder { margin: auto; color: var(--muted); font-size: 14px; text-align: center; }
+/* El hueco con el mazo se ajusta a su contenido: ya no hay espacio vacío que rellenar. */
+.slot.slot-deck { min-height: 0; border-style: solid; border-color: color-mix(in srgb, var(--line) 70%, transparent); background: rgba(0,0,0,.16); }
+.slot.opp-reveal { animation: slot-in .28s ease both; }
+@keyframes slot-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* Franja del rival: sustituye al hueco vacío mientras no hay carta que enseñar. */
+.opp-strip { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; justify-content: center;
+  margin: -6px 0 10px; padding: 9px 14px; border-radius: var(--radius); border: 1px dashed var(--line); background: rgba(0,0,0,.18); }
+.opp-strip .who { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-2); font-weight: 700; }
+.hand-left { margin-top: 8px; }
+
+/* Mazo de la mano: carta activa delante, el resto asomando por detrás. */
+.deck-wrap { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.deck { position: relative; width: 100%; max-width: 560px; margin: 0 auto; display: flex; align-items: center; justify-content: center;
+  touch-action: pan-y; user-select: none; -webkit-user-select: none; outline: none; overflow: hidden;
+  /* Las cartas de detrás se desvanecen en los bordes: se ve que el mazo continúa. */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 9%, #000 91%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 9%, #000 91%, transparent 100%); }
+.deck:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; border-radius: var(--radius); }
+.deck-stage { position: relative; width: 100%; height: 352px; transition: transform .12s ease-out; }
+.deck-card { position: absolute; left: 50%; top: 0; transform: translate(-50%, 0);
+  transition: transform .28s cubic-bezier(.2,.7,.3,1), opacity .28s ease; cursor: pointer;
+  filter: drop-shadow(0 14px 26px rgba(0,0,0,.45)); }
+.deck-card:not(.is-current) { filter: drop-shadow(0 8px 16px rgba(0,0,0,.5)) saturate(.75) brightness(.72); }
+.deck-card.is-current { cursor: default; }
+.deck-card.is-burnout.is-current { filter: drop-shadow(0 14px 26px rgba(0,0,0,.45)) grayscale(.5); }
+.deck-nav { position: absolute; z-index: 20; top: 50%; transform: translateY(-50%); padding: 8px 12px; font-size: 12px;
+  border-radius: 999px; background: color-mix(in srgb, var(--panel) 88%, transparent); backdrop-filter: blur(8px); }
+.deck-nav.prev { left: 0; }
+.deck-nav.next { right: 0; }
+.deck-nav[disabled] { opacity: .25; pointer-events: none; }
+.deck-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.deck-meta strong { font-size: 16px; }
+.deck-meta .pill.burnt { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 55%, transparent); }
+.deck-dots { display: flex; gap: 7px; }
+.deck-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); cursor: pointer; transition: background .2s, transform .2s; }
+.deck-dots i.on { background: var(--accent); transform: scale(1.35); }
+.deck-dots i.burnt { background: color-mix(in srgb, var(--bad) 60%, var(--line)); }
+.deck-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.deck-hint { text-align: center; max-width: 42ch; }
 
 .result { width: 100%; font-size: 13px; border-top: 1px solid var(--line); padding-top: 10px; display: grid; gap: 4px; }
 .result .r { display: flex; justify-content: space-between; gap: 10px; }
@@ -105,14 +147,28 @@
   .hud .player .rep { font-size: 22px; }
   .hud .player .who { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .hud .center .small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .ticket { padding: 14px 14px 14px 18px; }
-  .ticket h2 { font-size: 19px; }
-  .ticket .situation { font-size: 14px; }
+  /* En móvil el ticket cede altura para que el mazo entre antes en pantalla. */
+  .hud { gap: 8px; margin-bottom: 10px; }
+  .hud .player { padding: 8px 10px; }
+  .hud .player .rep { font-size: 22px; }
+  .hud .player .rep small { font-size: 10px; margin-left: 4px; }
+  .ticket { padding: 12px 12px 12px 16px; }
+  .ticket h2 { font-size: 18px; margin: 4px 0 6px; }
+  .ticket .situation { font-size: 14px; margin-bottom: 9px; }
+  .ticket .twist { margin-top: 9px; padding: 8px 11px; font-size: 13px; }
+  .table { margin: 12px 0; }
   .table { grid-template-columns: 1fr; gap: 12px; }
   .slot { min-height: 0; padding: 10px; }
   .hand { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; gap: 10px; padding: 10px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
   .hand-item { scroll-snap-align: center; flex: none; }
   .hand-wrap .hand-title { flex-direction: column; align-items: flex-start; gap: 2px; }
+  /* En móvil el mazo es el protagonista: carta grande y flechas pequeñas sobre las laterales. */
+  .slot.slot-deck { padding: 10px 4px 12px; }
+  .deck-card .card.size-m { --card-w: min(230px, calc(100vw - 108px)); }
+  .deck-stage { height: min(330px, calc((100vw - 108px) * 88 / 63)); }
+  .deck-nav { padding: 7px 9px; font-size: 11px; }
+  .deck-meta strong { font-size: 15px; }
+  .deck-hint { font-size: 11px; }
   .game-main { padding-bottom: 86px; }
   .game-actionbar { bottom: max(10px, env(safe-area-inset-bottom)); width: calc(100vw - 20px); }
   .endgame .actions button.primary { width: 100%; padding: 14px; font-size: 16px; }
@@ -148,7 +204,7 @@
 .onboarding-box { max-width: 460px; width: 100%; }
 .onboarding-box input { width: 100%; font-size: 18px; margin: 8px 0; }
 .onboarding-box .tag { font-size: 11px; color: var(--muted); letter-spacing: .14em; text-transform: uppercase; }
-.toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; background: var(--panel-2); border: 1px solid var(--accent); color: var(--text); padding: 12px 18px; border-radius: 10px; z-index: 60; transition: all .3s ease; max-width: 90vw; font-size: 14px; }
+.toast { pointer-events: none; position: fixed; left: 50%; bottom: calc(88px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px); opacity: 0; background: var(--panel-2); border: 1px solid var(--accent); color: var(--text); padding: 12px 18px; border-radius: 10px; z-index: 60; transition: all .3s ease; max-width: 90vw; font-size: 14px; }
 .toast.show { transform: translate(-50%, 0); opacity: 1; }
 
 /* Normas */

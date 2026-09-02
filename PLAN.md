@@ -77,7 +77,7 @@ Decisión de Fernando: el arcade se queda como está (5 tickets, mano de 5); má
 - [x] Arte de sobres en SVG: tira de apertura, trama, brillo animado, sello con el número de cartas y destellos en el sobre calabozo.
 - [x] Apertura cinematográfica a pantalla completa: sobre que tiembla y se rasga, cartas de una en una con destello radial por rareza y giro 3D, ficha consultable en cada carta, resumen final.
 - [x] Álbum oculto: solo se ven las cartas conseguidas alguna vez en el modo historia. Las demás son siluetas con la rareza. La búsqueda no delata a las no descubiertas.
-- [x] Botón de demostración "Descubrir toda la colección" (`config.demo.revealAllButton`), para enseñar el juego a Daniel Primo. **Retirar antes de compartirlo con la comunidad.**
+- [x] Botón de demostración "Descubrir toda la colección", para enseñar el juego a Daniel Primo. **Retirar antes de compartirlo con la comunidad** (ver `config.developer.enabled`, fase 6).
 - [x] Repositorio git inicializado.
 
 Pendiente de la fase, aplazado a propósito:
@@ -110,7 +110,15 @@ Pendiente de la fase, aplazado a propósito:
 - [x] Acceso a la tienda de sobres desde el álbum y desde el perfil.
 - [x] Panel "Tu plantilla" en el perfil: cartas en propiedad, copias, envíos, resueltos, burnouts acumulados y venta de repetidas.
 - [x] Desgaste de las cartas: tres burnouts y el malandrín deja la empresa, con contador que se reinicia al sobrevivir un sprint y avisos de "cuerda floja". Política elegida tras medir tres variantes (ver `CLAUDE.md`, "Desgaste de las cartas").
-- [ ] Poner `config.demo.revealAllButton` a `false` para la versión de la comunidad.
+- [x] Modo desarrollador en un solo interruptor (`config.developer.enabled`): gobierna el botón "Descubrir toda la colección" del álbum y el campo "Semilla (opcional)" del arcade, incluida la semilla del marcador y de la pantalla final.
+- [x] UX de la pantalla de partida, pensada para el móvil:
+  - La mano pasa a ser un **mazo** dentro del hueco "Tu malandrín": la carta activa delante y el resto asomando por detrás. Se cambia de carta arrastrando, con las flechas del teclado, con los botones Anterior/Siguiente o pulsando una carta lateral. La carta activa es la que se envía, así que elegir y enviar dejan de ser dos pasos.
+  - El hueco del rival no se dibuja mientras se elige: en modo máquina aparece con su carta al enviar; en dos jugadores no aparece nunca, porque no hay carta que enseñar hasta resolver. En su lugar, una franja de una línea.
+  - Botón de cerrar la ficha flotante (`position: fixed`): antes se iba con el desplazamiento del propio modal.
+  - En la fase de resultado ya no se pinta la mano entera, solo el recuento de disponibles.
+  - Corregido: el aviso emergente tapaba los clics del botón principal y se solapaba con la barra de acción.
+- [x] Comprobación del flujo a dos jugadores **por enlace**, que es la forma recomendada de compartir: A comparte, B lo abre y juega, comparte el resultado y A lo ve. Incluye el alta de quien abre el enlace sin cuenta y el rechazo de un enlace manipulado. El desplegable con el JSON se sigue comprobando como alternativa.
+- [ ] Poner `config.developer.enabled` a `false` para la versión de la comunidad.
 
 ---
 
@@ -119,7 +127,7 @@ Pendiente de la fase, aplazado a propósito:
 - [ ] Oponente LLM opcional: endpoint compatible OpenAI (incluye Ollama local) y Anthropic; solo elige carta y comenta la jugada. La clave se guarda en `localStorage` y nunca sale del navegador salvo hacia el endpoint configurado.
 - [ ] Sonido opcional (Web Audio, sin ficheros externos).
 - [ ] Revelado progresivo de cartas: publicar el juego con parte de la plantilla desactivada e ir activándola por fechas (a hablar con Daniel Primo). Encaja con `data/optout.js` y con el álbum oculto ya implementado.
-- [ ] Poner `config.demo.revealAllButton` a `false` en la versión pública.
+- [ ] Poner `config.developer.enabled` a `false` en la versión pública.
 - [ ] Publicación en GitHub Pages como *project site* (`cainuriel.github.io/malandrineitor`, no interfiere con la user site) y `README.md` final con créditos a la comunidad. Alternativa: distribuir el zip.
 
 ---

@@ -29,9 +29,9 @@ MI.album = (function () {
       el('button', { class: 'primary', text: 'Tienda de sobres', onclick: () => MI.story.openView('shop') }),
       el('span', { class: 'small muted', text: 'Las cartas se consiguen abriendo sobres en el modo historia.' })
     ]);
-    const demo = cfg.demo && cfg.demo.revealAllButton ? el('div', { class: 'row demo-row' }, [
+    const demo = MI.util.devMode() ? el('div', { class: 'row demo-row' }, [
       el('button', { class: MI.story.revealAll() ? '' : 'primary', text: MI.story.revealAll() ? 'Volver a ocultar las no descubiertas' : 'Descubrir toda la colección', onclick: () => { MI.story.setRevealAll(!MI.story.revealAll()); render(container); } }),
-      el('span', { class: 'small muted', text: 'Botón de demostración. Se retirará al compartir el juego con la comunidad.' })
+      el('span', { class: 'small muted', text: 'Opción de desarrollador. No aparece en la versión que se comparte con la comunidad.' })
     ]) : null;
     container.appendChild(el('div', { class: 'album-toolbar' }, [filters, search]));
     container.appendChild(shopRow);

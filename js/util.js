@@ -94,5 +94,12 @@ MI.util = (function () {
     window.scrollTo(0, lockedAt);
   }
 
-  return { hash, rng, clamp, round1, el, byId, lockScroll, unlockScroll };
+  // Modo desarrollador: interruptor único de config.developer.enabled.
+  // Gobierna el botón "Descubrir toda la colección" y el campo "Semilla (opcional)".
+  function devMode() {
+    const cfg = (MI.data && MI.data.config) || {};
+    return !!(cfg.developer && cfg.developer.enabled);
+  }
+
+  return { hash, rng, clamp, round1, el, byId, lockScroll, unlockScroll, devMode };
 })();

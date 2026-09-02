@@ -89,9 +89,26 @@ function check(ok, msg) { console.log((ok ? 'ok   ' : 'FALLO: ') + msg); if (!ok
         await page.click('.actions button.primary'); await page.waitForTimeout(400);
         const og = await overflow();
         check(og.sw <= og.iw + 1, `${f.name} · pantalla de partida sin desbordamiento` + (og.sw > og.iw + 1 ? ` (${og.culprits.join(', ')})` : ''));
-        await page.locator('.hand .card.selectable').first().click();
-        await page.click('.actions button.primary'); await page.waitForTimeout(600);
+        // El mazo elige por sí mismo: la carta activa es la que se envía.
+        check(await page.locator('.slot-deck .deck-card.is-current').count() === 1, `${f.name} · el mazo marca una carta activa`);
+        check(await page.locator('.slot').count() === 1, `${f.name} · el hueco del rival no ocupa sitio mientras se elige`);
+        const antes = await page.locator('.deck-meta strong').innerText();
+        await page.click('.deck-nav.next'); await page.waitForTimeout(350);
+        check((await page.locator('.deck-meta strong').innerText()) !== antes, `${f.name} · el mazo pasa al siguiente malandrín`);
+        const og2 = await overflow();
+        check(og2.sw <= og2.iw + 1, `${f.name} · el mazo no desborda el ancho` + (og2.sw > og2.iw + 1 ? ` (${og2.culprits.join(', ')})` : ''));
+        // Que el botón principal esté siempre libre importa más que el clic en sí:
+        // la barra es fija y el mazo queda justo encima.
+        const tapado = await page.evaluate(() => {
+          const b = document.querySelector('.actions button.primary');
+          const r = b.getBoundingClientRect();
+          const t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          return !(t === b || b.contains(t));
+        });
+        check(!tapado, `${f.name} · nada tapa el botón de enviar`);
+        await page.locator('.actions button.primary').evaluate((b) => b.click()); await page.waitForTimeout(600);
         check(await page.locator('.fx-stamp').count() > 0, `${f.name} · aparece el sello de resultado del ticket`);
+        check(await page.locator('.slot.opp-reveal').count() === 1, `${f.name} · la carta del rival aparece al enviar`);
       }
     }
 

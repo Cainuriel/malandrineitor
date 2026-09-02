@@ -7,6 +7,7 @@ MI.game = (function () {
   let S = null;          // estado de la partida en curso
   let container = null;
   let screen = 'setup';  // setup | play | end | export | resolved
+  let deckIndex = 0;     // carta activa del mazo de la mano (ver renderDeck)
   let pendingShared = null;
 
   const fmt = (n) => (Math.round(n * 10) / 10).toFixed(1);
@@ -28,6 +29,7 @@ MI.game = (function () {
       tickets: d.tickets.map((id) => lk.challenges[id]),
       ticket: 0, phase: 'choose', selected: null, lastResult: null, log: [], over: null, plays: [], stats: newStats()
     };
+    deckIndex = 0;
     screen = 'play';
   }
 
@@ -46,6 +48,7 @@ MI.game = (function () {
       tickets: opts.tickets.slice(),
       ticket: 0, phase: 'choose', selected: null, lastResult: null, log: [], over: null, plays: [], stats: newStats()
     };
+    deckIndex = 0;
     screen = 'play';
   }
 
@@ -64,6 +67,7 @@ MI.game = (function () {
       ticket: 0, phase: 'choose', selected: null, lastResult: null, log: [], over: null, plays: [], stats: newStats()
     };
     MI.match.role.set(match.id, role);
+    deckIndex = 0;
     screen = 'play';
   }
 
@@ -82,7 +86,7 @@ MI.game = (function () {
   function play() {
     const cfg = MI.data.config;
     const ch = current();
-    const mine = S.selected;
+    const mine = (S.selected && !S.burnout.me[S.selected.id]) ? S.selected : null;
     const noCard = () => ({ nobody: true, outcome: 'complicated', points: cfg.points.complicated[ch.difficulty], total: 0, threshold: cfg.thresholds[ch.difficulty], burnout: false });
 
     const me = mine ? MI.engine.resolve(mine, ch, { withTwist: true, rng: S.rng }, cfg) : noCard();
@@ -249,7 +253,7 @@ MI.game = (function () {
           el('option', { value: 'senior', text: 'Senior (juega bien)', selected: 'selected' }),
           el('option', { value: 'cto', text: 'CTO (no falla una)' })
         ])]),
-        el('div', { class: 'opt' }, [el('label', { text: 'Semilla (opcional)' }), el('input', { placeholder: 'Misma semilla, mismo reparto', oninput: (e) => { seed = e.target.value; } })]),
+        MI.util.devMode() ? el('div', { class: 'opt' }, [el('label', { text: 'Semilla (opcional)' }), el('input', { placeholder: 'Misma semilla, mismo reparto', oninput: (e) => { seed = e.target.value; } })]) : null,
         el('div', { class: 'actions' }, [el('button', { class: 'primary', text: 'Repartir cartas', onclick: () => { if (ensureName()) { newAiGame({ level, seed: seed || undefined }); render(); } } })])
       ]),
       el('h2', { style: { marginTop: '22px' }, text: 'A dos jugadores' }),
@@ -274,7 +278,7 @@ MI.game = (function () {
     ]));
   }
 
-  /* ---------- Render: partida ---------- */
+  /* ---------- Render: cabecera, ticket y resultado ---------- */
   function renderHud() {
     const cfg = MI.data.config;
     const oppRep = S.rep.opp == null ? '?' : S.rep.opp;
@@ -283,7 +287,7 @@ MI.game = (function () {
       el('div', { class: 'center' }, [
         el('div', { class: 'ticket-n', text: `Ticket ${Math.min(S.ticket + 1, S.tickets.length)} de ${S.tickets.length}` }),
         el('div', { class: 'progress' }, S.tickets.map((_, i) => el('i', { class: i < S.ticket ? 'done' : (i === S.ticket ? 'now' : '') }))),
-        el('div', { class: 'small muted', text: S.mode === 'ai' ? 'Nivel ' + S.level + ' · semilla ' + S.seed : 'Partida ' + S.match.id })
+        el('div', { class: 'small muted', text: S.mode === 'ai' ? 'Nivel ' + S.level + (MI.util.devMode() ? ' · semilla ' + S.seed : '') : 'Partida ' + S.match.id })
       ]),
       el('div', { class: 'player' }, [el('div', { class: 'who', text: S.oppName + (S.mode === 'ai' ? '' : ' · ' + cfg.company.name) }), el('div', { class: 'rep', html: oppRep + '<small>reputación</small>' })])
     ]);
@@ -299,7 +303,7 @@ MI.game = (function () {
         ? el('div', { class: 'twist revealed reveal' }, [el('span', { class: 'lbl', text: 'Giro' }), ch.twist.text, ' ',
             ...Object.entries(ch.twist.skills || {}).map(([k, w]) => el('span', { class: 'pill w', html: `${lk.skills[k].short} <b>+${w}</b>` })),
             ch.twist.tech ? el('span', { class: 'pill tech', text: 'Ahora la tecnología es ' + lk.techs[ch.twist.tech].name }) : null])
-        : el('div', { class: 'twist' }, [el('span', { class: 'lbl', text: 'Giro oculto' }), 'Este ticket tiene un giro que se revela después de elegir. Un malandrín polivalente lo aguanta mejor.']);
+        : el('div', { class: 'twist' }, [el('span', { class: 'lbl', text: 'Giro oculto' }), 'Se revela después de elegir. Un malandrín polivalente lo aguanta mejor.']);
     }
     return el('div', { class: 'ticket' }, [
       el('div', { class: 'kicker' }, ['Ticket #' + ch.id, diff, el('span', { text: 'Umbral ' + MI.data.config.thresholds[ch.difficulty] })]),
@@ -327,6 +331,127 @@ MI.game = (function () {
     MI.album.openDetail(card, { highlight: Object.keys(ch.skills), context: ch });
   }
 
+  /* ---------- El mazo de la mano ----------
+     La mano vive dentro del hueco "Tu malandrín": la carta activa delante y las demás
+     asomando por detrás, como un mazo. Se pasa de una a otra arrastrando, con las flechas
+     del teclado, con los botones o pulsando una carta lateral. La carta activa es la que
+     se envía: elegir y enviar dejan de ser dos pasos separados. */
+  function sendLabel() {
+    if (!available('me').length) return 'Nadie disponible: asumir el golpe';
+    if (!S.selected) return 'Elige un malandrín';
+    if (S.burnout.me[S.selected.id]) return S.selected.name + ' está quemado';
+    return 'Enviar a ' + S.selected.name;
+  }
+
+  function sendBlocked() {
+    if (!available('me').length) return false;   // sin nadie disponible se asume el golpe
+    return !S.selected || !!S.burnout.me[S.selected.id];
+  }
+
+  function syncSend() {
+    const b = document.getElementById('send-btn');
+    if (!b) return;
+    b.textContent = sendLabel();
+    if (sendBlocked()) b.setAttribute('disabled', 'disabled'); else b.removeAttribute('disabled');
+  }
+
+  function renderDeck(ch) {
+    const cards = S.hands.me;
+    const hl = Object.keys(ch.skills);
+    if (deckIndex < 0 || deckIndex >= cards.length) deckIndex = 0;
+    if (S.burnout.me[cards[deckIndex].id]) {
+      const first = cards.findIndex((card) => !S.burnout.me[card.id]);
+      if (first >= 0) deckIndex = first;
+    }
+
+    let suppressClick = false;
+    const stage = el('div', { class: 'deck-stage' });
+    const wraps = cards.map((card, i) => {
+      const turns = S.burnout.me[card.id];
+      const node = MI.card.render(card, { size: 'm', highlight: hl, state: turns ? 'burnout' : '' });
+      const w = el('div', { class: 'deck-card' + (turns ? ' is-burnout' : ''), onclick: () => { if (!suppressClick && i !== deckIndex) setIndex(i); } }, [node]);
+      stage.appendChild(w);
+      return w;
+    });
+
+    const prev = el('button', { class: 'deck-nav prev', text: 'Anterior', title: 'Malandrín anterior', onclick: () => setIndex(deckIndex - 1) });
+    const nextBtn = el('button', { class: 'deck-nav next', text: 'Siguiente', title: 'Malandrín siguiente', onclick: () => setIndex(deckIndex + 1) });
+    const deck = el('div', { class: 'deck', tabindex: '0' }, [prev, stage, nextBtn]);
+    const dots = el('div', { class: 'deck-dots' }, cards.map((card, i) => el('i', { class: S.burnout.me[card.id] ? 'burnt' : '', title: card.name, onclick: () => setIndex(i) })));
+    const meta = el('div', { class: 'deck-meta' });
+    const detailBtn = el('button', { class: 'ghost small-btn', text: 'Ver ficha', onclick: () => openCardDetail(cards[deckIndex], ch) });
+    const rescueBtn = el('button', { class: 'small-btn rescue', text: 'Rescatar del calabozo', onclick: () => { rescue('me', cards[deckIndex].id); render(); } });
+
+    function layout() {
+      wraps.forEach((w, i) => {
+        const d = i - deckIndex, a = Math.abs(d), sgn = d < 0 ? -1 : 1;
+        let t, sc, op, z, rot;
+        if (a === 0)      { t = 0;         sc = 1;    op = 1;   z = 10; rot = 0; }
+        else if (a === 1) { t = sgn * 58;  sc = 0.84; op = 0.6; z = 6;  rot = sgn * 5; }
+        else if (a === 2) { t = sgn * 88;  sc = 0.72; op = 0.3; z = 3;  rot = sgn * 8; }
+        else              { t = sgn * 104; sc = 0.66; op = 0;   z = 1;  rot = sgn * 10; }
+        w.style.transform = 'translate(-50%, 0) translateX(' + t + '%) scale(' + sc + ') rotate(' + rot + 'deg)';
+        w.style.opacity = op;
+        w.style.zIndex = z;
+        w.style.pointerEvents = op ? 'auto' : 'none';
+        w.classList.toggle('is-current', a === 0);
+      });
+      const card = cards[deckIndex];
+      const turns = S.burnout.me[card.id];
+      meta.innerHTML = '';
+      meta.appendChild(el('strong', { text: card.name }));
+      meta.appendChild(el('span', { class: 'small muted', text: (deckIndex + 1) + ' de ' + cards.length }));
+      if (turns) meta.appendChild(el('span', { class: 'pill burnt', text: 'Quemado · vuelve en ' + turns + (turns === 1 ? ' ticket' : ' tickets') }));
+      Array.from(dots.children).forEach((dot, i) => dot.classList.toggle('on', i === deckIndex));
+      rescueBtn.style.display = (turns && canRescue('me')) ? '' : 'none';
+      prev.disabled = deckIndex === 0;
+      nextBtn.disabled = deckIndex === cards.length - 1;
+      S.selected = card;
+      syncSend();
+    }
+
+    function setIndex(i) {
+      deckIndex = Math.max(0, Math.min(cards.length - 1, i));
+      layout();
+    }
+
+    // Arrastre con dedo o ratón. touch-action: pan-y deja libre el scroll vertical.
+    let sx = null, dx = 0;
+    deck.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      sx = e.clientX; dx = 0; suppressClick = false;
+    });
+    deck.addEventListener('pointermove', (e) => {
+      if (sx == null) return;
+      dx = e.clientX - sx;
+      if (Math.abs(dx) > 6) suppressClick = true;
+      stage.style.transform = 'translateX(' + (dx * 0.3) + 'px)';
+    });
+    const endDrag = () => {
+      if (sx == null) return;
+      stage.style.transform = '';
+      if (Math.abs(dx) > 40) setIndex(deckIndex + (dx < 0 ? 1 : -1));
+      sx = null; dx = 0;
+    };
+    deck.addEventListener('pointerup', endDrag);
+    deck.addEventListener('pointercancel', endDrag);
+    deck.addEventListener('pointerleave', endDrag);
+    deck.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); setIndex(deckIndex - 1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); setIndex(deckIndex + 1); }
+    });
+
+    layout();
+    return el('div', { class: 'deck-wrap' }, [
+      deck,
+      meta,
+      dots,
+      el('div', { class: 'deck-actions' }, [detailBtn, rescueBtn]),
+      el('div', { class: 'small muted deck-hint', text: 'Desliza el mazo o pulsa una carta de detrás. En naranja, las habilidades que pide el ticket.' })
+    ]);
+  }
+
+  /* ---------- Render: partida ---------- */
   function renderPlay(c) {
     const cfg = MI.data.config;
     const ch = current();
@@ -336,45 +461,49 @@ MI.game = (function () {
     left.appendChild(renderHud());
     left.appendChild(renderTicket(ch, S.phase === 'reveal'));
 
-    const mySlot = el('div', { class: 'slot' }, [el('div', { class: 'slot-title', text: 'Tu malandrín' })]);
-    const oppSlot = el('div', { class: 'slot' }, [el('div', { class: 'slot-title', text: 'El de ' + S.oppName })]);
+    const slots = [];
+    const mySlot = el('div', { class: 'slot mine' }, [el('div', { class: 'slot-title', text: 'Tu malandrín' })]);
+    slots.push(mySlot);
+    let strip = null;
+
     if (S.phase === 'choose') {
-      mySlot.appendChild(S.selected ? MI.card.render(S.selected, { size: 'm', highlight: Object.keys(ch.skills) }) : el('div', { class: 'placeholder', text: 'Elige una carta de tu mano y pulsa "Enviar". Con "Ver ficha" la lees entera antes de decidir.' }));
-      oppSlot.appendChild(MI.card.renderBack({ size: 'm' }));
-      oppSlot.appendChild(el('div', { class: 'small muted', text: S.mode === 'ai' ? available('opp').length + ' disponibles en su mano' : 'Juega a ciegas: verás su jugada al resolver la partida.' }));
+      // Mientras se elige no se dibuja el hueco del rival: era espacio vacío. Todo el ancho es para el mazo.
+      mySlot.classList.add('slot-deck');
+      mySlot.appendChild(renderDeck(ch));
+      strip = el('div', { class: 'opp-strip' }, [
+        el('span', { class: 'who', text: S.oppName }),
+        el('span', { class: 'small muted', text: S.mode === 'ai'
+          ? 'Elige a la vez que tú. Su carta se descubre al enviar la tuya. ' + available('opp').length + ' disponibles en su mano.'
+          : 'Juega a ciegas: verás su jugada al resolver la partida.' })
+      ]);
     } else {
       mySlot.appendChild(R.myCard ? MI.card.render(R.myCard, { size: 'm', highlight: Object.keys(R.me.weights || ch.skills) }) : el('div', { class: 'placeholder', text: 'Sin carta' }));
       mySlot.appendChild(renderResult(R.me, R.pay === 'me' ? cfg.points.payBonus : 0));
       if (!R.me.nobody) mySlot.appendChild(MI.fx.stamp(R.me.outcome, { pay: R.pay === 'me' }));
       if (S.mode === 'ai') {
+        // Aquí sí aparece: ya hay carta que enseñar.
+        const oppSlot = el('div', { class: 'slot opp-reveal' }, [el('div', { class: 'slot-title', text: 'El de ' + S.oppName })]);
         oppSlot.appendChild(R.oppCard ? MI.card.render(R.oppCard, { size: 'm', highlight: Object.keys(R.opp.weights || ch.skills) }) : el('div', { class: 'placeholder', text: 'Sin carta' }));
         oppSlot.appendChild(renderResult(R.opp, R.pay === 'opp' ? cfg.points.payBonus : 0));
+        slots.push(oppSlot);
       } else {
-        oppSlot.appendChild(MI.card.renderBack({ size: 'm' }));
-        oppSlot.appendChild(el('div', { class: 'small muted', text: 'La jugada del rival se compara al resolver la partida. La paga se decide entonces.' }));
+        strip = el('div', { class: 'opp-strip' }, [
+          el('span', { class: 'who', text: S.oppName }),
+          el('span', { class: 'small muted', text: 'Su jugada se compara al resolver la partida. La paga se decide entonces.' })
+        ]);
       }
     }
-    left.appendChild(el('div', { class: 'table' }, [mySlot, oppSlot]));
+
+    left.appendChild(el('div', { class: 'table' + (slots.length === 1 ? ' single' : '') }, slots));
+    if (strip) left.appendChild(strip);
     if (S.phase === 'reveal' && S.mode === 'ai') left.appendChild(el('div', { class: 'pay', text: R.pay ? (R.pay === 'me' ? 'Te llevas la paga' : S.oppName + ' se lleva la paga') : 'Empate: nadie se lleva la paga' }));
     if (S.phase === 'reveal' && R.items && R.items.length) left.appendChild(el('div', { class: 'points-list center' }, R.items.map((i) => el('span', { class: 'pill', text: i.label + ' +' + i.points }))));
+    if (S.phase === 'reveal') left.appendChild(el('div', { class: 'small muted center hand-left', text: available('me').length + ' de ' + S.hands.me.length + ' malandrines disponibles para el siguiente ticket.' }));
     if (S.phase === 'choose' && canRescue('me')) left.appendChild(el('p', { class: 'small', style: { color: 'var(--ok)', textAlign: 'center' }, text: 'El amo del calabozo está en tu mano: puedes rescatar a un malandrín quemado (una vez por partida).' }));
 
-    // Mano con botón "Ver ficha"
-    const hand = el('div', { class: 'hand' }, S.hands.me.map((card) => {
-      const turns = S.burnout.me[card.id];
-      const state = turns ? 'burnout' : (S.phase === 'reveal' ? 'dimmed' : '');
-      const node = MI.card.render(card, { size: 's', selectable: !turns && S.phase === 'choose', highlight: Object.keys(ch.skills), state, onSelect: () => { S.selected = card; render(); } });
-      if (S.selected && S.selected.id === card.id && S.phase === 'choose') node.classList.add('selected');
-      const rescueBtn = turns && S.phase === 'choose' && canRescue('me') ? el('button', { class: 'small-btn rescue', text: 'Rescatar del calabozo', onclick: (e) => { e.stopPropagation(); rescue('me', card.id); render(); } }) : null;
-      return el('div', { class: 'hand-item' }, [node, el('div', { class: 'row', style: { gap: '6px', justifyContent: 'center' } }, [el('button', { class: 'ghost small-btn', text: 'Ver ficha', onclick: (e) => { e.stopPropagation(); openCardDetail(card, ch); } }), rescueBtn])]);
-    }));
-    left.appendChild(el('div', { class: 'hand-wrap' }, [
-      el('div', { class: 'hand-title' }, [el('h2', { text: 'Tu mano' }), el('span', { class: 'small muted', text: 'En naranja, las habilidades que pide el ticket.' })]),
-      hand
-    ]));
     const lastOne = S.ticket + 1 >= S.tickets.length || S.over;
     left.appendChild(el('div', { class: 'actions game-actionbar' }, S.phase === 'choose'
-      ? [el('button', { class: 'primary', text: S.selected ? 'Enviar a ' + S.selected.name : (available('me').length ? 'Elige un malandrín' : 'Nadie disponible: asumir el golpe'), disabled: (!S.selected && available('me').length) ? 'disabled' : null, onclick: play })]
+      ? [el('button', { class: 'primary', id: 'send-btn', text: sendLabel(), disabled: sendBlocked() ? 'disabled' : null, onclick: play })]
       : [el('button', { class: 'primary', text: lastOne ? (S.mode === 'ai' ? 'Ver resultado final' : (S.role === 'A' ? 'Terminar y exportar' : 'Resolver la partida')) : 'Siguiente ticket', onclick: next })]));
 
     const log = el('div', { class: 'panel log' }, [el('h3', { text: 'Registro del sprint' }), ...(S.log.length ? S.log.map((e) => el('div', { class: 'entry ' + e.cls, html: e.html })) : [el('div', { class: 'entry', text: 'Aún no ha pasado nada. Todo en verde. Sospechoso.' })])]);
@@ -405,7 +534,7 @@ MI.game = (function () {
     maybeSplash();
     c.appendChild(el('div', { class: 'endgame' }, [
       el('h1', { text: msg }),
-      el('div', { class: 'score', text: `${S.myName} ${S.rep.me} · ${S.oppName} ${S.rep.opp}` + (S.story ? '' : ' · semilla ' + S.seed) }),
+      el('div', { class: 'score', text: `${S.myName} ${S.rep.me} · ${S.oppName} ${S.rep.opp}` + (S.story || !MI.util.devMode() ? '' : ' · semilla ' + S.seed) }),
       renderPoints(S.stats.items, S.points, S.level),
       el('div', { class: 'actions' }, S.story
         ? [el('button', { class: 'primary', text: 'Volver a la oficina', onclick: () => { S = null; screen = 'setup'; MI.app.go('story'); } })]

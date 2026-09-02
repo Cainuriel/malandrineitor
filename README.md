@@ -38,7 +38,7 @@ Todo está en `data/`: `cards.js` (cartas), `skills.js` (habilidades), `techs.js
 
 ## Antes de compartir el juego
 
-En `data/config.js`, poner `demo.revealAllButton` a `false`: es el botón "Descubrir toda la colección" del álbum, pensado solo para enseñar el juego sin tener que jugar la campaña entera.
+En `data/config.js`, poner `developer.enabled` a `false`. Es el único interruptor de las opciones de desarrollador: el botón "Descubrir toda la colección" del álbum y el campo "Semilla (opcional)" del arcade, pensados para enseñar el juego sin jugar la campaña entera y para repetir un reparto concreto.
 
 ## Retirar una carta
 

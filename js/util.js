@@ -49,7 +49,11 @@ MI.util = (function () {
         else if (k === 'html') node.innerHTML = v;
         else if (k === 'text') node.textContent = v;
         else if (k.startsWith('on') && typeof v === 'function') node.addEventListener(k.slice(2), v);
-        else if (k === 'style' && typeof v === 'object') Object.assign(node.style, v);
+        // Object.assign no sirve para propiedades personalizadas (--algo): hay que
+        // pasar por setProperty. Sin esto, --sk y --q se descartaban en silencio.
+        else if (k === 'style' && typeof v === 'object') {
+          for (const p in v) { if (p.startsWith('--')) node.style.setProperty(p, v[p]); else node.style[p] = v[p]; }
+        }
         else node.setAttribute(k, v);
       }
     }

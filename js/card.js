@@ -74,9 +74,23 @@ MI.card = (function () {
       el('div', { class: 'card-foot' }, [el('span', { text: cfg.company.name }), el('span', { class: 'id', text: '#' + card.id })])
     ]);
 
-    const inner = el('div', { class: 'card-inner' }, [frame, el('div', { class: 'card-holo' }), el('div', { class: 'card-shine' })]);
+    // Quemaduras del modo historia: una esquina chamuscada por cada burnout acumulado.
+    // Al llegar a config.story.burnoutLimit el malandrín deja la empresa, así que en
+    // pantalla nunca se ven más de burnoutLimit - 1.
+    const burns = Math.max(0, Math.min(3, opts.burns || 0));
+    const burnNodes = [];
+    for (let i = 0; i < burns; i++) {
+      // La semilla del filtro depende de la carta y de la esquina: dos quemaduras nunca
+      // salen calcadas, pero la misma carta se ve siempre igual.
+      const v = (MI.util.hash(card.id + '|' + i) % 3) + 1;
+      burnNodes.push(el('div', { class: 'card-burn burn-' + (i + 1), style: { '--q': 'url(#mi-quemadura-' + v + ')' } },
+        [el('i', { class: 'ember' }), el('i', { class: 'smoke' }), el('i', { class: 'smoke b' })]));
+    }
+
+    const inner = el('div', { class: 'card-inner' }, [frame, el('div', { class: 'card-holo' }), el('div', { class: 'card-shine' }), ...burnNodes]);
     const hasHl = skills.some((e) => e.hl);
-    const root = el('div', { class: 'card rarity-' + card.rarity + (opts.size ? ' size-' + opts.size : '') + (opts.selectable ? ' selectable' : '') + (opts.state ? ' ' + opts.state : '') + (hasHl ? ' has-hl' : ''), 'data-card': card.id }, inner);
+    const root = el('div', { class: 'card rarity-' + card.rarity + (opts.size ? ' size-' + opts.size : '') + (opts.selectable ? ' selectable' : '') + (opts.state ? ' ' + opts.state : '') + (hasHl ? ' has-hl' : '') + (burns ? ' burned burned-' + burns : ''), 'data-card': card.id,
+      title: burns ? card.name + ': ' + burns + (burns === 1 ? ' quemadura' : ' quemaduras') : null }, inner);
 
     if (opts.tilt !== false) attachTilt(root);
     if (opts.selectable && opts.onSelect) root.addEventListener('click', () => opts.onSelect(card, root));

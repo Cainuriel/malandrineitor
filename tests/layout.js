@@ -55,9 +55,36 @@ function check(ok, msg) { console.log((ok ? 'ok   ' : 'FALLO: ') + msg); if (!ok
       return { top: body.getBoundingClientRect().top, scrollable: m.scrollHeight > m.clientHeight, hidden: body.getBoundingClientRect().top < -1 };
     });
     check(modal && !modal.hidden, `${f.name} · la ficha ampliada no queda recortada por arriba`);
-    await page.click('.modal .close'); await page.waitForTimeout(200);
+    // Se cierra pulsando encima de la propia carta, no solo en el botón.
+    await page.locator('.modal .card').evaluate((n) => n.click()); await page.waitForTimeout(250);
+    check(await page.locator('.modal').count() === 0, `${f.name} · la ficha se cierra al pulsar sobre ella`);
     const restored = await page.evaluate(() => getComputedStyle(document.body).position);
     check(restored !== 'fixed', `${f.name} · el scroll del fondo se restaura al cerrar la ficha`);
+
+    // Y con el botón, sin descuadrar el contador de bloqueos de scroll.
+    await page.click('.album-grid .card'); await page.waitForTimeout(300);
+    await page.click('.modal .close'); await page.waitForTimeout(250);
+    check(await page.locator('.modal').count() === 0, `${f.name} · la ficha se cierra con el botón`);
+    check((await page.evaluate(() => getComputedStyle(document.body).position)) !== 'fixed', `${f.name} · un solo desbloqueo de scroll por cierre`);
+
+    // Quemaduras: una esquina por burnout acumulado, con el filtro de ruido aplicado.
+    const quemadas = await page.evaluate(() => {
+      const c = MI.data.cards[0];
+      const dos = MI.card.render(c, { burns: 2 });
+      const cero = MI.card.render(c, { burns: 0 });
+      const uno = MI.card.render(c, { burns: 1 });
+      return {
+        dos: dos.querySelectorAll('.card-burn').length,
+        cero: cero.querySelectorAll('.card-burn').length,
+        uno: uno.querySelectorAll('.card-burn').length,
+        clase: dos.classList.contains('burned-2'),
+        filtro: /url\(#mi-quemadura-\d\)/.test(dos.querySelector('.card-burn').style.getPropertyValue('--q')),
+        defs: !!document.getElementById('mi-quemadura-1')
+      };
+    });
+    check(quemadas.cero === 0 && quemadas.uno === 1 && quemadas.dos === 2, `${f.name} · una esquina quemada por burnout acumulado`);
+    check(quemadas.clase, `${f.name} · la carta quemada lleva su clase de estado`);
+    check(quemadas.filtro && quemadas.defs, `${f.name} · la quemadura usa el filtro de ruido declarado en la página`);
 
     // Apertura de sobre: la escena debe ser recorrible entera
     await page.goto(url + '#story'); await page.waitForTimeout(250);

@@ -157,6 +157,20 @@ Hay tres capas que ocupan la ventana entera: la apertura de sobres (`.opening-ov
 
 - La capa es un bloque con `overflow-y: auto` y `overscroll-behavior: contain`; **el contenido se centra en un hijo** con `min-height: 100%` y `justify-content: center`. Centrar con `place-items: center` directamente en un contenedor con scroll recorta por arriba todo lo que sea más alto que la ventana, y esa parte ya no se puede alcanzar.
 - El scroll del fondo se bloquea con `MI.util.lockScroll()` / `unlockScroll()`, que llevan un contador de capas abiertas, fijan el body guardando la posición y la restauran al cerrar. No usar `body { overflow: hidden }` a pelo: pierde la posición de lectura y no funciona bien en iOS.
+## Quemaduras de las cartas
+
+Cada burnout acumulado de la campaña (`story.strikes[id]`) pinta una esquina chamuscada en la carta: `MI.card.render(card, { burns: n })`. Como al llegar a `config.story.burnoutLimit` (3) el malandrín deja la empresa, en pantalla nunca se ven más de dos.
+
+- Las dos quemaduras van **abajo**, sobre el pie de la carta. Arriba está el nombre y no se puede tapar: la carta tiene que seguir identificando a una persona real.
+- El centro de los círculos es el propio vértice, así que solo se ve un cuarto: la esquina se ha consumido, no hay un agujero en medio.
+- El borde no es un arco perfecto porque un filtro SVG de `feTurbulence` + `feDisplacementMap` lo deforma (`#mi-quemadura-1..3`, declarados en `index.html`). La semilla se elige con `MI.util.hash(card.id + '|' + i)`: dos quemaduras nunca salen calcadas y la misma carta se ve siempre igual.
+- La brasa late y suben dos volutas de humo; ambas cosas se desactivan con `prefers-reduced-motion`.
+- Se pasan a: la colección y la elección de plantilla (modo historia), el mazo y la carta enviada durante el sprint, y la ficha ampliada. El arcade no las muestra: reparte manos sueltas y no tiene colección que desgastar.
+
+## La ficha ampliada
+
+Se cierra pulsando **en cualquier sitio**, no solo en el botón, que además es flotante (`position: fixed`). Dos cautelas: si el gesto ha sido un arrastre de más de 8px o hay texto seleccionado no cuenta como clic, y `close()` lleva una guarda contra el doble cierre, porque el clic del botón sigue subiendo hasta el modal y `unlockScroll()` se llamaría dos veces, descuadrando el contador de bloqueos.
+
 ## La pantalla de partida
 
 La mano **no** es una fila de cartas: es un **mazo** dentro del hueco "Tu malandrín" (`renderDeck` en `js/game.js`). La carta activa va delante y las demás asoman detrás, escaladas, giradas y oscurecidas. Se cambia de carta arrastrando (`pointerdown/move/up` con umbral de 40px), con las flechas del teclado, con los botones Anterior/Siguiente o pulsando una carta lateral.
@@ -169,6 +183,7 @@ Decisiones que conviene no deshacer sin motivo:
 - **Los bordes del mazo se difuminan** con `mask-image` en `.deck` en lugar de recortar en seco: se ve que el mazo continúa.
 - **Un malandrín quemado se puede tener delante** (para rescatarlo con Daniel Primo), pero el botón de enviar se bloquea y `play()` no lo acepta.
 
+- `MI.util.el` acepta propiedades personalizadas en `style` (`--sk`, `--q`) porque las pasa por `setProperty`. `Object.assign(node.style, …)` **las descarta en silencio**: durante un tiempo las barras de habilidad se pintaron todas del color por defecto por este motivo.
 - Los elementos de rejilla y flex que contengan texto largo necesitan `min-width: 0`; si no, no bajan del ancho de su contenido y desbordan (pasó con el marcador y con la mano de cartas).
 
 `tests/layout.js` recorre las vistas y estas capas en cinco formatos (móvil vertical y apaisado, tablet, portátil y pantalla grande) comprobando que no hay desbordamiento horizontal, que nada queda recortado por arriba, que el scroll del fondo se restaura y que no hay errores de consola. **Ejecutarlo tras cualquier cambio de maquetación.**

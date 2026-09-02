@@ -118,6 +118,9 @@ Pendiente de la fase, aplazado a propósito:
   - En la fase de resultado ya no se pinta la mano entera, solo el recuento de disponibles.
   - Corregido: el aviso emergente tapaba los clics del botón principal y se solapaba con la barra de acción.
 - [x] Comprobación del flujo a dos jugadores **por enlace**, que es la forma recomendada de compartir: A comparte, B lo abre y juega, comparte el resultado y A lo ve. Incluye el alta de quien abre el enlace sin cuenta y el rechazo de un enlace manipulado. El desplegable con el JSON se sigue comprobando como alternativa.
+- [x] Quemaduras en las cartas: una esquina chamuscada por burnout acumulado, con borde irregular por filtro SVG, brasa que late y humo. Van abajo para no tapar el nombre.
+- [x] La ficha ampliada se cierra pulsando en cualquier sitio, no solo en el botón.
+- [x] Corregido: `MI.util.el` descartaba las propiedades personalizadas de `style`, así que las barras de habilidad se pintaban todas del color por defecto en vez del color de su grupo.
 - [ ] Poner `config.developer.enabled` a `false` para la versión de la comunidad.
 
 ---

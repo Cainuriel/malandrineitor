@@ -69,12 +69,24 @@ MI.album = (function () {
       el('td', { class: 'g', text: (groups[e.s.group] || {}).name || '' }),
       el('td', { text: String(e.v) })
     ])));
-    const close = () => { modal.remove(); MI.util.unlockScroll(); document.removeEventListener('keydown', onKey); };
+    // Guarda contra el doble cierre: el botón cierra y su clic sigue subiendo hasta el modal.
+    // Sin ella, unlockScroll() se llamaría dos veces y descuadraría el contador de bloqueos.
+    let closed = false;
+    const close = () => { if (closed) return; closed = true; modal.remove(); MI.util.unlockScroll(); document.removeEventListener('keydown', onKey); };
     const onKey = (e) => { if (e.key === 'Escape') close(); };
-    const modal = el('div', { class: 'modal', onclick: (e) => { if (e.target === modal) close(); } }, [
+    // Se cierra pulsando en cualquier parte, no solo en el fondo ni en el botón.
+    // Se respeta la selección de texto: si el gesto ha sido un arrastre, no cuenta como clic.
+    let downAt = null;
+    const modal = el('div', { class: 'modal',
+      onpointerdown: (e) => { downAt = { x: e.clientX, y: e.clientY }; },
+      onclick: (e) => {
+        if (downAt && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 8) return;
+        if (window.getSelection && String(window.getSelection())) return;
+        close();
+      } }, [
       el('button', { class: 'close', text: 'Cerrar', onclick: close }),
       el('div', { class: 'modal-body' }, [
-        MI.card.render(card, { size: 'l', topSkills: 6, highlight: opts.highlight }),
+        MI.card.render(card, { size: 'l', topSkills: 6, highlight: opts.highlight, burns: opts.burns || 0 }),
         el('div', { class: 'detail panel' }, [
           el('h2', { text: card.name }),
           el('p', { class: 'muted', text: card.title || '' }),

@@ -441,9 +441,9 @@ MI.story = (function () {
       .sort((a, b) => (s.owned[b.id] ? 1 : 0) - (s.owned[a.id] ? 1 : 0) || ORDER.indexOf(b.rarity) - ORDER.indexOf(a.rarity) || a.name.localeCompare(b.name))
       .map((card) => {
         const n = s.owned[card.id] || 0;
-        const node = n ? MI.card.render(card, { selectable: true, onSelect: (cd) => MI.album.openDetail(cd) }) : MI.card.renderHidden(card);
-        const price = cfg().sellPrice[card.rarity] || 0;
         const st = s.strikes[card.id] || 0;
+        const node = n ? MI.card.render(card, { selectable: true, burns: st, onSelect: (cd) => MI.album.openDetail(cd, { burns: st }) }) : MI.card.renderHidden(card);
+        const price = cfg().sellPrice[card.rarity] || 0;
         return el('div', { class: 'hand-item' }, [node,
           el('div', { class: 'row', style: { gap: '6px', justifyContent: 'center' } }, [
             el('span', { class: 'pill', text: n ? 'x' + n : 'No la tienes' }),
@@ -471,7 +471,7 @@ MI.story = (function () {
     const grid = el('div', { class: 'album-grid squad-grid' }, owned
       .sort((a, b) => ORDER.indexOf(b.rarity) - ORDER.indexOf(a.rarity) || a.name.localeCompare(b.name))
       .map((card) => el('div', { class: 'hand-item' }, [
-        MI.card.render(card, { size: 'm', selectable: true, onSelect: () => { if (picked.includes(card.id)) picked = picked.filter((x) => x !== card.id); else if (picked.length < N) picked.push(card.id); refresh(); } }),
+        MI.card.render(card, { size: 'm', selectable: true, burns: s.strikes[card.id] || 0, onSelect: () => { if (picked.includes(card.id)) picked = picked.filter((x) => x !== card.id); else if (picked.length < N) picked.push(card.id); refresh(); } }),
         el('button', { class: 'ghost small-btn', text: 'Ver ficha', onclick: (e) => { e.stopPropagation(); MI.album.openDetail(card); } })
       ])));
     c.appendChild(el('div', { class: 'row', style: { marginBottom: '12px' } }, [counter, el('button', { class: 'ghost small-btn', text: 'Elegir automáticamente', onclick: () => { picked = autoSquad(owned, N); refresh(); } })]));

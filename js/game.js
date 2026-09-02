@@ -328,7 +328,7 @@ MI.game = (function () {
   }
 
   function openCardDetail(card, ch) {
-    MI.album.openDetail(card, { highlight: Object.keys(ch.skills), context: ch });
+    MI.album.openDetail(card, { highlight: Object.keys(ch.skills), context: ch, burns: strikesMap()[card.id] || 0 });
   }
 
   /* ---------- El mazo de la mano ----------
@@ -355,9 +355,17 @@ MI.game = (function () {
     if (sendBlocked()) b.setAttribute('disabled', 'disabled'); else b.removeAttribute('disabled');
   }
 
+  // Quemaduras acumuladas de la campaña. Solo el modo historia las tiene: el arcade
+  // reparte manos sueltas y no hay colección que desgastar.
+  function strikesMap() {
+    if (!S || !S.story || !MI.story) return {};
+    try { return MI.story.load().strikes || {}; } catch (e) { return {}; }
+  }
+
   function renderDeck(ch) {
     const cards = S.hands.me;
     const hl = Object.keys(ch.skills);
+    const burns = strikesMap();
     if (deckIndex < 0 || deckIndex >= cards.length) deckIndex = 0;
     if (S.burnout.me[cards[deckIndex].id]) {
       const first = cards.findIndex((card) => !S.burnout.me[card.id]);
@@ -368,7 +376,7 @@ MI.game = (function () {
     const stage = el('div', { class: 'deck-stage' });
     const wraps = cards.map((card, i) => {
       const turns = S.burnout.me[card.id];
-      const node = MI.card.render(card, { size: 'm', highlight: hl, state: turns ? 'burnout' : '' });
+      const node = MI.card.render(card, { size: 'm', highlight: hl, burns: burns[card.id] || 0, state: turns ? 'burnout' : '' });
       const w = el('div', { class: 'deck-card' + (turns ? ' is-burnout' : ''), onclick: () => { if (!suppressClick && i !== deckIndex) setIndex(i); } }, [node]);
       stage.appendChild(w);
       return w;
@@ -477,7 +485,7 @@ MI.game = (function () {
           : 'Juega a ciegas: verás su jugada al resolver la partida.' })
       ]);
     } else {
-      mySlot.appendChild(R.myCard ? MI.card.render(R.myCard, { size: 'm', highlight: Object.keys(R.me.weights || ch.skills) }) : el('div', { class: 'placeholder', text: 'Sin carta' }));
+      mySlot.appendChild(R.myCard ? MI.card.render(R.myCard, { size: 'm', highlight: Object.keys(R.me.weights || ch.skills), burns: strikesMap()[R.myCard.id] || 0 }) : el('div', { class: 'placeholder', text: 'Sin carta' }));
       mySlot.appendChild(renderResult(R.me, R.pay === 'me' ? cfg.points.payBonus : 0));
       if (!R.me.nobody) mySlot.appendChild(MI.fx.stamp(R.me.outcome, { pay: R.pay === 'me' }));
       if (S.mode === 'ai') {

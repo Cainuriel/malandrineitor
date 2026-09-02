@@ -178,3 +178,58 @@
   .card.rarity-epica .card-holo { opacity: .18; }
   .card.rarity-legendaria .card-holo { opacity: .3; }
 }
+
+/* ---------- Quemaduras del modo historia ----------
+   Una esquina chamuscada por cada burnout acumulado (`opts.burns` en MI.card.render).
+   La mancha se compone de círculos desalineados para que el borde no sea un arco
+   perfecto: negro opaco en el vértice, carbón alrededor y un filo de brasa fino que
+   respira. Dos volutas de humo suben por dentro, porque .card-inner recorta. */
+.card-burn { position: absolute; width: 26%; aspect-ratio: 1; pointer-events: none; z-index: 4; --q: none; }
+.card-burn::before {
+  content: ""; position: absolute; inset: 0; filter: var(--q);
+  background:
+    radial-gradient(circle at var(--cx) var(--cy), #000 0 46%, rgba(0,0,0,.9) 51%, rgba(0,0,0,0) 55%),
+    radial-gradient(circle at var(--x2) var(--y2), #080402 0 23%, rgba(8,4,2,0) 27%),
+    radial-gradient(circle at var(--x3) var(--y3), #080402 0 20%, rgba(8,4,2,0) 24%),
+    radial-gradient(circle at var(--cx) var(--cy), rgba(30,15,6,.9) 0 60%, rgba(30,15,6,.45) 74%, rgba(30,15,6,.16) 86%, rgba(0,0,0,0) 100%);
+}
+/* Filo de brasa: sigue el borde de lo carbonizado, no lo rodea entero. */
+.card-burn .ember {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at var(--cx) var(--cy), rgba(0,0,0,0) 0 46%, rgba(255,140,30,.75) 49%, rgba(255,60,0,.25) 53%, rgba(0,0,0,0) 58%),
+    radial-gradient(circle at var(--x2) var(--y2), rgba(0,0,0,0) 0 23%, rgba(255,116,18,.45) 26%, rgba(0,0,0,0) 31%);
+  mix-blend-mode: screen; filter: var(--q);
+  animation: brasa 2.6s ease-in-out infinite;
+}
+.card-burn .smoke {
+  position: absolute; left: var(--sx); top: var(--sy);
+  width: 30%; aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle, rgba(206,201,195,.42), rgba(206,201,195,0) 70%);
+  filter: blur(3px); opacity: 0;
+  animation: humo 3.6s linear infinite;
+}
+.card-burn .smoke.b { width: 20%; animation-delay: 1.8s; animation-duration: 4.4s; }
+
+/* Las dos quemaduras van abajo, sobre el pie de la carta: arriba está el nombre y no
+   se puede tapar. El centro del círculo es el propio vértice, así que solo se ve un
+   cuarto: la esquina se ha consumido. Nada de scaleX para reflejarla, giraría también
+   el humo, que siempre sube. */
+.card-burn.burn-1 { right: 0; bottom: 0; --cx: 100%; --cy: 100%; --x2: 58%; --y2: 100%; --x3: 100%; --y3: 58%; --sx: 34%; --sy: 30%; }
+.card-burn.burn-2 { left: 0;  bottom: 0; --cx: 0;    --cy: 100%; --x2: 42%; --y2: 100%; --x3: 0;    --y3: 58%; --sx: 30%; --sy: 30%; }
+.card-burn.burn-3 { right: 0; top: 0;    --cx: 100%; --cy: 0;    --x2: 58%; --y2: 0;    --x3: 100%; --y3: 42%; --sx: 30%; --sy: 18%; }
+
+/* El papel se ensombrece hacia las esquinas tocadas. */
+.card.burned-1 .card-inner { box-shadow: inset -12px -12px 22px -12px rgba(0,0,0,.9), 0 18px 40px rgba(0,0,0,.55); }
+.card.burned-2 .card-inner { box-shadow: inset -12px -12px 22px -12px rgba(0,0,0,.9), inset 12px -12px 22px -12px rgba(0,0,0,.9), 0 18px 40px rgba(0,0,0,.55); }
+
+@keyframes brasa { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+@keyframes humo {
+  0%   { transform: translate(0, 0) scale(.4); opacity: 0; }
+  20%  { opacity: .45; }
+  100% { transform: translate(-45%, -210%) scale(1.6); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-burn .ember { animation: none; opacity: .8; }
+  .card-burn .smoke { display: none; }
+}

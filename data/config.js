@@ -110,10 +110,11 @@ MI.data.config = {
 
   // Modo desarrollador: un único interruptor para todo lo que no debe ver la comunidad.
   // Con enabled: true aparecen el botón "Descubrir toda la colección" del álbum y el campo
-  // "Semilla (opcional)" del modo arcade. Con enabled: false desaparecen los dos.
-  // PONER A false ANTES DE COMPARTIR EL JUEGO CON LA COMUNIDAD.
+  // "Semilla (opcional)" del modo arcade, que sirven para enseñar el juego sin jugarlo
+  // entero y para repetir un reparto concreto. Desconectado para la versión pública:
+  // volver a ponerlo a true solo en local, y nunca subirlo así.
   developer: {
-    enabled: true
+    enabled: false
   },
 
   ai: {

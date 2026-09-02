@@ -18,7 +18,7 @@ Abre `index.html` en el navegador. No necesita servidor, red ni instalación. Si
 
 ## Dos jugadores por enlace
 
-Uno crea la partida y juega sus cinco tickets a ciegas; comparte el enlace generado con su rival. El rival lo abre, juega los mismos tickets con su propia mano y devuelve otro enlace con la partida resuelta. Las jugadas van ofuscadas y la partida firmada; no es seguridad, es para que no sea trivial hacer trampas. El JSON se puede descargar como respaldo. Detalle en `docs/DOS_JUGADORES.md`.
+Uno crea la partida y juega sus cinco tickets a ciegas; comparte el enlace generado con su rival. El rival lo abre, juega los mismos tickets con su propia mano y devuelve otro enlace con la partida resuelta. Las jugadas van ofuscadas y la partida firmada; no es seguridad, es para que no sea trivial hacer trampas. El enlace ronda los 140 caracteres: lleva la partida entera comprimida en formato binario, sin servidor de por medio. El JSON se puede descargar como respaldo. Detalle en `docs/DOS_JUGADORES.md`.
 
 ## Cuenta, puntos y modo historia
 
@@ -36,9 +36,9 @@ Todo está en `data/`: `cards.js` (cartas), `skills.js` (habilidades), `techs.js
 - `CHROME_PATH=/ruta/a/chrome node tests/layout.js` revisa la maquetación en móvil, móvil apaisado, tablet, portátil y pantalla grande.
 - `CHROME_PATH=/ruta/a/chrome node tests/screenshots.js` genera capturas y recorre el flujo a dos jugadores.
 
-## Antes de compartir el juego
+## Opciones de desarrollador
 
-En `data/config.js`, poner `developer.enabled` a `false`. Es el único interruptor de las opciones de desarrollador: el botón "Descubrir toda la colección" del álbum y el campo "Semilla (opcional)" del arcade, pensados para enseñar el juego sin jugar la campaña entera y para repetir un reparto concreto.
+El interruptor `developer.enabled`, en `data/config.js`. Con `true` aparecen el botón "Descubrir toda la colección" del álbum y el campo "Semilla (opcional)" del arcade, útiles para enseñar el juego sin jugarlo entero y para repetir un reparto concreto. La versión pública lo lleva a `false`.
 
 ## Retirar una carta
 

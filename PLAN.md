@@ -124,7 +124,8 @@ Pendiente de la fase, aplazado a propósito:
 - [x] Corregido el fallo de los enlaces de vuelta: el enlace ya no arrastra `result`, que ocupaba tres cuartas partes del payload y lo dejaba en 6.260 caracteres. Se reconstruye en destino. De ida ~1.100, de vuelta ~1.500.
 - [x] Mensajes distintos para enlace cortado, enlace retocado y enlace propio abierto por su autor. Este último deja de ser un aviso sin salida y pasa a ser un panel con la opción de volver a compartirlo.
 - [x] El desplegable de carga acepta un enlace pegado entero, no solo el JSON.
-- [ ] Poner `config.developer.enabled` a `false` para la versión de la comunidad.
+- [x] Enlace de partida en formato binario: de 6.260 caracteres a 130-155. Sin `result`, sin doble base64, sin nombres de carta ni de ticket (se deducen de la semilla) y con las jugadas en un byte cada una. Con huella del catálogo y longitud declarada para distinguir un enlace cortado de uno manipulado. Los enlaces del formato anterior se siguen abriendo.
+- [x] `config.developer.enabled` a `false`: la versión pública no muestra el botón de descubrir la colección ni el campo de semilla.
 
 ---
 

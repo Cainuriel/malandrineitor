@@ -47,7 +47,11 @@ function check(ok, msg) { console.log((ok ? 'ok   ' : 'FALLO: ') + msg); if (!ok
 
     // Ficha ampliada: se debe poder llegar al principio y al final del contenido
     await page.goto(url + '#album'); await page.waitForTimeout(250);
-    await page.click('text=Descubrir toda la colección'); await page.waitForTimeout(250);
+    // El botón de descubrir la colección solo existe en modo desarrollador; la prueba
+    // necesita cartas visibles, así que se activa la bandera directamente.
+    // (Volver a navegar a la misma URL no repinta: hay que pedir el repintado.)
+    await page.evaluate(() => { MI.story.setRevealAll(true); MI.app.go('album'); });
+    await page.waitForTimeout(300);
     await page.click('.album-grid .card'); await page.waitForTimeout(350);
     const modal = await page.evaluate(() => {
       const m = document.querySelector('.modal'); if (!m) return null;

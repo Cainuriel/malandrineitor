@@ -50,7 +50,9 @@ const { chromium } = require('playwright');
     await page.screenshot({ path: path.join(out, `menu${sfx}.png`) });
     await go(page, 'album');
     await page.screenshot({ path: path.join(out, `album-hidden${sfx}.png`), fullPage: false });
-    await page.click('text=Descubrir toda la colección');
+    // El botón solo existe en modo desarrollador; las capturas del álbum necesitan
+    // las cartas visibles, así que se activa la bandera y se pide el repintado.
+    await page.evaluate(() => { MI.story.setRevealAll(true); MI.app.go('album'); });
     await page.waitForTimeout(300);
     await page.screenshot({ path: path.join(out, `album${sfx}.png`), fullPage: !mobile });
 
@@ -163,6 +165,13 @@ const { chromium } = require('playwright');
         await page.locator('.deck-nav.next').evaluate((b) => b.click());
         await page.waitForTimeout(200);
       }
+      // Deslizar puede dejarte sobre un malandrín quemado, y entonces el botón de
+      // enviar se bloquea con razón: hay que moverse hasta uno disponible.
+      for (let k = 0; k < 6 && await page.locator('.actions button.primary').evaluate((b) => b.disabled); k++) {
+        const haySiguiente = await page.locator('.deck-nav.next:not([disabled])').count();
+        await page.locator(haySiguiente ? '.deck-nav.next' : '.deck-nav.prev').evaluate((b) => b.click());
+        await page.waitForTimeout(180);
+      }
       await page.locator('.actions button.primary').evaluate((b) => b.click());
       await page.waitForSelector('.result, .endgame, .res-table', { timeout: 15000 });
       await page.waitForTimeout(200);
@@ -247,11 +256,15 @@ const { chromium } = require('playwright');
 
   const antes2 = dialogs.length;
   const trucado = await C.evaluate((p) => {
+    // Se cambia un byte del medio sin tocar la longitud: la firma tiene que cantarlo.
     const b64 = p.replace(/-/g, '+').replace(/_/g, '/');
-    const obj = JSON.parse(atob(b64 + '='.repeat((4 - b64.length % 4) % 4)));
-    obj.players.A.name = 'Tramposo#0000';          // se cambia el contenido, no la firma
-    const bin = String.fromCharCode.apply(null, new TextEncoder().encode(JSON.stringify(obj)));
-    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const bin = atob(b64 + '='.repeat((4 - b64.length % 4) % 4));
+    const bytes = Uint8Array.from(bin, (ch) => ch.charCodeAt(0));
+    const medio = Math.floor(bytes.length / 2);
+    bytes[medio] = bytes[medio] ^ 0x5a;
+    let out = '';
+    bytes.forEach((x) => { out += String.fromCharCode(x); });
+    return btoa(out).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }, enlaceA.split('#match=')[1]);
   await C.goto(url + '#match=' + trucado); await C.waitForTimeout(400);
   const avisoFirma = dialogs.slice(antes2).join(' / ');

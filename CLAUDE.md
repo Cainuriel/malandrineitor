@@ -159,19 +159,33 @@ Hay tres capas que ocupan la ventana entera: la apertura de sobres (`.opening-ov
 - El scroll del fondo se bloquea con `MI.util.lockScroll()` / `unlockScroll()`, que llevan un contador de capas abiertas, fijan el body guardando la posición y la restauran al cerrar. No usar `body { overflow: hidden }` a pelo: pierde la posición de lectura y no funciona bien en iOS.
 ## El enlace de la partida
 
-El enlace lleva la partida entera en el fragmento `#match=`, en base64 URL-safe. **No lleva `result`**: se reconstruye en destino con `M.rebuildResult`, que es determinista porque los dados viajan dentro de las jugadas ofuscadas. La firma se recalcula sobre el objeto aligerado, así que sigue verificándose.
+El enlace lleva la partida en el fragmento `#match=`, en base64 URL-safe. **No es JSON: es un formato binario** (`v2`) de unos 70 bytes, que da un enlace de **130-155 caracteres**. Antes eran 1.100 de ida y **6.260 de vuelta**, y algunas aplicaciones de mensajería solo hacen pulsable el principio de un enlace largo, así que al tocarlo llegaba cortado.
 
-El motivo es de tamaño, y viene de un fallo real: con `result` dentro, el enlace de vuelta medía **6.260 caracteres** y algunas aplicaciones de mensajería solo hacen pulsable el principio, de modo que al tocarlo llegaba cortado. Sin él, el de ida ronda los 1.100 y el de vuelta los 1.500. `tests/run.js` vigila que el enlace resuelto no pase de 2.000 caracteres y que el resultado reconstruido sea idéntico al que calculó quien resolvió.
+De dónde salía el exceso, por orden de importancia:
 
-Tres averías distintas, tres mensajes distintos. Confundirlos manda a la gente a buscar donde no es:
+1. **`result` viajaba dentro** y son tres cuartas partes del payload. No hace falta: se reconstruye con `M.rebuildResult`, que es determinista porque los dados van dentro de las jugadas.
+2. **Doble base64.** Las jugadas ofuscadas ya eran base64 y luego se codificaba el JSON entero: 1,78× de inflado sobre los mismos datos.
+3. **Se mandaban nombres de carta y de ticket** que se deducen de `seed` con `M.deal`.
+4. **Las jugadas iban como JSON.** Cinco jugadas caben en cinco bytes: la carta es su posición en la mano (0-4, o 7 si no había nadie) y el dado son tres bits. Un sexto byte describe el rescate del calabozo, que ocurre como mucho una vez. Esos seis bytes siguen cifrados con el mismo flujo XOR, así que las jugadas no se ven.
 
-- **Enlace cortado** (no descodifica o el JSON no cierra): "ha llegado incompleto", con la sugerencia de reenviarlo o pasar el JSON.
-- **Enlace retocado** (descodifica pero la firma no cuadra): "la firma no coincide".
+Un hash **no** habría servido, ni con semilla fija: no es cifrado, es una reducción con pérdida de información y no se puede revertir. Para acortar solo hay dos caminos: quitar redundancia (esto) o un servidor que guarde la partida y devuelva un identificador corto, que aquí no existe a propósito.
+
+Estructura del payload: versión, estado, **longitud total declarada**, id, semilla, fecha en segundos, huella del catálogo, y por jugador su estado, su nombre y sus seis bytes de jugadas; al final, ocho bytes de firma.
+
+Dos salvaguardas que no se deben quitar:
+
+- **La huella del catálogo** (`M.catalogFingerprint`) cubre los identificadores de cartas activas, los de tickets y el tamaño de mano y de sprint. Como el reparto se deduce de la semilla, si el catálogo cambiase entre que uno crea la partida y el otro la abre, el reparto sería otro y las jugadas dejarían de ser legales **en silencio**. Con la huella se avisa y no se juega.
+- **La longitud declarada** va en la cabecera porque la firma va al final: sin ella, un enlace cortado pierde la firma y se confundiría con uno manipulado, que manda a buscar donde no es.
+
+Si una partida no es reproducible desde su semilla (manos puestas a mano, catálogo distinto), `toUrlPayload` cae al **formato largo** en JSON, que es autosuficiente. En una partida normal no ocurre nunca. Los enlaces del formato anterior se siguen abriendo: se detectan porque su primer byte es `{`.
+
+Tres averías, tres mensajes. Confundirlos manda a la gente a buscar donde no es:
+
+- **Enlace cortado** (la longitud no cuadra, o no descodifica): "ha llegado incompleto", con la sugerencia de reenviarlo o pegarlo entero.
+- **Enlace retocado** (longitud correcta, firma que no cuadra): "la firma no coincide".
 - **Enlace propio abierto por su autor** (`role.get(id) === 'A'` con estado `A-done`): no es un error. Se muestra el panel `.shared-match.own` explicando que falta que juegue el rival, con botones para volver a compartirlo o descargar el JSON. Antes era un `alert` que dejaba al jugador en la pantalla de arcade sin contexto, y se leía como "el enlace está roto".
 
-El desplegable de carga acepta tanto el JSON como **un enlace pegado entero**: es la vía de rescate cuando el chat solo hace pulsable un trozo pero el texto completo se puede copiar.
-
-Qué NO hacer para acortar más: un hash no sirve, es de una sola dirección y no se puede revertir. `hands` y `tickets` sí se podrían quitar, porque se derivan de `seed` con `M.deal`, pero entonces el enlace dejaría de ser autosuficiente: si el catálogo de cartas o de tickets cambia entre que uno crea la partida y el otro la abre, el reparto sale distinto y las jugadas dejan de ser legales, en silencio. Con el catálogo todavía en revisión no compensa ahorrar 400 caracteres a cambio de esa fragilidad. Si algún día hiciera falta, el orden sería: primero comprimir (LZ antes del base64, sin tocar el protocolo), y solo después derivar el reparto, y siempre con una huella del catálogo dentro del enlace para poder avisar en vez de corromper la partida.
+El desplegable de carga acepta tanto el JSON como **un enlace pegado entero**: es la vía de rescate cuando el chat solo hace pulsable un trozo pero el texto completo se puede copiar. El fichero JSON conserva `result` y el reparto: es la copia legible y autosuficiente.
 
 ## Quemaduras de las cartas
 

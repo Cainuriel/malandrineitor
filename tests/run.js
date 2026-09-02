@@ -117,11 +117,26 @@ check(powerOrder.join(',') === 'daniel-primo,yuri,jose-manuel-gomez,sergi-edo,an
   const carga = Mx.toUrlPayload(resuelta);
   const enlace = 'https://cainuriel.github.io/malandrineitor/#match=' + carga;
   check(enlace.length < 2000, `el enlace de la partida resuelta cabe en un mensaje (${enlace.length} caracteres)`);
-  const bruto = JSON.parse(Buffer.from(carga.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'));
-  check(!bruto.result, 'el enlace no arrastra el resultado: se reconstruye en destino');
+  const bruto = Buffer.from(carga.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+  check(bruto[0] === 2, 'el enlace usa el formato binario compacto, no JSON');
+  const texto = bruto.toString('latin1');
+  check(!texto.includes('holtrix') && !texto.includes('result'), 'el enlace no lleva ni nombres de carta ni el resultado: todo se deduce de la semilla');
+  check(bruto.length < 120, `el enlace ocupa ${bruto.length} bytes de datos`);
   const vuelta = Mx.fromUrlPayload(carga);
   check(vuelta.status === 'resolved' && !!vuelta.result, 'al abrir el enlace se reconstruye el resultado');
   check(JSON.stringify(vuelta.result) === JSON.stringify(resuelta.result), 'el resultado reconstruido es idéntico al que calculó quien resolvió');
+  // La huella del catálogo evita que un cambio de cartas reparta otra partida en silencio.
+  const huellaOk = Mx.catalogFingerprint() === Mx.catalogFingerprint();
+  check(huellaOk && typeof Mx.catalogFingerprint() === 'number', 'la huella del catálogo es estable');
+
+  // Los enlaces del formato antiguo se siguen abriendo.
+  const antiguo = (() => {
+    const copia = Object.assign({}, resuelta); delete copia.sig; copia.sig = Mx.sign(copia);
+    return Buffer.from(JSON.stringify(copia), 'utf8').toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  })();
+  const viejo = Mx.fromUrlPayload(antiguo);
+  check(viejo.status === 'resolved' && viejo.id === resuelta.id, 'los enlaces del formato anterior se siguen abriendo');
+
   let cortado = false, mensaje = '';
   try { Mx.fromUrlPayload(carga.slice(0, Math.floor(carga.length * 0.8))); } catch (e) { cortado = true; mensaje = e.message; }
   check(cortado && /incompleto/.test(mensaje), 'un enlace cortado avisa de que ha llegado incompleto, no de manipulación');
@@ -157,6 +172,39 @@ check(powerOrder.join(',') === 'daniel-primo,yuri,jose-manuel-gomez,sergi-edo,an
   Mx.commitPlays(m2, 'B', 'Bea', 's', m2.tickets.map(() => ({ cardId: m2.hands.B[0], die: 3 })));
   const r2 = Mx.resolve(m2, cardsById, chById, engine);
   check(r2.tickets[1].A.nobody === true, 'sin el amo del calabozo en la mano, el rescate se ignora');
+
+  // El enlace compacto guarda las jugadas por su posición en la mano. Hay que
+  // comprobar que sobreviven los dos casos raros: el rescate y el ticket sin nadie.
+  // (Este bloque falsea las manos, así que el enlace cae al formato largo a propósito:
+  //  es justo la salvaguarda que evita repartir otra partida en silencio.)
+  check(Buffer.from(Mx.toUrlPayload(m).replace(/-/g, '+').replace(/_/g, '/'), 'base64')[0] === 0x7B, 'una partida con manos que no salen de la semilla usa el formato largo');
+  const conRescate = Mx.fromUrlPayload(Mx.toUrlPayload(m));
+  const jugadasA = Mx.plays(conRescate, 'A').plays;
+  check(jugadasA[1].rescue === 'holtrix' && jugadasA[1].cardId === 'holtrix', 'el rescate del calabozo sobrevive al enlace compacto');
+  check(jugadasA.every((p, i) => p.die === playsA[i].die), 'los dados sobreviven al enlace compacto');
+  const rr = Mx.resolve(conRescate, cardsById, chById, engine);
+  check(JSON.stringify(rr) === JSON.stringify(r), 'la partida con rescate resuelve igual antes y después del enlace');
+
+  // Y ahora el rescate por la vía compacta, con una partida repartida de verdad.
+  const compacta = Mx.create('Ana', 'rescate-compacto', MI.data.cards, MI.data.challenges);
+  const rescatada = compacta.hands.A[2];
+  Mx.commitPlays(compacta, 'A', 'Ana', 's', compacta.tickets.map((t, i) => (
+    i === 3 ? { cardId: rescatada, die: 5, rescue: rescatada } : { cardId: compacta.hands.A[i % 5], die: 2 + (i % 4) }
+  )));
+  Mx.commitPlays(compacta, 'B', 'Bea', 's', compacta.tickets.map(() => ({ cardId: compacta.hands.B[1], die: 3 })));
+  const cargaC = Mx.toUrlPayload(compacta);
+  check(Buffer.from(cargaC.replace(/-/g, '+').replace(/_/g, '/'), 'base64')[0] === 2, 'una partida repartida por la semilla usa el formato compacto');
+  const idaVuelta = Mx.fromUrlPayload(cargaC);
+  const jc = Mx.plays(idaVuelta, 'A').plays;
+  check(jc[3].rescue === rescatada && jc[3].cardId === rescatada, 'el rescate sobrevive al formato compacto');
+  check(jc.every((p, i) => p.cardId === Mx.plays(compacta, 'A').plays[i].cardId && p.die === Mx.plays(compacta, 'A').plays[i].die), 'todas las jugadas sobreviven al formato compacto');
+  check(JSON.stringify(Mx.resolve(idaVuelta, cardsById, chById, engine)) === JSON.stringify(Mx.resolve(compacta, cardsById, chById, engine)), 'la resolución es idéntica antes y después del enlace compacto');
+
+  const sinNadie = Mx.create('Ana', 'vacia', MI.data.cards, MI.data.challenges);
+  Mx.commitPlays(sinNadie, 'A', 'Ana', 's', sinNadie.tickets.map((t, i) => (i === 2 ? { cardId: null, die: 0 } : { cardId: sinNadie.hands.A[i % 5], die: 4 })));
+  Mx.commitPlays(sinNadie, 'B', 'Bea', 's', sinNadie.tickets.map(() => ({ cardId: sinNadie.hands.B[0], die: 3 })));
+  const vuelta2 = Mx.fromUrlPayload(Mx.toUrlPayload(sinNadie));
+  check(Mx.plays(vuelta2, 'A').plays[2].cardId === null, 'un ticket sin nadie disponible sobrevive al enlace compacto');
 }
 
 // 9. Modo historia: sobres, recortes y recompensas

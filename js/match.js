@@ -163,6 +163,8 @@
     return obj;
   };
 
+  const ERROR_CORTADO = 'El enlace de la partida ha llegado incompleto o no es válido. Algunas aplicaciones de mensajería cortan los enlaces: pide que te lo reenvíen, o pega aquí el enlace completo.';
+
   // Reconstruye el resultado a partir de las jugadas ofuscadas de la propia partida.
   // Es determinista: los dados van dentro de las jugadas y las habilidades se reaplican.
   M.rebuildResult = function (match) {
@@ -170,36 +172,228 @@
     return M.resolve(match, util().byId(mi.data.cards), util().byId(mi.data.challenges), mi.engine);
   };
 
-  // El enlace NO lleva `result`: ocupa tres cuartas partes del payload y se puede
-  // reconstruir en destino. Con él, el enlace de vuelta pasaba de 6.000 caracteres y
-  // los mensajeros lo cortaban al enlazarlo, que es el fallo que reportó Fernando el
-  // 2 de septiembre de 2026 compartiendo por WhatsApp desde el móvil.
-  // La firma se recalcula sobre el objeto aligerado, así que sigue siendo verificable.
-  M.toUrlPayload = function (match) {
+  /* ---------- Enlace compacto (v2) ----------
+     El enlace no lleva JSON: lleva los bytes justos. El JSON de la partida encadenaba
+     dos base64 —las jugadas ofuscadas ya venían en base64 y luego se codificaba el
+     objeto entero—, y además mandaba nombres de cartas y de tickets que se pueden
+     deducir de la semilla ahora que el catálogo está cerrado. Con `result` dentro el
+     enlace de vuelta llegaba a 6.260 caracteres y las aplicaciones de mensajería solo
+     hacían pulsable el principio.
+
+     Estructura:
+       1  versión (2)
+       1  estado (0 A-playing, 1 A-done, 2 B-done, 3 resolved)
+       2  longitud total declarada: si no cuadra, el enlace llegó cortado. La firma va
+          al final, así que sin este dato un enlace truncado se confundiría con uno
+          manipulado y mandaría a buscar donde no es.
+       1+ identificador de la partida, con su longitud delante
+       1+ semilla, con su longitud delante
+       4  fecha de creación en segundos desde 1970
+       4  huella del catálogo: si no coincide, el reparto sería otro y se avisa
+       por jugador (A y B): 1 estado, 1+ nombre, y si ha jugado, 6 bytes de jugadas
+       8  firma
+     Las jugadas caben en un byte cada una: la carta es su posición en la mano (0-4,
+     o 7 si no había nadie disponible) y el dado son tres bits. El sexto byte describe
+     el rescate del calabozo, que ocurre como mucho una vez. Esos seis bytes van
+     cifrados con el mismo flujo XOR de siempre, así que las jugadas siguen sin verse.
+
+     Los enlaces del formato antiguo (JSON en base64, empiezan por "{") se siguen
+     abriendo: se detectan por el primer byte. */
+
+  const ESTADOS = ['A-playing', 'A-done', 'B-done', 'resolved'];
+  const SIN_CARTA = 7;
+
+  function activeCards() {
+    const fuera = new Set(root.MI.data.optout || []);
+    return root.MI.data.cards.filter((c) => !fuera.has(c.id));
+  }
+
+  // Huella del catálogo y de los parámetros que determinan el reparto. Si cambian, el
+  // enlace ya no describe la misma partida y hay que decirlo en vez de repartir otra.
+  M.catalogFingerprint = function () {
+    const c = cfg();
+    const s = activeCards().map((x) => x.id).join(',') + '|' + root.MI.data.challenges.map((x) => x.id).join(',')
+      + '|' + c.arcade.handSize + 'x' + c.arcade.tickets;
+    return util().hash(s) >>> 0;
+  };
+
+  function bytesToBase64Url(bytes) {
+    let s = '';
+    bytes.forEach((b) => { s += String.fromCharCode(b); });
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function base64UrlToBytes(payload) {
+    const b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const bin = atob(b64 + '='.repeat((4 - b64.length % 4) % 4));
+    return Uint8Array.from(bin, (ch) => ch.charCodeAt(0));
+  }
+
+  // Flujo XOR sobre bytes sueltos, con la misma clave que M.obfuscate.
+  function xorBytes(bytes, key) {
+    const r = util().rng(util().hash(cfg().secret + '|' + key));
+    const out = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) out[i] = bytes[i] ^ Math.floor(r() * 256);
+    return out;
+  }
+
+  function firmaDe(bytes) {
+    let s = '';
+    bytes.forEach((b) => { s += String.fromCharCode(b); });
+    const c = s + cfg().secret;
+    const h1 = util().hash(c), h2 = util().hash(c + h1.toString(16));
+    const out = new Uint8Array(8);
+    for (let i = 0; i < 4; i++) { out[i] = (h1 >>> (8 * (3 - i))) & 255; out[4 + i] = (h2 >>> (8 * (3 - i))) & 255; }
+    return out;
+  }
+
+  // Las cinco jugadas de un jugador en seis bytes, cifradas.
+  function empaquetarJugadas(match, role) {
+    const mano = match.hands[role];
+    const jugadas = (M.plays(match, role) || { plays: [] }).plays;
+    const n = cfg().arcade.tickets;
+    const out = new Uint8Array(n + 1);
+    let rescate = 255;
+    for (let i = 0; i < n; i++) {
+      const p = jugadas[i] || {};
+      const idx = p.cardId ? mano.indexOf(p.cardId) : -1;
+      const die = Math.max(0, Math.min(7, p.die || 0));
+      out[i] = ((idx < 0 ? SIN_CARTA : idx) & 7) | (die << 3);
+      if (p.rescue) { const ri = mano.indexOf(p.rescue); if (ri >= 0) rescate = (i << 3) | ri; }
+    }
+    out[n] = rescate;
+    return xorBytes(out, match.id + '|' + role);
+  }
+
+  function desempaquetarJugadas(bytes, mano, id, role) {
+    const claro = xorBytes(bytes, id + '|' + role);
+    const n = cfg().arcade.tickets;
+    const plays = [];
+    for (let i = 0; i < n; i++) {
+      const idx = claro[i] & 7, die = (claro[i] >> 3) & 7;
+      plays.push({ cardId: idx === SIN_CARTA ? null : (mano[idx] || null), die });
+    }
+    if (claro[n] !== 255) {
+      const ticket = (claro[n] >> 3) & 31, carta = claro[n] & 7;
+      if (plays[ticket] && mano[carta]) plays[ticket].rescue = mano[carta];
+    }
+    return plays;
+  }
+
+  // El formato compacto da por hecho que las manos y los tickets salen de la semilla.
+  // Si una partida no cumple eso —manos puestas a mano, o un catálogo distinto— el
+  // enlace corto la repartiría de otra forma, así que se recurre al formato largo,
+  // que es autosuficiente. En una partida normal nunca ocurre.
+  function reproducibleDesdeLaSemilla(match) {
+    try {
+      const d = M.deal(match.seed, activeCards(), root.MI.data.challenges);
+      return JSON.stringify(d.hands) === JSON.stringify(match.hands)
+        && JSON.stringify(d.tickets) === JSON.stringify(match.tickets);
+    } catch (e) { return false; }
+  }
+
+  function legacyToJson(match) {
     const lite = Object.assign({}, match);
     delete lite.result; delete lite.sig;
     lite.sig = M.sign(lite);
     const bytes = enc().encode(JSON.stringify(lite));
-    let binary = '';
-    bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
-    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    return bytesToBase64Url(bytes);
+  }
+
+  M.toUrlPayload = function (match) {
+    if (!reproducibleDesdeLaSemilla(match)) return legacyToJson(match);
+    const enc8 = enc();
+    const partes = [];
+    const push = (arr) => partes.push(arr instanceof Uint8Array ? arr : new Uint8Array(arr));
+    const cadena = (s) => { const b = enc8.encode(String(s == null ? '' : s)).slice(0, 255); push([b.length]); push(b); };
+    const u32 = (n) => push([(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255]);
+
+    push([2, Math.max(0, ESTADOS.indexOf(match.status)), 0, 0]);   // longitud, rellenada al final
+    cadena(match.id);
+    cadena(match.seed);
+    u32(Math.floor(new Date(match.created || Date.now()).getTime() / 1000));
+    u32(M.catalogFingerprint());
+    ['A', 'B'].forEach((role) => {
+      const p = match.players[role];
+      push([p.done ? 1 : 0]);
+      cadena(p.name);
+      if (p.done && p.blob) push(empaquetarJugadas(match, role));
+    });
+
+    let total = 0; partes.forEach((x) => { total += x.length; });
+    const cuerpo = new Uint8Array(total);
+    let o = 0; partes.forEach((x) => { cuerpo.set(x, o); o += x.length; });
+    const largo = total + 8;
+    cuerpo[2] = (largo >> 8) & 255; cuerpo[3] = largo & 255;
+    const final = new Uint8Array(largo);
+    final.set(cuerpo, 0); final.set(firmaDe(cuerpo), total);
+    return bytesToBase64Url(final);
   };
+
   M.fromUrlPayload = function (payload) {
+    let bytes;
+    try { bytes = base64UrlToBytes(payload); } catch (e) { throw new Error(ERROR_CORTADO); }
+    if (bytes[0] === 0x7B) return legacyFromJson(bytes);      // enlaces del formato antiguo
+    if (bytes[0] !== 2) throw new Error(ERROR_CORTADO);
+    try { return leerBinario(bytes); }
+    catch (e) { if (e.esDelJuego) throw e; throw new Error(ERROR_CORTADO); }
+  };
+
+  function leerBinario(bytes) {
+    // Primero la longitud: un enlace cortado es mucho más probable que uno retocado, y
+    // conviene decirlo por su nombre. base64 puede añadir hasta dos bytes de relleno.
+    const declarada = (bytes[2] << 8) + bytes[3];
+    if (bytes.length < declarada || bytes.length > declarada + 2) throw new Error(ERROR_CORTADO);
+    const util8 = bytes.slice(0, declarada);
+    const cuerpo = util8.slice(0, declarada - 8), firma = util8.slice(declarada - 8);
+    const esperada = firmaDe(cuerpo);
+    for (let i = 0; i < 8; i++) if (firma[i] !== esperada[i]) throw delJuego('La firma del enlace no coincide. Alguien lo ha tocado, o es de otra versión del juego.');
+
+    const dec8 = dec();
+    let i = 1;
+    const estado = ESTADOS[cuerpo[i++]] || 'A-playing';
+    i += 2;   // la longitud ya se ha usado
+    const cadena = () => { const n = cuerpo[i++]; const s = dec8.decode(cuerpo.slice(i, i + n)); i += n; return s; };
+    const u32 = () => { const n = (cuerpo[i] << 24 >>> 0) + (cuerpo[i + 1] << 16) + (cuerpo[i + 2] << 8) + cuerpo[i + 3]; i += 4; return n >>> 0; };
+
+    const id = cadena(), seed = cadena();
+    const created = new Date(u32() * 1000).toISOString();
+    const huella = u32();
+    if (huella !== M.catalogFingerprint()) throw delJuego('Esta partida se creó con otra versión del juego: el catálogo de cartas o de tickets ha cambiado y el reparto ya no sería el mismo. Pídele a tu rival que la cree de nuevo.');
+
+    const d = M.deal(seed, activeCards(), root.MI.data.challenges);
+    const match = { v: 1, id, seed, created, hands: d.hands, tickets: d.tickets,
+      players: { A: { name: null, done: false, blob: null }, B: { name: null, done: false, blob: null } },
+      status: estado, result: null };
+
+    ['A', 'B'].forEach((role) => {
+      const done = cuerpo[i++] === 1;
+      const name = cadena();
+      match.players[role].name = name || null;
+      match.players[role].done = done;
+      if (done) {
+        const n = cfg().arcade.tickets + 1;
+        const plays = desempaquetarJugadas(cuerpo.slice(i, i + n), match.hands[role], id, role);
+        i += n;
+        // Se vuelve a ofuscar con el formato de siempre: el resto del juego lee `blob`.
+        match.players[role].blob = M.obfuscate({ plays }, id + '|' + role);
+      }
+    });
+
+    if (match.status === 'resolved') match.result = M.rebuildResult(match);
+    match.sig = M.sign(Object.assign({}, match, { sig: undefined }));
+    return match;
+  }
+
+  function delJuego(mensaje) { const e = new Error(mensaje); e.esDelJuego = true; return e; }
+
+  // Enlaces creados antes del formato binario: JSON completo en base64.
+  function legacyFromJson(bytes) {
     let match;
-    try {
-      const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-      const binary = atob(base64 + '='.repeat((4 - base64.length % 4) % 4));
-      const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-      match = M.importText(dec().decode(bytes));
-    } catch (e) {
-      if (e.message && e.message.includes('firma')) throw e;
-      // Un enlace cortado casi siempre falla al descodificar o al interpretar el JSON.
-      // Merece un aviso distinto al de manipulación: la causa habitual es el mensajero.
-      throw new Error('El enlace de la partida ha llegado incompleto. Algunas aplicaciones de mensajería cortan los enlaces largos: pide que te lo reenvíen, o que te pasen el fichero JSON de la partida.');
-    }
+    try { match = M.importText(dec().decode(bytes)); }
+    catch (e) { if (e.message && e.message.includes('firma')) throw e; throw new Error(ERROR_CORTADO); }
     if (match.status === 'resolved' && !match.result) match.result = M.rebuildResult(match);
     return match;
-  };
+  }
 
   /* ---------- Perfil de jugador (localStorage) ---------- */
   const PROFILE_KEY = 'mi.profile';

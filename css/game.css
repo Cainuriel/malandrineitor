@@ -321,3 +321,12 @@
   .fx-splash-title { line-height: 1.14; -webkit-text-stroke-width: 3px; text-shadow: 0 0 26px color-mix(in srgb, var(--fx-c) 80%, transparent), 4px 5px 0 var(--fx-c); }
   .fx-word { -webkit-text-stroke-width: 2px; }
 }
+
+/* Desglose del perfil por modo de juego */
+.bymode { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.bymode-card { padding: 12px 14px; border-radius: 10px; background: var(--bg-2); border: 1px solid var(--line); }
+.bymode-name { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.bymode-big { font-size: 20px; font-weight: 900; letter-spacing: -0.02em; margin: 2px 0 6px; }
+.bymode-detail { display: flex; gap: 10px; flex-wrap: wrap; font-family: var(--mono); font-size: 12px; }
+.bymode-detail .w { color: var(--ok); } .bymode-detail .l { color: var(--bad); } .bymode-detail .d { color: var(--warn); }
+.bymode-detail .pts { color: var(--accent); margin-left: auto; }

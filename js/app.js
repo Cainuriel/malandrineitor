@@ -84,6 +84,7 @@ MI.app = (function () {
     c.appendChild(el('div', { class: 'stats big' }, [
       stat(p.points || 0, 'puntos malandrín'), stat(p.games || 0, 'partidas'), stat(p.wins || 0, 'victorias'), stat(p.losses || 0, 'derrotas'), stat(p.draws || 0, 'empates'), stat(p.bestRep || 0, 'mejor reputación')
     ]));
+    c.appendChild(renderByMode(p));
     if (story) c.appendChild(el('div', { class: 'panel', style: { marginTop: '16px' } }, [
       el('h2', { text: 'Historia' }),
       el('div', { class: 'row' }, [el('span', { class: 'pill', text: 'Capítulo ' + story.chapter }), el('span', { class: 'pill', text: story.coins + ' malandricoins' }), el('span', { class: 'pill', text: MI.story.ownedCards(story).length + ' cartas' }), el('span', { class: 'pill', text: story.sprints + ' sprints' })])
@@ -110,6 +111,37 @@ MI.app = (function () {
     ]));
   }
   function stat(v, l) { return el('div', { class: 'stat' }, [el('b', { text: String(v) }), el('span', { text: l })]); }
+
+  // Desglose por modo. Se usa el recuento exacto del perfil; los perfiles antiguos
+  // se reconstruyen a partir del historial, que basta porque aún son cortos.
+  function renderByMode(p) {
+    const MODES = [['ai', 'Arcade contra la máquina'], ['story', 'Modo historia'], ['p2p', 'Arcade a dos jugadores']];
+    let by = p.byMode;
+    if (!by || !Object.keys(by).length) {
+      by = {};
+      (p.history || []).forEach((h) => {
+        const m = by[h.mode] = by[h.mode] || { games: 0, wins: 0, losses: 0, draws: 0, points: 0 };
+        m.games++; m.points += h.points || 0;
+        if (h.result === 'win') m.wins++; else if (h.result === 'loss') m.losses++; else m.draws++;
+      });
+    }
+    const rows = MODES.filter(([k]) => by[k] && by[k].games);
+    return el('div', { class: 'panel', style: { marginTop: '16px' } }, [
+      el('h2', { text: 'Por modo de juego' }),
+      rows.length ? el('div', { class: 'bymode' }, rows.map(([k, label]) => {
+        const m = by[k];
+        return el('div', { class: 'bymode-card' }, [
+          el('div', { class: 'bymode-name', text: label }),
+          el('div', { class: 'bymode-big', text: m.games + (m.games === 1 ? ' partida' : ' partidas') }),
+          el('div', { class: 'bymode-detail' }, [
+            el('span', { class: 'w', text: m.wins + ' V' }), el('span', { class: 'l', text: m.losses + ' D' }),
+            m.draws ? el('span', { class: 'd', text: m.draws + ' E' }) : null,
+            el('span', { class: 'pts', text: '+' + m.points + ' puntos' })
+          ])
+        ]);
+      })) : el('p', { class: 'muted small', text: 'Todavía no has terminado ninguna partida. Cuentan las tres modalidades: arcade contra la máquina, historia y arcade a dos jugadores.' })
+    ]);
+  }
 
   function init() {
     const v = MI.engine.validate(MI.data);

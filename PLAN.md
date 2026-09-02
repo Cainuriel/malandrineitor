@@ -98,7 +98,16 @@ Pendiente de la fase, aplazado a propósito:
 
 ---
 
-## Fase 6 — LLM opcional, revelado por días y publicación `[ ]`
+## Fase 6 — Publicación y correcciones `[~]`
+
+- [x] Publicado en GitHub Pages como *project site* (`.nojekyll` en la raíz).
+- [x] Panel "Por modo de juego" en el perfil, con recuento exacto en `profile.byMode`.
+- [x] Corregido: la recompensa del modo historia se aplica al terminar el sprint, no al pulsar el botón de la pantalla final. Antes, cerrar la pestaña ahí hacía perder monedas y avance de capítulo.
+- [ ] Poner `config.demo.revealAllButton` a `false` para la versión de la comunidad.
+
+---
+
+## Fase 7 — LLM opcional y revelado por días `[ ]`
 
 - [ ] Oponente LLM opcional: endpoint compatible OpenAI (incluye Ollama local) y Anthropic; solo elige carta y comenta la jugada. La clave se guarda en `localStorage` y nunca sale del navegador salvo hacia el endpoint configurado.
 - [ ] Sonido opcional (Web Audio, sin ficheros externos).

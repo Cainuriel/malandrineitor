@@ -169,7 +169,7 @@
   function storage() { try { return root.localStorage; } catch (e) { return null; } }
 
   M.profile = {
-    empty: () => ({ name: '', tag: '', points: 0, games: 0, wins: 0, losses: 0, draws: 0, bestRep: 0, history: [] }),
+    empty: () => ({ name: '', tag: '', points: 0, games: 0, wins: 0, losses: 0, draws: 0, bestRep: 0, byMode: {}, history: [] }),
     load() {
       const s = storage(); if (!s) return M.profile.empty();
       try {
@@ -191,6 +191,12 @@
       if (entry.matchId && p.history.some((h) => h.matchId === entry.matchId)) return p; // no duplicar
       p.games++;
       p.points = (p.points || 0) + (entry.points || 0);
+      // Recuento exacto por modo: el historial se recorta a 50 entradas y no sirve para contar.
+      p.byMode = p.byMode || {};
+      const m = p.byMode[entry.mode] = p.byMode[entry.mode] || { games: 0, wins: 0, losses: 0, draws: 0, points: 0 };
+      m.games++;
+      m.points += entry.points || 0;
+      if (entry.result === 'win') m.wins++; else if (entry.result === 'loss') m.losses++; else m.draws++;
       if (entry.result === 'win') p.wins++; else if (entry.result === 'loss') p.losses++; else p.draws++;
       p.bestRep = Math.max(p.bestRep || 0, entry.me);
       p.history.unshift(Object.assign({ date: new Date().toISOString() }, entry));

@@ -139,6 +139,9 @@ MI.game = (function () {
       st.items.push(...MI.scoring.sprint({ result, burnouts: st.burnouts, pays: st.pays, tickets: S.tickets.length }));
       S.points = MI.scoring.total(st.items, S.level);
       MI.match.profile.record({ mode: S.story ? 'story' : 'ai', rival: S.oppName + ' (' + S.level + ')', me: S.rep.me, opp: S.rep.opp, result, points: S.points, seed: S.seed });
+      // La recompensa del modo historia (monedas, capítulo) se aplica aquí, al terminar el sprint.
+      // Si esperase al botón de la pantalla final, cerrar la pestaña la haría perder.
+      if (S.story && S.story.onFinish) S.story.onFinish(summaryOf(S));
       screen = 'end';
     } else {
       MI.match.commitPlays(S.match, S.role, S.myName, S.playerSeed, S.plays);
@@ -334,6 +337,10 @@ MI.game = (function () {
   }
 
   /* ---------- Render: finales ---------- */
+  function summaryOf(st) {
+    return { result: st.over === 'me' ? 'win' : (st.over === 'opp' ? 'loss' : 'draw'), resolved: st.stats.resolved, improved: st.stats.improved, pays: st.stats.pays, points: st.points, rep: st.rep.me };
+  }
+
   // El pantallazo se muestra una sola vez por partida, antes del resumen.
   function maybeSplash() {
     if (S.splashDone) return;
@@ -346,13 +353,12 @@ MI.game = (function () {
     c.innerHTML = '';
     const msg = { me: 'Has ganado el sprint', opp: S.oppName + ' gana el sprint', draw: 'Empate técnico' }[S.over];
     maybeSplash();
-    const summary = { result: S.over === 'me' ? 'win' : (S.over === 'opp' ? 'loss' : 'draw'), resolved: S.stats.resolved, improved: S.stats.improved, pays: S.stats.pays, points: S.points, rep: S.rep.me };
     c.appendChild(el('div', { class: 'endgame' }, [
       el('h1', { text: msg }),
       el('div', { class: 'score', text: `${S.myName} ${S.rep.me} · ${S.oppName} ${S.rep.opp}` + (S.story ? '' : ' · semilla ' + S.seed) }),
       renderPoints(S.stats.items, S.points, S.level),
       el('div', { class: 'actions' }, S.story
-        ? [el('button', { class: 'primary', text: 'Volver a la oficina', onclick: () => { const cb = S.story.onFinish; S = null; screen = 'setup'; cb(summary); } })]
+        ? [el('button', { class: 'primary', text: 'Volver a la oficina', onclick: () => { S = null; screen = 'setup'; MI.app.go('story'); } })]
         : [el('button', { class: 'primary', text: 'Jugar otra vez', onclick: () => { S = null; screen = 'setup'; render(); } }), el('button', { text: 'Ver álbum', onclick: () => MI.app.go('album') })]),
       el('div', { class: 'panel log static' }, [el('h3', { text: 'Registro del sprint' }), ...S.log.map((e) => el('div', { class: 'entry ' + e.cls, html: e.html }))])
     ]));

@@ -61,7 +61,28 @@ const dp = MI.data.cards.find((c) => c.id === 'daniel-primo');
 const worst = engine.resolve(dp, MI.data.challenges.find((c) => c.id === 'db-breach'), { withTwist: true, rng: () => 0 }, cfg);
 check(worst.burnout === false, 'Daniel Primo nunca entra en burnout');
 
-// 7. Partida a dos jugadores: crear, jugar A, exportar/importar, jugar B, resolver; firma y ofuscación
+// 7. Habilidades especiales nuevas y orden de potencia de las épicas
+const sergi = MI.data.cards.find((c) => c.id === 'sergi-edo');
+const mapChallenge = { tech: 'python', difficulty: 3, skills: { data_mining: 3 }, twist: { text: 'Cambian las coordenadas.', skills: { security: 3 }, tech: 'linux' } };
+const mapEval = engine.evaluate(sergi, mapChallenge, { withTwist: true }, cfg);
+check(!mapEval.withTwist && !mapEval.weights.security, 'Cartógrafo de datos ignora el giro en tickets de análisis de datos');
+
+const alexAvalos = MI.data.cards.find((c) => c.id === 'alex-avalos');
+const linuxChallenge = MI.data.challenges.find((c) => c.tech === 'linux');
+const rootResult = engine.resolve(alexAvalos, linuxChallenge, { rng: () => 0 }, cfg);
+check(rootResult.die === 2, 'Acceso root suma +1 al dado en tickets Linux');
+
+const joseAngel = MI.data.cards.find((c) => c.id === 'jose-angel-socarrades');
+const symfonyChallenge = MI.data.challenges.find((c) => c.tech === 'symfony');
+const symfonyResult = engine.resolve(joseAngel, symfonyChallenge, { rng: () => 0 }, cfg);
+check(symfonyResult.die === 2, 'Symfony de guardia suma +1 al dado en tickets Symfony');
+
+const rarityOrder = ['comun', 'rara', 'epica', 'legendaria'];
+const cardPower = (c) => rarityOrder.indexOf(c.rarity) * 10 + Object.values(c.skills).reduce((sum, value) => sum + value, 0) / Object.keys(c.skills).length;
+const powerOrder = MI.data.cards.slice().sort((a, b) => cardPower(b) - cardPower(a)).slice(0, 5).map((c) => c.id);
+check(powerOrder.join(',') === 'daniel-primo,yuri,jose-manuel-gomez,sergi-edo,andres-cabrera', 'orden de potencia: Daniel, Yuri, José Manuel, Sergi y Andrés');
+
+// 8. Partida a dos jugadores: crear, jugar A, exportar/importar, jugar B, resolver; firma y ofuscación
 {
   const Mx = MI.match;
   const cardsById = {}; MI.data.cards.forEach((c) => { cardsById[c.id] = c; });

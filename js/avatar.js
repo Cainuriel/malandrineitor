@@ -7,6 +7,11 @@ MI.avatar = (function () {
   const SKIN = ['#f5d0b0', '#e8b894', '#d29a72', '#b57a53', '#8d5a3c', '#6b4130', '#f7dcc4', '#c98e6a'];
   const HAIR = ['#1b1b1f', '#3b2a20', '#5a3d2b', '#8b5a2b', '#c48a3f', '#d9c27e', '#6e6e73', '#e5e5ea', '#b23a48', '#3d5a80'];
   const BG   = ['#1f2a44', '#2d1f44', '#1f3d3a', '#44261f', '#1f2f44', '#3a1f44', '#22343c', '#3b3320'];
+  const TRAITS = {
+    yuri: { skin: '#f5d0b0', hairColor: '#8b5a2b', hairIndex: 6, beard: 'viking', glasses: '' },
+    'jose-manuel-gomez': { hairIndex: 3, beard: '', glasses: 'square' },
+    'sonia-garcia-alcaraz': { hairIndex: 2, beard: '', glasses: 'square' }
+  };
 
   function pickers(seed) {
     const r = MI.util.rng(MI.util.hash('avatar:' + seed));
@@ -33,6 +38,7 @@ MI.avatar = (function () {
 
   function beard(kind, c) {
     if (kind === 'full') return `<path fill="${c}" d="M62 108 C64 136 80 150 100 150 C120 150 136 136 138 108 C132 122 118 126 100 126 C82 126 68 122 62 108 Z"/>`;
+    if (kind === 'viking') return `<g fill="${c}"><path d="M58 100 C58 132 68 148 82 154 L90 176 L100 162 L110 176 L118 154 C132 148 142 132 142 100 C134 116 126 126 116 130 C110 134 90 134 84 130 C74 126 66 116 58 100 Z"/><path d="M78 116 C84 112 92 114 100 120 C108 114 116 112 122 116 C116 124 108 126 100 124 C92 126 84 124 78 116 Z"/></g>`;
     if (kind === 'goatee') return `<path fill="${c}" d="M86 126 C90 140 110 140 114 126 C108 132 92 132 86 126 Z"/>`;
     if (kind === 'stubble') return `<path fill="${c}" opacity="0.35" d="M64 110 C68 134 82 146 100 146 C118 146 132 134 136 110 C130 122 118 126 100 126 C82 126 70 122 64 110 Z"/>`;
     return '';
@@ -41,12 +47,13 @@ MI.avatar = (function () {
   function svg(card, opts) {
     opts = opts || {};
     const P = pickers(card.id || card.name);
-    const skin = P.pick(SKIN);
-    const hairC = P.pick(HAIR);
+    const traits = TRAITS[card.id] || {};
+    const skin = traits.skin || P.pick(SKIN);
+    const hairC = traits.hairColor || P.pick(HAIR);
     const bg = P.pick(BG);
-    const hairFn = P.pick(HAIRS);
-    const gl = P.chance(0.45) ? P.pick(['round', 'square']) : '';
-    const bd = P.chance(0.5) ? P.pick(['full', 'goatee', 'stubble']) : '';
+    const hairFn = typeof traits.hairIndex === 'number' ? HAIRS[traits.hairIndex] : P.pick(HAIRS);
+    const gl = Object.prototype.hasOwnProperty.call(traits, 'glasses') ? traits.glasses : (P.chance(0.45) ? P.pick(['round', 'square']) : '');
+    const bd = Object.prototype.hasOwnProperty.call(traits, 'beard') ? traits.beard : (P.chance(0.5) ? P.pick(['full', 'goatee', 'stubble']) : '');
     const smile = P.chance(0.7);
     const shirt = opts.accent || '#4cc9f0';
     const shirt2 = P.pick(['#ffffff', '#0b1020', '#e0e1dd']);

@@ -24,7 +24,7 @@ MI.album = (function () {
     const all = activeCards();
     const found = all.filter((c) => MI.story.discovered(c.id)).length;
     container.appendChild(el('h1', { text: 'Álbum de malandrines' }));
-    container.appendChild(el('p', { class: 'lead', text: `Plantilla de ${cfg.company.name}. Has descubierto ${found} de ${all.length}. Las cartas se descubren consiguiéndolas en el modo historia; pasa el ratón para ver el brillo y haz clic para la ficha completa.` }));
+    container.appendChild(el('p', { class: 'lead', text: `Plantilla de ${cfg.company.name}. Has descubierto ${found} de ${all.length}. Las cartas se descubren consiguiéndolas en el modo historia; Haz clic para la ficha completa.` }));
     const shopRow = el('div', { class: 'row demo-row' }, [
       el('button', { class: 'primary', text: 'Tienda de sobres', onclick: () => MI.story.openView('shop') }),
       el('span', { class: 'small muted', text: 'Las cartas se consiguen abriendo sobres en el modo historia.' })

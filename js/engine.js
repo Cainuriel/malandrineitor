@@ -44,6 +44,7 @@
     let withTwist = !!opts.withTwist;
     if (useAbilities && engine.hasAbility(card, 'no_weakness')) withTwist = false;
     if (useAbilities && engine.hasAbility(card, 'researcher') && (challenge.skills || {}).rd) withTwist = false;
+    if (useAbilities && engine.hasAbility(card, 'cartographer') && (challenge.skills || {}).data_mining) withTwist = false;
 
     const weights = effectiveWeights(challenge, withTwist);
     const tech = effectiveTech(challenge, withTwist);
@@ -75,6 +76,8 @@
     let die = 1 + Math.floor(rnd() * cfg.luck.dieFaces);
     if (opts.abilities !== false && engine.hasAbility(card, 'autoscaling') && challenge.difficulty >= 4) die = Math.min(cfg.luck.dieFaces, die + 1);
     if (opts.abilities !== false && engine.hasAbility(card, 'reactionary') && challenge.tech === 'react') die = Math.min(cfg.luck.dieFaces, die + 2);
+    if (opts.abilities !== false && engine.hasAbility(card, 'root_access') && challenge.tech === 'linux') die = Math.min(cfg.luck.dieFaces, die + 1);
+    if (opts.abilities !== false && engine.hasAbility(card, 'symfony_guard') && challenge.tech === 'symfony') die = Math.min(cfg.luck.dieFaces, die + 1);
     const luck = die * cfg.luck.scale;
 
     const total = ev.score + luck;

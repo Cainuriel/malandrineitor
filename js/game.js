@@ -254,17 +254,22 @@ MI.game = (function () {
       ]),
       el('h2', { style: { marginTop: '22px' }, text: 'A dos jugadores' }),
       el('div', { class: 'panel' }, [
-        el('p', { class: 'small muted', text: 'Uno crea la partida y juega sus tickets a ciegas. Comparte un enlace con su rival, que juega los mismos tickets y devuelve otro enlace con el resultado. Las jugadas van ofuscadas y firmadas.' }),
+        el('p', { class: 'small muted', text: 'Uno crea la partida y juega sus tickets a ciegas. Comparte un enlace o archivo JSON con su rival, jugará los mismos tickets y le devolverá otro enlace o archivo con el resultado final.' }),
         el('div', { class: 'actions', style: { justifyContent: 'flex-start' } }, [
           el('button', { class: 'primary', text: 'Crear partida y jugar primero', onclick: () => { if (ensureName()) { const m = MI.match.create(name, null, MI.album.activeCards(), MI.data.challenges); newP2pGame(m, 'A', name); render(); } } })
         ]),
-        el('div', { class: 'opt' }, [el('label', { text: 'Cargar fichero' }), el('input', { type: 'file', accept: '.json,application/json', onchange: (e) => {
-          const f = e.target.files[0]; if (!f) return;
-          if (!ensureName()) { e.target.value = ''; return; }
-          f.text().then((t) => loadMatchText(t, name));
-        } })]),
-        el('div', { class: 'opt' }, [el('label', { text: 'o pegar el JSON' }), el('textarea', { rows: '3', placeholder: 'Pega aquí el contenido del fichero', id: 'paste-match' })]),
-        el('div', { class: 'actions', style: { justifyContent: 'flex-start' } }, [el('button', { text: 'Cargar lo pegado', onclick: () => { const t = document.getElementById('paste-match').value.trim(); if (t && ensureName()) loadMatchText(t, name); } })])
+        el('details', { class: 'json-import' }, [
+          el('summary', { text: 'Cargar o pegar JSON' }),
+          el('div', { class: 'json-import-body' }, [
+            el('div', { class: 'opt' }, [el('label', { text: 'Cargar fichero' }), el('input', { type: 'file', accept: '.json,application/json', onchange: (e) => {
+              const f = e.target.files[0]; if (!f) return;
+              if (!ensureName()) { e.target.value = ''; return; }
+              f.text().then((t) => loadMatchText(t, name));
+            } })]),
+            el('div', { class: 'opt' }, [el('label', { text: 'o pegar el JSON' }), el('textarea', { rows: '3', placeholder: 'Pega aquí el contenido del fichero', id: 'paste-match' })]),
+            el('div', { class: 'actions', style: { justifyContent: 'flex-start' } }, [el('button', { text: 'Cargar lo pegado', onclick: () => { const t = document.getElementById('paste-match').value.trim(); if (t && ensureName()) loadMatchText(t, name); } })])
+          ])
+        ])
       ]),
     ]));
   }

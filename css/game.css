@@ -67,6 +67,10 @@
 
 .setup { max-width: 720px; margin: 0 auto; }
 .setup .opt { display: grid; grid-template-columns: 160px 1fr; gap: 12px; align-items: center; margin: 12px 0; }
+.json-import { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+.json-import summary { width: fit-content; color: var(--text-2); font-weight: 700; cursor: pointer; user-select: none; }
+.json-import summary:hover { color: var(--accent); }
+.json-import-body { margin-top: 12px; padding-top: 2px; }
 
 .endgame { text-align: center; padding: 40px 20px; }
 .endgame h1 { font-size: 56px; margin: 0; letter-spacing: -0.03em; }

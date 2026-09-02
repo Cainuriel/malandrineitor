@@ -182,4 +182,6 @@ Medido con simulaciones de la campaña completa (200 partidas, jugador que compr
 El proyecto es un repositorio git normal. No hay build: lo que está en el árbol de trabajo es lo que se juega.
 
 - `.gitignore` excluye `node_modules/`, `package-lock.json` y `docs/img/` (las capturas se regeneran con `tests/screenshots.js` y pesan más que el resto del proyecto junto).
-- Para publicar en GitHub Pages: repositorio público `malandrineitor` y Pages sobre la rama principal. Queda en `https://<usuario>.github.io/malandrineitor` como *project site*, que **no** interfiere con la *user site* (`<usuario>.github.io`): una cuenta tiene una sola user site pero tantas project sites como repositorios. Antes de publicar, poner `config.demo.revealAllButton` a `false`.
+- Para publicar en GitHub Pages: repositorio público `malandrineitor` y, en Settings → Pages, *Deploy from a branch* con la rama `master` y la carpeta `/ (root)`. Queda en `https://<usuario>.github.io/malandrineitor` como *project site*, que **no** interfiere con la *user site* (`<usuario>.github.io`): una cuenta tiene una sola user site pero tantas project sites como repositorios.
+- El fichero vacío `.nojekyll` en la raíz desactiva el paso de Jekyll: el despliegue es directo y ningún fichero o carpeta se ignora por convenciones ajenas al proyecto. No borrarlo.
+- Antes de publicar para la comunidad, poner `config.demo.revealAllButton` a `false`.

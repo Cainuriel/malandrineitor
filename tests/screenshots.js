@@ -154,18 +154,24 @@ const { chromium } = require('playwright');
   // El enlace apunta al juego publicado; al probar en local se abre el mismo payload sobre el fichero.
   const local = (enlace) => url + '#match=' + enlace.split('#match=')[1];
 
+  // Se espera por estado, no por reloj: con esperas fijas el último ticket se colaba
+  // antes de que la pantalla cambiase y la comprobación fallaba de forma intermitente.
   const jugarSprint = async (page, pasarCarta) => {
     for (let i = 0; i < 5; i++) {
-      await page.waitForTimeout(250);
+      await page.waitForSelector('.deck-stage', { timeout: 15000 });
       if (pasarCarta && await page.locator('.deck-nav.next').count()) {
         await page.locator('.deck-nav.next').evaluate((b) => b.click());
-        await page.waitForTimeout(250);
+        await page.waitForTimeout(200);
       }
       await page.locator('.actions button.primary').evaluate((b) => b.click());
-      await page.waitForTimeout(300);
+      await page.waitForSelector('.result, .endgame, .res-table', { timeout: 15000 });
+      await page.waitForTimeout(200);
+      if (await page.locator('.endgame, .res-table').count()) break;
       await page.locator('.actions button.primary').evaluate((b) => b.click());
+      await page.waitForTimeout(200);
     }
-    await page.waitForTimeout(500);
+    await page.waitForSelector('.endgame, .res-table, .deck-stage', { timeout: 15000 });
+    await page.waitForTimeout(300);
   };
 
   const A = await newPage(false);
@@ -209,6 +215,7 @@ const { chromium } = require('playwright');
   const enlaceB = await linkOf(B, 'Compartir resultado');
   check(!!enlaceB && enlaceB.includes('#match='), 'B obtiene el enlace del resultado');
 
+  check(enlaceB.length < 2000, 'el enlace del resultado cabe en un mensaje: ' + enlaceB.length + ' caracteres');
   await A.goto(local(enlaceB)); await A.waitForTimeout(500);
   const title = await A.locator('.endgame h1').innerText();
   check(!!title, 'A abre el enlace del resultado y ve el desenlace: "' + title + '"');
@@ -221,15 +228,34 @@ const { chromium } = require('playwright');
   const C = await newPage(false);
   await go(C, 'menu');
   await signup(C, 'Ceci');
+  // Abrir tu propio enlace mientras esperas al rival no es un error: debe explicarse
+  // y ofrecer volver a compartirlo, no soltar un aviso y dejarte en la pantalla vacía.
+  const antesPropio = dialogs.length;
+  await A.goto(local(enlaceA)); await A.waitForTimeout(500);
+  check(await A.locator('.shared-match.own').count() > 0, 'quien abre su propio enlace ve que espera al rival, no un error');
+  check(dialogs.length === antesPropio, 'y no salta ningún aviso de enlace inválido');
+  check(await A.locator('.shared-match.own button', { hasText: 'Volver a compartir el enlace' }).count() > 0, 'con la opción de volver a compartirlo');
+  await A.screenshot({ path: path.join(out, 'p2p-enlace-propio.png'), fullPage: true });
+
+  // Dos averías distintas deben dar dos avisos distintos: el enlace cortado por el chat
+  // y el enlace retocado a mano. Confundirlos manda a la gente a buscar donde no es.
   const antes = dialogs.length;
-  const roto = local(enlaceA).slice(0, -12) + 'AAAAAAAAAAAA';
-  await C.goto(roto); await C.waitForTimeout(300);
-  if (await C.locator('text=Abrir partida recibida').count()) {
-    await C.locator('text=Abrir partida recibida').evaluate((b) => b.click());
-    await C.waitForTimeout(300);
-  }
-  const aviso = dialogs.slice(antes).join(' / ');
-  check(dialogs.length > antes, 'un enlace manipulado se rechaza con un aviso: ' + (aviso || 'sin aviso'));
+  await C.goto(local(enlaceA).slice(0, Math.floor(local(enlaceA).length * 0.75)));
+  await C.waitForTimeout(400);
+  const avisoCorte = dialogs.slice(antes).join(' / ');
+  check(/incompleto/.test(avisoCorte), 'un enlace cortado avisa de que ha llegado incompleto: ' + (avisoCorte || 'sin aviso'));
+
+  const antes2 = dialogs.length;
+  const trucado = await C.evaluate((p) => {
+    const b64 = p.replace(/-/g, '+').replace(/_/g, '/');
+    const obj = JSON.parse(atob(b64 + '='.repeat((4 - b64.length % 4) % 4)));
+    obj.players.A.name = 'Tramposo#0000';          // se cambia el contenido, no la firma
+    const bin = String.fromCharCode.apply(null, new TextEncoder().encode(JSON.stringify(obj)));
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }, enlaceA.split('#match=')[1]);
+  await C.goto(url + '#match=' + trucado); await C.waitForTimeout(400);
+  const avisoFirma = dialogs.slice(antes2).join(' / ');
+  check(/firma/.test(avisoFirma), 'un enlace retocado se rechaza por firma: ' + (avisoFirma || 'sin aviso'));
 
   // El desplegable de JSON sigue siendo la alternativa cuando el enlace no se puede pegar.
   const [descarga] = await Promise.all([
@@ -250,6 +276,17 @@ const { chromium } = require('playwright');
   await D.locator('text=Cargar lo pegado').evaluate((b) => b.click());
   await D.waitForTimeout(400);
   check(await D.locator('.endgame').count() > 0, 'la carga por JSON pegado sigue funcionando');
+
+  // Vía de rescate: pegar el enlace entero cuando el chat solo hace pulsable un trozo.
+  const E = await newPage(false);
+  await go(E, 'game');
+  await signup(E, 'Eva');
+  await E.locator('.json-import').evaluate((d) => { d.open = true; });
+  await E.waitForTimeout(150);
+  await E.locator('#paste-match').evaluate((t, v) => { t.value = v; }, enlaceB);
+  await E.locator('text=Cargar lo pegado').evaluate((b) => b.click());
+  await E.waitForTimeout(400);
+  check(await E.locator('.endgame').count() > 0, 'pegar el enlace entero en el desplegable también carga la partida');
 
   await browser.close();
   if (errors.length) { console.error('Errores en página:\n' + errors.join('\n')); process.exit(1); }

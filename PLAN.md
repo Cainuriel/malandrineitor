@@ -121,6 +121,9 @@ Pendiente de la fase, aplazado a propósito:
 - [x] Quemaduras en las cartas: una esquina chamuscada por burnout acumulado, con borde irregular por filtro SVG, brasa que late y humo. Van abajo para no tapar el nombre.
 - [x] La ficha ampliada se cierra pulsando en cualquier sitio, no solo en el botón.
 - [x] Corregido: `MI.util.el` descartaba las propiedades personalizadas de `style`, así que las barras de habilidad se pintaban todas del color por defecto en vez del color de su grupo.
+- [x] Corregido el fallo de los enlaces de vuelta: el enlace ya no arrastra `result`, que ocupaba tres cuartas partes del payload y lo dejaba en 6.260 caracteres. Se reconstruye en destino. De ida ~1.100, de vuelta ~1.500.
+- [x] Mensajes distintos para enlace cortado, enlace retocado y enlace propio abierto por su autor. Este último deja de ser un aviso sin salida y pasa a ser un panel con la opción de volver a compartirlo.
+- [x] El desplegable de carga acepta un enlace pegado entero, no solo el JSON.
 - [ ] Poner `config.developer.enabled` a `false` para la versión de la comunidad.
 
 ---

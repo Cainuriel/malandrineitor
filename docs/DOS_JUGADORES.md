@@ -35,3 +35,13 @@ Como alternativa, ambos estados se pueden descargar y cargar como JSON. El conte
 - El dado de cada jugada se toma del fichero (se lanzó en su navegador con su propio generador). Las habilidades de las cartas se reaplican al resolver, por lo que el resultado no depende del navegador.
 - Una jugada con una carta que no está en la mano, o que estaba en burnout en ese ticket, cuenta como "nadie disponible" (penalización de la dificultad).
 - No hay eliminación por llegar a cero en este modo: se comparan reputaciones al final.
+
+## Tamaño del enlace
+
+`result` **no viaja en el enlace**: se reconstruye al abrirlo a partir de las jugadas ofuscadas, que son deterministas porque llevan el dado dentro. Con él, el enlace de vuelta pasaba de 6.000 caracteres y algunas aplicaciones de mensajería solo hacen pulsable el principio, así que al tocarlo llegaba cortado. Sin él, el de ida ronda los 1.100 caracteres y el de vuelta los 1.500. El fichero JSON sí conserva el resultado: es la copia legible.
+
+## Cuando algo falla
+
+- *"Ha llegado incompleto"*: el enlace se cortó por el camino. Que te lo reenvíen, o cópialo entero manteniéndolo pulsado y pégalo en "Pegar un enlace o cargar el JSON".
+- *"La firma no coincide"*: el contenido se ha modificado, o es de otra versión del juego.
+- *"Esta partida la creaste tú"*: no es un error. Ya jugaste tu turno y falta que lo juegue el rival. Desde ahí puedes volver a compartir el enlace.

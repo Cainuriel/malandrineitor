@@ -157,6 +157,22 @@ Hay tres capas que ocupan la ventana entera: la apertura de sobres (`.opening-ov
 
 - La capa es un bloque con `overflow-y: auto` y `overscroll-behavior: contain`; **el contenido se centra en un hijo** con `min-height: 100%` y `justify-content: center`. Centrar con `place-items: center` directamente en un contenedor con scroll recorta por arriba todo lo que sea más alto que la ventana, y esa parte ya no se puede alcanzar.
 - El scroll del fondo se bloquea con `MI.util.lockScroll()` / `unlockScroll()`, que llevan un contador de capas abiertas, fijan el body guardando la posición y la restauran al cerrar. No usar `body { overflow: hidden }` a pelo: pierde la posición de lectura y no funciona bien en iOS.
+## El enlace de la partida
+
+El enlace lleva la partida entera en el fragmento `#match=`, en base64 URL-safe. **No lleva `result`**: se reconstruye en destino con `M.rebuildResult`, que es determinista porque los dados viajan dentro de las jugadas ofuscadas. La firma se recalcula sobre el objeto aligerado, así que sigue verificándose.
+
+El motivo es de tamaño, y viene de un fallo real: con `result` dentro, el enlace de vuelta medía **6.260 caracteres** y algunas aplicaciones de mensajería solo hacen pulsable el principio, de modo que al tocarlo llegaba cortado. Sin él, el de ida ronda los 1.100 y el de vuelta los 1.500. `tests/run.js` vigila que el enlace resuelto no pase de 2.000 caracteres y que el resultado reconstruido sea idéntico al que calculó quien resolvió.
+
+Tres averías distintas, tres mensajes distintos. Confundirlos manda a la gente a buscar donde no es:
+
+- **Enlace cortado** (no descodifica o el JSON no cierra): "ha llegado incompleto", con la sugerencia de reenviarlo o pasar el JSON.
+- **Enlace retocado** (descodifica pero la firma no cuadra): "la firma no coincide".
+- **Enlace propio abierto por su autor** (`role.get(id) === 'A'` con estado `A-done`): no es un error. Se muestra el panel `.shared-match.own` explicando que falta que juegue el rival, con botones para volver a compartirlo o descargar el JSON. Antes era un `alert` que dejaba al jugador en la pantalla de arcade sin contexto, y se leía como "el enlace está roto".
+
+El desplegable de carga acepta tanto el JSON como **un enlace pegado entero**: es la vía de rescate cuando el chat solo hace pulsable un trozo pero el texto completo se puede copiar.
+
+Qué NO hacer para acortar más: un hash no sirve, es de una sola dirección y no se puede revertir. `hands` y `tickets` sí se podrían quitar, porque se derivan de `seed` con `M.deal`, pero entonces el enlace dejaría de ser autosuficiente: si el catálogo de cartas o de tickets cambia entre que uno crea la partida y el otro la abre, el reparto sale distinto y las jugadas dejan de ser legales, en silencio. Con el catálogo todavía en revisión no compensa ahorrar 400 caracteres a cambio de esa fragilidad. Si algún día hiciera falta, el orden sería: primero comprimir (LZ antes del base64, sin tocar el protocolo), y solo después derivar el reparto, y siempre con una huella del catálogo dentro del enlace para poder avisar en vez de corromper la partida.
+
 ## Quemaduras de las cartas
 
 Cada burnout acumulado de la campaña (`story.strikes[id]`) pinta una esquina chamuscada en la carta: `MI.card.render(card, { burns: n })`. Como al llegar a `config.story.burnoutLimit` (3) el malandrín deja la empresa, en pantalla nunca se ven más de dos.

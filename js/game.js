@@ -9,6 +9,7 @@ MI.game = (function () {
   let screen = 'setup';  // setup | play | end | export | resolved
   let deckIndex = 0;     // carta activa del mazo de la mano (ver renderDeck)
   let pendingShared = null;
+  let ownMatch = null;      // partida propia abierta desde su propio enlace, a la espera del rival
 
   const fmt = (n) => (Math.round(n * 10) / 10).toFixed(1);
   const sign = (n) => (n >= 0 ? '+' : '') + n;
@@ -211,15 +212,25 @@ MI.game = (function () {
   function loadMatch(match, name) {
     if (match.status === 'resolved') { S = { mode: 'p2p', match, role: MI.match.role.get(match.id) }; if (S.role) recordP2p(match, S.role); screen = 'resolved'; render(); return; }
     if (match.status === 'A-done') {
-      if (MI.match.role.get(match.id) === 'A') { alert('Esta partida la creaste tú. Tiene que jugarla tu rival.'); return; }
+      // Abrir tu propio enlace no es un error del enlace: es que aún no lo ha jugado
+      // el rival. Antes salía un alert y te dejaba en la pantalla de arcade sin nada
+      // que hacer, y eso se lee como "el enlace está roto".
+      if (MI.match.role.get(match.id) === 'A') { ownMatch = match; screen = 'setup'; render(); return; }
       newP2pGame(match, 'B', name); render(); return;
     }
     alert('Esta partida está en estado "' + match.status + '" y no se puede continuar desde aquí.');
   }
 
+  // Acepta tanto el JSON de la partida como un enlace pegado entero. Lo segundo es la
+  // vía de rescate cuando la aplicación de mensajería solo hace pulsable un trozo del
+  // enlace: el texto completo sigue estando ahí y se puede copiar y pegar.
   function loadMatchText(text, name) {
     let match;
-    try { match = MI.match.importText(text); } catch (e) { alert(e.message); return; }
+    const t = (text || '').trim();
+    const enlace = t.match(/#match=([A-Za-z0-9\-_]+)/);
+    try {
+      match = enlace ? MI.match.fromUrlPayload(enlace[1]) : MI.match.importText(t);
+    } catch (e) { alert(e.message); return; }
     loadMatch(match, name);
   }
 
@@ -234,6 +245,15 @@ MI.game = (function () {
 
     c.appendChild(el('div', { class: 'setup' }, [
       el('h1', { text: 'Modo arcade' }),
+      ownMatch ? el('div', { class: 'panel shared-match own' }, [
+        el('h2', { text: 'Esta partida la creaste tú' }),
+        el('p', { class: 'small muted', text: 'Ya jugaste tus cinco tickets. Falta que tu rival juegue los suyos y te devuelva el enlace con el resultado. Si se le ha perdido, vuelve a mandárselo.' }),
+        el('div', { class: 'actions', style: { justifyContent: 'flex-start' } }, [
+          el('button', { class: 'primary', text: 'Volver a compartir el enlace', onclick: (e) => shareMatch(ownMatch, e.currentTarget) }),
+          el('button', { text: 'Descargar copia JSON', onclick: () => download(MI.match.exportText(ownMatch), 'malandrineitor-' + ownMatch.id + '.json') }),
+          el('button', { class: 'ghost', text: 'Cerrar', onclick: () => { ownMatch = null; render(); } })
+        ])
+      ]) : null,
       pendingShared ? el('div', { class: 'panel shared-match' }, [
         el('h2', { text: 'Te han enviado una partida' }),
         el('p', { class: 'small muted', text: 'Abre el enlace para jugar tu turno o consultar el resultado.' }),
@@ -263,15 +283,16 @@ MI.game = (function () {
           el('button', { class: 'primary', text: 'Crear partida y jugar primero', onclick: () => { if (ensureName()) { const m = MI.match.create(name, null, MI.album.activeCards(), MI.data.challenges); newP2pGame(m, 'A', name); render(); } } })
         ]),
         el('details', { class: 'json-import' }, [
-          el('summary', { text: 'Cargar o pegar JSON' }),
+          el('summary', { text: 'Pegar un enlace o cargar el JSON' }),
           el('div', { class: 'json-import-body' }, [
             el('div', { class: 'opt' }, [el('label', { text: 'Cargar fichero' }), el('input', { type: 'file', accept: '.json,application/json', onchange: (e) => {
               const f = e.target.files[0]; if (!f) return;
               if (!ensureName()) { e.target.value = ''; return; }
               f.text().then((t) => loadMatchText(t, name));
             } })]),
-            el('div', { class: 'opt' }, [el('label', { text: 'o pegar el JSON' }), el('textarea', { rows: '3', placeholder: 'Pega aquí el contenido del fichero', id: 'paste-match' })]),
-            el('div', { class: 'actions', style: { justifyContent: 'flex-start' } }, [el('button', { text: 'Cargar lo pegado', onclick: () => { const t = document.getElementById('paste-match').value.trim(); if (t && ensureName()) loadMatchText(t, name); } })])
+            el('div', { class: 'opt' }, [el('label', { text: 'o pegar el enlace' }), el('textarea', { rows: '3', placeholder: 'Pega aquí el enlace completo de la partida, o el contenido del fichero', id: 'paste-match' })]),
+            el('div', { class: 'actions', style: { justifyContent: 'flex-start' } }, [el('button', { text: 'Cargar lo pegado', onclick: () => { const t = document.getElementById('paste-match').value.trim(); if (t && ensureName()) loadMatchText(t, name); } })]),
+            el('p', { class: 'small muted', style: { margin: '8px 0 0' }, text: 'Si al pulsar el enlace en el chat sale que ha llegado incompleto, cópialo entero manteniéndolo pulsado y pégalo aquí: algunas aplicaciones solo hacen pulsable el principio.' })
           ])
         ])
       ]),

@@ -109,6 +109,23 @@ check(powerOrder.join(',') === 'daniel-primo,yuri,jose-manuel-gomez,sergi-edo,an
   const cheat = Mx.importText(Mx.exportText(m2)); cheat.hands.B[0] = 'daniel-primo';
   let rejected = false; try { Mx.importText(JSON.stringify(cheat)); } catch (e) { rejected = true; }
   check(rejected, 'cambiar la mano en el fichero invalida la firma');
+  // El enlace de la partida resuelta: sin `result` dentro, reconstruido al abrirlo.
+  // Un enlace de 6.000 caracteres lo cortan los mensajeros; este ronda los 1.500.
+  const resuelta = Mx.importText(Mx.exportText(m2));
+  resuelta.result = Mx.resolve(resuelta, cardsById, chById, engine);
+  resuelta.status = 'resolved';
+  const carga = Mx.toUrlPayload(resuelta);
+  const enlace = 'https://cainuriel.github.io/malandrineitor/#match=' + carga;
+  check(enlace.length < 2000, `el enlace de la partida resuelta cabe en un mensaje (${enlace.length} caracteres)`);
+  const bruto = JSON.parse(Buffer.from(carga.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'));
+  check(!bruto.result, 'el enlace no arrastra el resultado: se reconstruye en destino');
+  const vuelta = Mx.fromUrlPayload(carga);
+  check(vuelta.status === 'resolved' && !!vuelta.result, 'al abrir el enlace se reconstruye el resultado');
+  check(JSON.stringify(vuelta.result) === JSON.stringify(resuelta.result), 'el resultado reconstruido es idéntico al que calculó quien resolvió');
+  let cortado = false, mensaje = '';
+  try { Mx.fromUrlPayload(carga.slice(0, Math.floor(carga.length * 0.8))); } catch (e) { cortado = true; mensaje = e.message; }
+  check(cortado && /incompleto/.test(mensaje), 'un enlace cortado avisa de que ha llegado incompleto, no de manipulación');
+
   // Perfil firmado
   const p = { name: 'Ana', games: 3, wins: 2, losses: 1, draws: 0, bestRep: 90, history: [] };
   p.sig = Mx.sign(p);

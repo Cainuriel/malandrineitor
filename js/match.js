@@ -163,22 +163,42 @@
     return obj;
   };
 
+  // Reconstruye el resultado a partir de las jugadas ofuscadas de la propia partida.
+  // Es determinista: los dados van dentro de las jugadas y las habilidades se reaplican.
+  M.rebuildResult = function (match) {
+    const mi = root.MI;
+    return M.resolve(match, util().byId(mi.data.cards), util().byId(mi.data.challenges), mi.engine);
+  };
+
+  // El enlace NO lleva `result`: ocupa tres cuartas partes del payload y se puede
+  // reconstruir en destino. Con él, el enlace de vuelta pasaba de 6.000 caracteres y
+  // los mensajeros lo cortaban al enlazarlo, que es el fallo que reportó Fernando el
+  // 2 de septiembre de 2026 compartiendo por WhatsApp desde el móvil.
+  // La firma se recalcula sobre el objeto aligerado, así que sigue siendo verificable.
   M.toUrlPayload = function (match) {
-    const bytes = enc().encode(JSON.stringify(JSON.parse(M.exportText(match))));
+    const lite = Object.assign({}, match);
+    delete lite.result; delete lite.sig;
+    lite.sig = M.sign(lite);
+    const bytes = enc().encode(JSON.stringify(lite));
     let binary = '';
     bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   };
   M.fromUrlPayload = function (payload) {
+    let match;
     try {
       const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
       const binary = atob(base64 + '='.repeat((4 - base64.length % 4) % 4));
       const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-      return M.importText(dec().decode(bytes));
+      match = M.importText(dec().decode(bytes));
     } catch (e) {
-      if (e.message && (e.message.includes('partida') || e.message.includes('firma'))) throw e;
-      throw new Error('El enlace de partida no es válido o está incompleto.');
+      if (e.message && e.message.includes('firma')) throw e;
+      // Un enlace cortado casi siempre falla al descodificar o al interpretar el JSON.
+      // Merece un aviso distinto al de manipulación: la causa habitual es el mensajero.
+      throw new Error('El enlace de la partida ha llegado incompleto. Algunas aplicaciones de mensajería cortan los enlaces largos: pide que te lo reenvíen, o que te pasen el fichero JSON de la partida.');
     }
+    if (match.status === 'resolved' && !match.result) match.result = M.rebuildResult(match);
+    return match;
   };
 
   /* ---------- Perfil de jugador (localStorage) ---------- */

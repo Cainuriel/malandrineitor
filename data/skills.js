@@ -15,6 +15,7 @@ MI.data.skills = [
   { id: 'legacy',       name: 'Legacy y migraciones',          short: 'LEGCY', group: 'dev',        desc: 'Código heredado, refactor a gran escala, migraciones de versión y de plataforma.' },
   { id: 'testing',      name: 'Testing y QA',                  short: 'TEST',  group: 'dev',        desc: 'Estrategia de pruebas, automatización, cobertura útil, TDD.' },
   { id: 'performance',  name: 'Rendimiento',                   short: 'PERF',  group: 'dev',        desc: 'Profiling, caché, Web Vitals, optimización de consultas y latencia.' },
+  { id: 'cms',          name: 'Gestores de contenidos',        short: 'CMS',   group: 'dev',        desc: 'WordPress, Drupal, Moodle, plugins, temas, publicación y mantenimiento de contenidos.' },
   { id: 'blockchain',   name: 'Blockchain EVM',                short: 'EVM',   group: 'dev',        desc: 'Smart contracts y redes compatibles con Ethereum Virtual Machine.' },
   { id: 'blockchain_non_evm', name: 'Blockchain no EVM',       short: 'NOEVM', group: 'dev',        desc: 'Bitcoin y redes blockchain construidas con Rust u otras arquitecturas no EVM.' },
   { id: 'web3',         name: 'Web3',                          short: 'WEB3',  group: 'dev',        desc: 'Integración web con wallets, firmas, identidad y aplicaciones blockchain.' },

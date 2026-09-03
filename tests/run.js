@@ -66,6 +66,10 @@ const yuriWorst = engine.resolve(yuri, MI.data.challenges.find((c) => c.id === '
 check(yuri.rarity === 'legendaria' && yuriWorst.burnout === false, 'toda carta legendaria es inmune al burnout');
 check(yuri.skills.blockchain === 9 && yuri.skills.blockchain_non_evm === 9 && yuri.skills.web3 === 8, 'Yuri domina blockchain EVM, no EVM y Web3');
 check(fer.skills.blockchain_non_evm === 7 && fer.skills.web3 === 10, 'Fernando domina Web3 y conoce blockchain no EVM');
+const cmsProfiles = MI.data.cards.filter((c) => ['php', 'wordpress', 'drupal'].includes(c.expertise) || /php|wordpress|drupal|cms|moodle/i.test(c.title));
+check(cmsProfiles.length > 0 && cmsProfiles.every((c) => c.skills.cms > cfg.skills.defaultValue), 'los perfiles PHP y de gestores de contenidos tienen la habilidad CMS');
+const laravelTickets = MI.data.challenges.filter((c) => c.id.startsWith('laravel-'));
+check(laravelTickets.length === 2 && laravelTickets.every((c) => c.tech === 'php'), 'los dos tickets Laravel tienen PHP como tecnología campeona');
 
 // 7. Habilidades especiales nuevas y orden de potencia de las épicas
 const sergi = MI.data.cards.find((c) => c.id === 'sergi-edo');

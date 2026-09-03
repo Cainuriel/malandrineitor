@@ -18,7 +18,7 @@
       if (ctx.challenge.difficulty >= 4) items.push({ label: 'Ticket de los gordos', points: c.hardTicket });
       if (ctx.streak >= 3) items.push({ label: 'Racha de ' + ctx.streak, points: c.streak3 });
     } else if (r.outcome === 'improved') {
-      items.push({ label: 'Ticket mejorado', points: c.improved });
+      items.push({ label: 'Parche puesto', points: c.improved });
     }
     if (ctx.pay) items.push({ label: 'La paga', points: c.pay });
     return items;

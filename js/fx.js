@@ -12,7 +12,7 @@ MI.fx = (function () {
   // {rival} lo rellena quien llama: la empresa de la máquina o el nombre del otro jugador.
   function fill(text, rival) { return (text || '').replace(/\{rival\}/g, rival || MI.data.config.rival.name); }
 
-  const WORD = { resolved: 'RESUELTO', improved: 'MEJORADO', complicated: 'COMPLICADO' };
+  const WORD = { resolved: 'RESUELTO', improved: '¡PARCHE PUESTO!', complicated: 'COMPLICADO' };
 
   /* Sello cómico. Se inserta en un contenedor con position: relative y se quita solo. */
   function stamp(outcome, opts) {

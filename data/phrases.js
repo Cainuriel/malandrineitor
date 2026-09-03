@@ -18,7 +18,7 @@ MI.data.phrases = {
   // Coletilla pequeña bajo el sello
   kicker: {
     resolved: ['Ticket cerrado sin despeinarse', 'Se cierra y se factura', 'Producción respira', 'Y sin tocar el viernes', 'El cliente ni se ha enterado'],
-    improved: ['Parche puesto, deuda apuntada', 'Aguanta hasta el lunes', 'Funciona, no preguntes', 'Se ha ganado tiempo', 'Mejor que estaba'],
+    improved: ['Deuda técnica apuntada', 'Aguanta hasta el lunes', 'Funciona, no preguntes', 'Se ha ganado tiempo', 'Mejor que estaba'],
     complicated: ['A la pila de "ya lo miro"', 'El ticket vuelve, y con amigos', 'Esto ya no es un ticket, es un proyecto', 'Alguien ha abierto un incidente sobre el incidente', 'Café. Mucho café.']
   },
 

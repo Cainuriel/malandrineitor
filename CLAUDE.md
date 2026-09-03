@@ -70,7 +70,7 @@ docs/               Documentación de diseño (reglas, fórmula, guía de cartas
   rarity: 'rara',                  // comun | rara | epica | legendaria
   expertise: 'evm',                // id de data/techs.js  (bonus de campeón)
   kryptonite: { tech: 'react' },   // { tech: id } o { skill: id } o null
-  skills: { blockchain: 10, seguridad: 8, ... },
+  skills: { blockchain: 10, blockchain_non_evm: 7, web3: 10, security: 8, ... },
   ability: { id: 'zk_shield', name: '...', text: '...' } | null,  // solo épicas/legendarias
   quote: 'Frase de carta',         // opcional
   notes: ''                        // bio libre, pendiente de rellenar
@@ -97,14 +97,14 @@ docs/               Documentación de diseño (reglas, fórmula, guía de cartas
 2. **Campeón**: si `card.expertise === challenge.tech`, `score = config.champion.floor + base * config.champion.factor`. Con los valores por defecto (`floor 10`, `factor 0.4`) el rango es 10–14, por encima del máximo de 10 de cualquier carta sin expertise. **Regla de negocio: el campeón de la tecnología del reto siempre es la mejor opción.** Cualquier cambio de configuración debe respetar `floor >= 10`.
 3. **Criptonita**: si la tecnología del reto coincide con `kryptonite.tech`, o la habilidad de mayor peso del reto coincide con `kryptonite.skill`, `score *= config.kryptonite.factor` (0.5 por defecto). Se aplica después del bonus de campeón (no puede darse a la vez: una carta no puede tener la misma tecnología como expertise y criptonita; `engine.validate()` lo comprueba).
 4. **Suerte**: se suma un dado `d6` escalado (`config.luck.dieFaces`, `config.luck.scale`) — "el factor viernes".
-5. **Umbral** por dificultad (`config.thresholds[difficulty]`). Resultado: `resolved` si `total >= umbral`, `improved` si `total >= umbral - config.improvedMargin`, `complicated` en caso contrario.
-6. **Puntos de reputación** por resultado y dificultad en `config.points`. `complicated` manda la carta a *burnout* durante `config.burnoutTurns` turnos.
+5. **Umbral** por dificultad (`config.thresholds[difficulty]`). Resultado: `resolved` ("Resuelto") si `total >= umbral`, `improved` ("¡Parche puesto!", recompensa parcial, no cuenta como resuelto y evita el burnout) si `total >= umbral - config.improvedMargin`, `complicated` en caso contrario. La clave interna sigue siendo `improved` por compatibilidad; nunca se muestra como "Mejorado".
+6. **Puntos de reputación** por resultado y dificultad en `config.points`. `complicated` manda la carta a *burnout* durante `config.burnoutTurns` turnos. Las cartas legendarias son inmunes al burnout por regla de rareza.
 7. En cada ticket los dos jugadores mandan un malandriner al mismo ticket; quien obtiene mayor `total` se lleva la paga (`config.points.payBonus`).
 8. El giro puede cambiar la tecnología principal (`twist.tech`): entonces el campeón se evalúa con la nueva tecnología y la criptonita también. Es el mecanismo del ticket "es un framework JavaScript… ¡es Vue!".
 
 ## Partidas a dos jugadores y perfil (`js/match.js`; detalle en `docs/DOS_JUGADORES.md`)
 
-- La partida firmada se comparte normalmente en el fragmento `#match=…` de una URL; el JSON descargable es el respaldo. Ambos contienen `hands`, `tickets`, `players.A/B` y `status` (`A-playing` → `A-done` → `resolved`). Manos y tickets se derivan de `seed` con `MI.match.deal`, así cualquier navegador reconstruye la partida.
+- La partida se comparte normalmente en el fragmento `#match=…` de una URL; el JSON descargable es el respaldo legible y autosuficiente. El enlace compacto `v2` no lleva `hands`, `tickets` ni `result`: transporta la semilla y las jugadas, y el navegador reconstruye esos datos con `MI.match.deal` y `MI.match.rebuildResult`. El estado avanza `A-playing` → `A-done` → `resolved`.
 - Las jugadas de cada jugador (`{cardId, die}` por ticket) se guardan ofuscadas con un flujo XOR derivado de `config.secret + id de partida + rol`, en base64 (`blob`). El fichero completo lleva `sig` (doble FNV sobre el JSON canónico + secret). No es criptografía seria; evita trampas triviales y detecta manipulaciones accidentales.
 - `MI.match.resolve` reproduce ambas jugadas de forma determinista (el dado se toma del fichero, las habilidades se reaplican) y comprueba legalidad (carta en mano y no quemada).
 - Perfil en `localStorage['mi.profile']` firmado con la misma función; si la firma no cuadra, se reinicia y se avisa. `localStorage['mi.match.<id>']` recuerda si este navegador es A o B en cada partida.
@@ -121,7 +121,7 @@ docs/               Documentación de diseño (reglas, fórmula, guía de cartas
 - **Modo historia** (`js/story.js`): estado `{ coins, owned:{id:n}, seen:{id:true}, chapter, wins:{}, opened, sprints, log, lastSquad }`. Sobres en `config.story.packs` (rango de cartas y pesos por rareza; `hidden: true` para los que no se venden en la tienda). Las repetidas **se conservan** y se venden a mano desde la colección por `config.story.sellPrice` (nunca la última copia). Los sobres gratuitos (bienvenida, emergencia) evitan repetidas. Diez capítulos en `config.story.chapters`: nivel de la rival, rango de dificultad de los tickets (`minDifficulty`/`maxDifficulty`) y rarezas de su mano. Ganar el capítulo en curso desbloquea el siguiente; **perder devuelve al último punto de control** (`config.story.onLoss: 'checkpoint'`, puntos en `config.story.checkpoints`), conservando siempre colección y malandricoins. La partida se juega con `MI.game.newStoryGame({hand, oppHand, tickets, level, onFinish})`. **`onFinish(summary)` se llama en `finish()`, al terminar el sprint, no al pulsar el botón de la pantalla final**: aplica `reward` y guarda. Si esperase al clic, cerrar la pestaña en la pantalla de resultado haría perder las monedas y el avance de capítulo aunque la partida ya constase en el perfil. El botón solo navega.
 - **Apertura de sobres**: `MI.story.cinematic(pack, onDone)` monta una capa a pantalla completa (`.opening-overlay`) con tres actos: el sobre (arte SVG generado por `MI.story.packSvg(packId)`, con temblor y rasgado), las cartas de una en una (destello radial por rareza y giro 3D de entrada) y el resumen final. Avanza con clic, Enter o espacio; Escape salta al resumen. **Toda apertura de sobre debe pasar por aquí**, incluida la de bienvenida y la de emergencia.
   Durante la cinemática **no se ofrece la ficha de la carta**: decisión de producto de Fernando, porque interrumpe el ritmo (y además la ficha abría por debajo de la capa). Las fichas se consultan después, en la colección o en el álbum.
-- Otras habilidades implementadas en el motor: `reactionary` (+2 al dado si la tecnología es React), `autoscaling` (+1 al dado en dificultad 4-5), `agent_swarm` (sin burnout), `no_weakness` (ignora giros), `mentor` (campeón si el ticket pide Docencia), `craftsman` (mejorado cuenta como resuelto en dificultad 1-2), `researcher` (ignora el giro si el ticket pide I+D), `cartographer` (ignora el giro si el ticket pide análisis de datos), `root_access` (+1 al dado en Linux), `symfony_guard` (+1 al dado en Symfony), `dungeon_master` (inmune a criptonita y burnout, rescate).
+- Otras habilidades implementadas en el motor: `reactionary` (+2 al dado si la tecnología es React), `autoscaling` (+1 al dado en dificultad 4-5), `agent_swarm` (sin burnout), `no_weakness` (ignora giros), `mentor` (campeón si el ticket pide Docencia), `craftsman` (un parche puesto cuenta como resuelto en dificultad 1-2), `researcher` (ignora el giro si el ticket pide I+D), `cartographer` (ignora el giro si el ticket pide análisis de datos), `root_access` (+1 al dado en Linux), `symfony_guard` (+1 al dado en Symfony), `dungeon_master` (inmune a criptonita y burnout, rescate).
 
 ## Convenciones de código
 
@@ -246,7 +246,7 @@ Decisiones que conviene no deshacer sin motivo:
 
 ## Efectos de tebeo (`js/fx.js`)
 
-- `MI.fx.stamp(outcome, { pay })` devuelve el sello que se superpone a la carta enviada al revelar un ticket: rayos, palabra grande (RESUELTO / MEJORADO / COMPLICADO), onomatopeya y coletilla, ambas sacadas al azar de `data/phrases.js`. Se desvanece solo a los 1,5 s para no tapar el desglose de puntuación y lleva `pointer-events: none`.
+- `MI.fx.stamp(outcome, { pay })` devuelve el sello que se superpone a la carta enviada al revelar un ticket: rayos, palabra grande (RESUELTO / ¡PARCHE PUESTO! / COMPLICADO), onomatopeya y coletilla, ambas sacadas al azar de `data/phrases.js`. Se desvanece solo a los 1,5 s para no tapar el desglose de puntuación y lleva `pointer-events: none`.
 - `MI.fx.splash(kind, { title, score, phrase, onDone })` es el pantallazo de fin de sprint (`win` / `loss` / `draw`), con título de tebeo, marcador, frase al azar y cierre por clic, Enter, Escape o a los 6 s. Se muestra una sola vez por partida (`S.splashDone`).
 - Ambos respetan `prefers-reduced-motion`: la clase `fx-still` y una regla de medios desactivan las animaciones.
 - La tipografía es una pila de sistema con Impact a la cabeza (`--fx-font`): no se descargan fuentes, el juego debe funcionar sin red.
@@ -259,7 +259,7 @@ Decisiones y por qué:
 
 - **Se aplica al final del sprint, nunca durante.** Quitar una carta de la mano a media partida dejaría al jugador sin poder jugarla y sin explicación; además ya está en burnout el resto del sprint.
 - **Se pierde una copia, no la carta entera.** Con dos copias te queda una, así que los repetidos valen como seguro además de como venta.
-- **`config.story.burnoutReset: true`**: el contador vuelve a cero si el malandrín termina un sprint entero sin quemarse. Es lo que convierte la regla en estrategia en vez de en una cuenta atrás inevitable. Medido sobre 200 campañas completas:
+- **`config.story.burnoutReset: true`**: el contador baja en uno si el malandrín termina un sprint entero sin quemarse, tanto si se jugó como si se quedó en la oficina. Dos quemaduras requieren dos sprints limpios para desaparecer. Las mediciones históricas siguientes corresponden a la política anterior de reinicio completo y deben repetirse antes de retocar el equilibrio:
 
   | política | cartas perdidas por campaña (mediana) | p90 | máximo | campañas con alguna baja |
   |---|---|---|---|---|
@@ -267,9 +267,9 @@ Decisiones y por qué:
   | 3 burnouts, contador a cero al sobrevivir | 0 | 2 | 8 | 38 % |
   | 2 burnouts, contador a cero al sobrevivir | 1 | 3 | 7 | 73 % |
 
-  Con contador de por vida la atrición se dispara al final de la campaña (cada carta se queda clavada en 2 y muere al siguiente tropiezo). Con reinicio, la amenaza es constante pero acotada. El simulador juega de forma óptima, así que una persona perderá algo más.
+  Con contador de por vida la atrición se dispara al final de la campaña (cada carta se queda clavada en 2 y muere al siguiente tropiezo). La recuperación gradual actual aumenta la amenaza respecto a la política medida. El simulador juega de forma óptima, así que una persona perderá algo más.
 - **El aviso es parte de la mecánica**: la colección y el panel "Tu plantilla" del perfil muestran a cuántos burnouts está cada uno ("2 de 3 · en la cuerda floja"), y el resumen del sprint avisa de quién se acerca al límite. Sin ese aviso la regla sería castigo aleatorio, no decisión.
-- **Daniel Primo es inmune al burnout**, así que nunca se va.
+- **Todas las cartas legendarias son inmunes al burnout**, así que nunca se van por desgaste. El rescate del calabozo sigue siendo un poder exclusivo de Daniel Primo.
 - El texto dice **"deja Malandriner S.A."**, no "destruida": son personas reales de la comunidad y el tono importa.
 - Solo aplica al modo historia. El arcade reparte manos aleatorias y no tiene colección que desgastar.
 

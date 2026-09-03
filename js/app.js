@@ -21,7 +21,6 @@ MI.app = (function () {
     const n = MI.album.activeCards().length;
     const p = MI.match.profile.load();
     c.appendChild(el('div', { class: 'hero' }, [
-      el('h1', { class: 'title', text: '¡MALANDRINEITOR!' }),
       el('p', { class: 'sub', text: 'El juego de cartas de la comunidad de Web Reactiva.' }),
       el('p', { class: 'company-line', text: cfg.company.name + ' · ' + cfg.company.tagline }),
       p.tag ? el('p', { class: 'small muted', text: 'Juegas como ' + p.tag + ' · ' + (p.points || 0) + ' puntos malandrín' }) : null
@@ -137,7 +136,7 @@ MI.app = (function () {
       el('h2', { text: 'Tu plantilla' }),
       el('p', { class: 'small muted', text: owned.length
         ? `${owned.length} malandrines en propiedad` + (dups ? ` · ${dups} repetida${dups === 1 ? '' : 's'} para vender` : '') + (burned ? ` · ${burned} con algún burnout a sus espaldas` : '')
-          + `. Quien se queme ${cfg.story.burnoutLimit} veces deja la empresa; el contador vuelve a cero si termina un sprint entero sin quemarse.`
+          + `. Quien se queme ${cfg.story.burnoutLimit} veces deja la empresa; cada sprint limpio resta un burnout. Las cartas legendarias son inmunes.`
         : 'Todavía no tienes cartas. Abre un sobre en la tienda.' }),
       owned.length ? el('div', { class: 'squad-list' }, owned.map((card) => {
         const n = story.owned[card.id];

@@ -27,7 +27,7 @@ MI.data.config = {
 
   // Umbral de éxito por dificultad (índice = dificultad 1..5).
   thresholds: [null, 4.5, 6, 7.5, 9, 10.5],
-  improvedMargin: 2.5,   // total >= umbral - margen => "mejorado"
+  improvedMargin: 2.5,   // total >= umbral - margen => "¡parche puesto!"
 
   points: {
     resolved:    [null, 10, 15, 20, 30, 40],
@@ -77,9 +77,9 @@ MI.data.config = {
     sellPrice: { comun: 4, rara: 10, epica: 25, legendaria: 80 },   // venta manual de una carta repetida
 
     // Desgaste: un malandrín que se quema demasiadas veces deja la empresa (se pierde una copia).
-    // burnoutReset: true -> el contador vuelve a cero si termina un sprint sin quemarse.
-    //   Con false (contador de por vida) la atrición se dispara: medido, hasta 34 cartas perdidas
-    //   en una campaña mala frente a 8 con reset. Ver CLAUDE.md, "Desgaste de las cartas".
+    // burnoutReset: true -> resta un burnout por cada sprint que termina sin quemarse.
+    //   Con false (contador de por vida) la atrición se dispara. Ver CLAUDE.md,
+    //   "Desgaste de las cartas".
     burnoutLimit: 3,
     burnoutReset: true,
     // Qué pasa al perder un sprint (la colección y los malandricoins se conservan siempre):

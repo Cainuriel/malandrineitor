@@ -17,6 +17,7 @@ ctx.TextEncoder = TextEncoder; ctx.TextDecoder = TextDecoder; ctx.btoa = btoa; c
 const MI = ctx.window.MI;
 const cfg = MI.data.config;
 const engine = MI.engine;
+const activeCards = MI.album.activeCards();
 let failures = 0;
 function check(cond, msg) { if (!cond) { failures++; console.error('FALLO:', msg); } else console.log('ok  ', msg); }
 
@@ -60,6 +61,11 @@ check(pick && pick.id === 'fernando-lopez', 'la IA nivel cto envía al campeón 
 const dp = MI.data.cards.find((c) => c.id === 'daniel-primo');
 const worst = engine.resolve(dp, MI.data.challenges.find((c) => c.id === 'db-breach'), { withTwist: true, rng: () => 0 }, cfg);
 check(worst.burnout === false, 'Daniel Primo nunca entra en burnout');
+const yuri = MI.data.cards.find((c) => c.id === 'yuri');
+const yuriWorst = engine.resolve(yuri, MI.data.challenges.find((c) => c.id === 'db-breach'), { withTwist: true, rng: () => 0 }, cfg);
+check(yuri.rarity === 'legendaria' && yuriWorst.burnout === false, 'toda carta legendaria es inmune al burnout');
+check(yuri.skills.blockchain === 9 && yuri.skills.blockchain_non_evm === 9 && yuri.skills.web3 === 8, 'Yuri domina blockchain EVM, no EVM y Web3');
+check(fer.skills.blockchain_non_evm === 7 && fer.skills.web3 === 10, 'Fernando domina Web3 y conoce blockchain no EVM');
 
 // 7. Habilidades especiales nuevas y orden de potencia de las épicas
 const sergi = MI.data.cards.find((c) => c.id === 'sergi-edo');
@@ -77,17 +83,38 @@ const symfonyChallenge = MI.data.challenges.find((c) => c.tech === 'symfony');
 const symfonyResult = engine.resolve(joseAngel, symfonyChallenge, { rng: () => 0 }, cfg);
 check(symfonyResult.die === 2, 'Symfony de guardia suma +1 al dado en tickets Symfony');
 
+const pantic = MI.data.cards.find((c) => c.id === 'pantic');
+const seoChallenge = MI.data.challenges.find((c) => c.id === 'seo-javascript-indexing');
+check(engine.evaluate(pantic, seoChallenge, {}, cfg).champion, 'Pantic es campeón cuando SEO es la habilidad principal');
+const crmDrupal = MI.data.challenges.find((c) => c.id === 'crm-missing-customers');
+const panticBeforeTwist = engine.evaluate(pantic, crmDrupal, { withTwist: false }, cfg);
+const panticAfterTwist = engine.evaluate(pantic, crmDrupal, { withTwist: true }, cfg);
+check(!panticBeforeTwist.kryptonite && panticAfterTwist.kryptonite && panticAfterTwist.score < panticAfterTwist.base, 'el giro Drupal activa la criptonita de Pantic');
+check(!MI.data.optout.includes('betulioo') && activeCards.some((c) => c.id === 'betulioo'), 'Betulioo vuelve al juego con su mismo ID');
+const newCommons = ['joseba', 'mario-alejandro-armenta', 'jose-antonio-olmos', 'francesc-alberola', 'samuel-baute', 'marty', 'traza'].map((id) => MI.data.cards.find((c) => c.id === id));
+check(newCommons.every((c) => c && c.rarity === 'comun' && c.kryptonite), 'los siete nuevos malandrines son comunes y tienen criptonita');
+check(MI.data.cards.find((c) => c.id === 'mario-alejandro-armenta').expertise === 'copilot', 'Mario es campeón de GitHub Copilot');
+const samuel = MI.data.cards.find((c) => c.id === 'samuel-baute');
+const samuelTickets = ['bank-statement-legacy', 'branch-terminal-forms'].map((id) => MI.data.challenges.find((c) => c.id === id));
+check(samuelTickets.every((c) => c && c.twist) && engine.evaluate(samuel, samuelTickets[0], { withTwist: true }, cfg).champion, 'Samuel tiene dos tickets legacy con giro y es campeón del giro COBOL');
+const cryptoTickets = ['zk-private-audit', 'post-quantum-credentials', 'blockchain-r1-k1-mobile'].map((id) => MI.data.challenges.find((c) => c.id === id));
+check(cryptoTickets.every((c) => c && c.difficulty >= 4 && (c.skills.crypto || c.skills.blockchain)), 'los tres tickets criptográficos son difíciles y piden Criptografía o Blockchain');
+check(cryptoTickets[0].tech === 'zk' && cryptoTickets[0].difficulty === 5, 'el ticket de solvencia usa ZK y dificultad 5');
+check(cryptoTickets[1].difficulty === 5 && cryptoTickets[1].skills.crypto === 3, 'la migración poscuántica prioriza Criptografía y dificultad 5');
+check(cryptoTickets[2].tech === 'evm' && cryptoTickets[2].twist.skills.mobile === 3, 'el ticket R1/K1 revela la integración con el chip seguro del móvil');
+
 const rarityOrder = ['comun', 'rara', 'epica', 'legendaria'];
 const cardPower = (c) => rarityOrder.indexOf(c.rarity) * 10 + Object.values(c.skills).reduce((sum, value) => sum + value, 0) / Object.keys(c.skills).length;
 const powerOrder = MI.data.cards.slice().sort((a, b) => cardPower(b) - cardPower(a)).slice(0, 5).map((c) => c.id);
-check(powerOrder.join(',') === 'daniel-primo,yuri,jose-manuel-gomez,sergi-edo,andres-cabrera', 'orden de potencia: Daniel, Yuri, José Manuel, Sergi y Andrés');
+check(powerOrder.slice(0, 2).join(',') === 'yuri,daniel-primo', 'las dos legendarias encabezan la potencia: Yuri y Daniel');
+check(cardPower(yuri) > cardPower(dp), 'las nuevas competencias elevan ligeramente a Yuri sobre Daniel');
 
 // 8. Partida a dos jugadores: crear, jugar A, exportar/importar, jugar B, resolver; firma y ofuscación
 {
   const Mx = MI.match;
   const cardsById = {}; MI.data.cards.forEach((c) => { cardsById[c.id] = c; });
   const chById = {}; MI.data.challenges.forEach((c) => { chById[c.id] = c; });
-  const m = Mx.create('Ana', 'semilla-test', MI.data.cards, MI.data.challenges);
+  const m = Mx.create('Ana', 'semilla-test', activeCards, MI.data.challenges);
   check(m.hands.A.length === cfg.arcade.handSize && m.tickets.length === cfg.arcade.tickets && !m.hands.A.some((id) => m.hands.B.includes(id)), 'reparto: dos manos disjuntas y tickets fijados por la semilla');
   const playsA = m.tickets.map((t, i) => ({ cardId: m.hands.A[i % m.hands.A.length], die: 1 + (i % 6) }));
   Mx.commitPlays(m, 'A', 'Ana', 'sA', playsA);
@@ -154,7 +181,7 @@ check(powerOrder.join(',') === 'daniel-primo,yuri,jose-manuel-gomez,sergi-edo,an
   const Mx = MI.match;
   const cardsById = {}; MI.data.cards.forEach((c) => { cardsById[c.id] = c; });
   const chById = {}; MI.data.challenges.forEach((c) => { chById[c.id] = c; });
-  const m = Mx.create('Ana', 'rescate', MI.data.cards, MI.data.challenges);
+  const m = Mx.create('Ana', 'rescate', activeCards, MI.data.challenges);
   m.hands.A = ['daniel-primo', 'holtrix', 'xabat-karrera', 'vicent-perez', 'paulo-carvajal'];
   m.tickets = ['blockchain-from-scratch', 'db-breach', 'react-white-screen', 'cert-expired', 'mvp-agentic'];
   // Ticket 1: HolTrix a la blockchain (se quema seguro). Ticket 2: rescate de HolTrix y lo manda otra vez.
@@ -165,7 +192,7 @@ check(powerOrder.join(',') === 'daniel-primo,yuri,jose-manuel-gomez,sergi-edo,an
   check(r.tickets[0].A.burnout === true, 'HolTrix se quema en la blockchain');
   check(r.tickets[1].A.cardId === 'holtrix' && !r.tickets[1].A.nobody, 'el rescate del calabozo devuelve a HolTrix a la mano en el siguiente ticket');
   check(r.points.A.items.some((i) => i.label === 'Rescate del calabozo'), 'el rescate puntúa');
-  const m2 = Mx.create('Ana', 'rescate2', MI.data.cards, MI.data.challenges);
+  const m2 = Mx.create('Ana', 'rescate2', activeCards, MI.data.challenges);
   m2.hands.A = ['holtrix', 'xabat-karrera', 'vicent-perez', 'paulo-carvajal', 'hugo-s'];
   m2.tickets = m.tickets;
   Mx.commitPlays(m2, 'A', 'Ana', 's', playsA.map((p) => ({ cardId: p.cardId === 'daniel-primo' ? 'hugo-s' : p.cardId, die: p.die, rescue: p.rescue })));
@@ -186,7 +213,7 @@ check(powerOrder.join(',') === 'daniel-primo,yuri,jose-manuel-gomez,sergi-edo,an
   check(JSON.stringify(rr) === JSON.stringify(r), 'la partida con rescate resuelve igual antes y después del enlace');
 
   // Y ahora el rescate por la vía compacta, con una partida repartida de verdad.
-  const compacta = Mx.create('Ana', 'rescate-compacto', MI.data.cards, MI.data.challenges);
+  const compacta = Mx.create('Ana', 'rescate-compacto', activeCards, MI.data.challenges);
   const rescatada = compacta.hands.A[2];
   Mx.commitPlays(compacta, 'A', 'Ana', 's', compacta.tickets.map((t, i) => (
     i === 3 ? { cardId: rescatada, die: 5, rescue: rescatada } : { cardId: compacta.hands.A[i % 5], die: 2 + (i % 4) }
@@ -200,7 +227,7 @@ check(powerOrder.join(',') === 'daniel-primo,yuri,jose-manuel-gomez,sergi-edo,an
   check(jc.every((p, i) => p.cardId === Mx.plays(compacta, 'A').plays[i].cardId && p.die === Mx.plays(compacta, 'A').plays[i].die), 'todas las jugadas sobreviven al formato compacto');
   check(JSON.stringify(Mx.resolve(idaVuelta, cardsById, chById, engine)) === JSON.stringify(Mx.resolve(compacta, cardsById, chById, engine)), 'la resolución es idéntica antes y después del enlace compacto');
 
-  const sinNadie = Mx.create('Ana', 'vacia', MI.data.cards, MI.data.challenges);
+  const sinNadie = Mx.create('Ana', 'vacia', activeCards, MI.data.challenges);
   Mx.commitPlays(sinNadie, 'A', 'Ana', 's', sinNadie.tickets.map((t, i) => (i === 2 ? { cardId: null, die: 0 } : { cardId: sinNadie.hands.A[i % 5], die: 4 })));
   Mx.commitPlays(sinNadie, 'B', 'Bea', 's', sinNadie.tickets.map(() => ({ cardId: sinNadie.hands.B[0], die: 3 })));
   const vuelta2 = Mx.fromUrlPayload(Mx.toUrlPayload(sinNadie));
@@ -271,12 +298,15 @@ check(powerOrder.join(',') === 'daniel-primo,yuri,jose-manuel-gomez,sergi-edo,an
   for (let i = 1; i <= L; i++) st.wearAndTear(s, { hand, cards: { 'vicent-perez': { burnouts: 1 } } });
   check(s.owned['vicent-perez'] === 1, 'con dos copias solo se pierde una');
 
-  // El contador vuelve a cero si termina un sprint sin quemarse
+  // Cada sprint sin quemarse elimina solo un burnout acumulado
   s = base();
   st.wearAndTear(s, { hand, cards: { 'holtrix': { burnouts: L - 1 } } });
   check((s.strikes['holtrix'] || 0) === L - 1, 'el desgaste se acumula dentro de la campaña');
-  const warn = st.wearAndTear(s, { hand, cards: {} });
-  check(!s.strikes['holtrix'] && s.owned['holtrix'] === 1, 'sobrevivir un sprint entero pone el contador a cero');
+  let warn = st.wearAndTear(s, { hand, cards: {} });
+  check(s.strikes['holtrix'] === L - 2 && s.owned['holtrix'] === 1, 'un sprint limpio elimina solo un burnout');
+  check(warn.warn.some((x) => x.card.id === 'holtrix' && x.strikes === L - 2), 'la carta conserva una quemadura visible');
+  warn = st.wearAndTear(s, { hand, cards: {} });
+  check(!s.strikes['holtrix'], 'otro sprint limpio elimina el burnout restante');
   check(warn.lost.length === 0, 'sin burnouts no se pierde a nadie');
 
   // Aviso de cuerda floja

@@ -90,12 +90,13 @@
 
     const points = cfg.points[outcome][challenge.difficulty];
     let burnout = outcome === 'complicated';
+    if (burnout && card.rarity === 'legendaria') burnout = false;
     if (burnout && opts.abilities !== false && (engine.hasAbility(card, 'dungeon_master') || engine.hasAbility(card, 'agent_swarm'))) burnout = false;
 
     return Object.assign(ev, { die, luck, total, threshold, outcome, points, burnout });
   };
 
-  engine.outcomeLabel = { resolved: 'Resuelto', improved: 'Mejorado', complicated: 'Complicado' };
+  engine.outcomeLabel = { resolved: 'Resuelto', improved: '¡Parche puesto!', complicated: 'Complicado' };
 
   // Habilidades activas: el rescate del amo del calabozo. Devuelve true si la carta puede rescatar.
   engine.canRescue = function (hand, burnout, usedRescue) {

@@ -10,6 +10,8 @@ MI.data.techs = [
   { id: 'svelte',      name: 'Svelte',           group: 'front', aliases: ['sveltekit'] },
   { id: 'sass',        name: 'Sass / CSS',       group: 'front', aliases: ['scss', 'css', 'tailwind'] },
   { id: 'wordpress',   name: 'WordPress',        group: 'front', aliases: ['wp'] },
+  { id: 'drupal',      name: 'Drupal',           group: 'front', aliases: [] },
+  { id: 'seo',         name: 'SEO',              group: 'front', aliases: ['posicionamiento', 'seo técnico'] },
 
   { id: 'java',        name: 'Java',             group: 'back',  aliases: ['spring', 'spring boot', 'jakarta'] },
   { id: 'kotlin',      name: 'Kotlin',           group: 'back',  aliases: [] },
@@ -42,6 +44,7 @@ MI.data.techs = [
   { id: 'onprem',      name: 'On-premise / soberano', group: 'cloud', aliases: ['proxmox', 'bare metal'] },
 
   { id: 'claude_code', name: 'Claude Code',      group: 'ia',    aliases: ['claude', 'agentes de código'] },
+  { id: 'copilot',     name: 'GitHub Copilot',   group: 'ia',    aliases: ['copilot', 'github copilot'] },
   { id: 'llm',         name: 'LLM y RAG',        group: 'ia',    aliases: ['rag', 'langchain', 'openai', 'ollama'] },
   { id: 'pytorch',     name: 'PyTorch / ML',     group: 'ia',    aliases: ['tensorflow', 'scikit-learn', 'sklearn'] },
 
@@ -51,6 +54,8 @@ MI.data.techs = [
   { id: 'typescript',  name: 'TypeScript',       group: 'lang',  aliases: ['javascript', 'js', 'ts'] },
   { id: 'rust',        name: 'Rust',             group: 'lang',  aliases: [] },
   { id: 'cobol',       name: 'COBOL / mainframe', group: 'lang', aliases: ['mainframe', 'as400'] },
+  { id: 'delphi',      name: 'Delphi',           group: 'lang',  aliases: ['object pascal'] },
+  { id: 'pascal',      name: 'Pascal',           group: 'lang',  aliases: ['free pascal', 'lazarus'] },
 
   { id: 'nocode',      name: 'No-code / automatización', group: 'tools', aliases: ['n8n', 'make', 'zapier', 'bubble'] },
   { id: 'erp',         name: 'ERP / CRM',        group: 'tools', aliases: ['sap', 'odoo', 'dynamics', 'salesforce'] },

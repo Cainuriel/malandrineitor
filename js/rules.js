@@ -13,7 +13,7 @@ MI.rules = (function () {
       sec('Las cartas', [
         'Cada carta es un malandrín de la comunidad con <b>habilidades</b> de 1 a 10 (Front, Back, DevOps, Seguridad, IA, Docencia y muchas más). Las que no aparecen en la carta valen ' + cfg.skills.defaultValue + '. Todos tienen <b>desarrollo dirigido por especificación</b>, porque aquí se programa con agentes, aunque cada cual a su nivel.',
         'Cada malandrín es <b>campeón</b> de una tecnología (React, AWS, Blockchain EVM, Java…) y tiene una <b>criptonita</b>: una tecnología o una disciplina que se le da rematadamente mal. Algunos no tienen puntos débiles; son pocos y se nota.',
-        'Hay cuatro rarezas: común, rara, épica y legendaria. Las épicas y la legendaria traen una <b>habilidad especial</b> escrita en la carta.'
+        'Hay cuatro rarezas: común, rara, épica y legendaria. Las épicas y legendarias traen una <b>habilidad especial</b> escrita en la carta. Además, las legendarias son inmunes al burnout.'
       ]),
       sec('Los tickets', [
         'Un ticket es una situación real de oficina redactada en jerga profesional: un pod en CrashLoopBackOff un viernes, una base de datos exfiltrada, un WordPress que vende cosas raras. Cada ticket pide unas habilidades con <b>pesos</b> (×3, ×2, ×1), tiene una <b>dificultad</b> de 1 a 5 y, muchas veces, una <b>tecnología principal</b>.',
@@ -24,7 +24,7 @@ MI.rules = (function () {
         'Si el malandrín es <b>campeón</b> de la tecnología principal, su puntuación pasa a ser ' + cfg.champion.floor + ' + media × ' + cfg.champion.factor + ': siempre por encima de cualquiera que no sea campeón. Mandar al campeón nunca es mala idea.',
         'Si el ticket toca su <b>criptonita</b> (la tecnología coincide, o la habilidad de más peso es su punto débil), la puntuación se multiplica por ' + cfg.kryptonite.factor + '.',
         'Se suma el <b>factor viernes</b>: un dado de ' + cfg.luck.dieFaces + ' caras multiplicado por ' + cfg.luck.scale + '. Nadie controla el viernes.',
-        'El total se compara con el <b>umbral</b> de la dificultad (' + cfg.thresholds.slice(1).join(' / ') + ' para dificultad 1 a 5). Igual o por encima: <b>resuelto</b>. Hasta ' + cfg.improvedMargin + ' puntos por debajo: <b>mejorado</b>. Más abajo: <b>complicado</b>, y el malandrín entra en <b>burnout</b> durante ' + cfg.burnoutTurns + ' tickets.'
+        'El total se compara con el <b>umbral</b> de la dificultad (' + cfg.thresholds.slice(1).join(' / ') + ' para dificultad 1 a 5). Igual o por encima: <b>resuelto</b>. Hasta ' + cfg.improvedMargin + ' puntos por debajo: <b>¡parche puesto!</b> Se ha salido del paso: hay recompensa parcial y no hay burnout, pero el ticket no cuenta como resuelto. Más abajo: <b>complicado</b>, y el malandrín entra en <b>burnout</b> durante ' + cfg.burnoutTurns + ' tickets.'
       ]),
       sec('Reputación y paga', [
         'Los dos jugadores empiezan con ' + cfg.points.startReputation + ' de <b>reputación</b> y mandan un malandriner al mismo ticket. Resolver suma (de ' + cfg.points.resolved[1] + ' a ' + cfg.points.resolved[5] + ' según dificultad), mejorar suma menos y complicar resta. Quien obtiene mayor total en el ticket <b>se lleva la paga</b>: +' + cfg.points.payBonus + '.',
@@ -32,11 +32,11 @@ MI.rules = (function () {
       ]),
       sec('Desgaste: el burnout se paga', [
         'En el modo historia, cada vez que un malandrín acaba un ticket en <b>complicado</b> se le apunta un burnout. Al <b>' + cfg.story.burnoutLimit + '</b>, deja Malandriner S.A. y pierdes esa copia de la carta. Si tenías dos, te queda una; si era la única, se va del todo y hay que volver a conseguirla en un sobre.',
-        'El contador <b>vuelve a cero</b> cuando ese malandrín termina un sprint entero sin quemarse, así que no es una cuenta atrás inevitable: es una señal de que lo estás mandando a sitios donde no debería estar. En la colección y en tu perfil aparece a cuántos burnouts está cada uno, para que puedas darle descanso a tiempo. Daniel Primo no se quema nunca, así que no se va jamás.',
+        'Cada sprint entero sin quemarse <b>resta un burnout</b>, incluso si el malandrín se queda en la oficina. En la colección y en tu perfil aparece a cuántos burnouts está cada uno, para que puedas darle descanso a tiempo. Las cartas legendarias no se queman y nunca dejan la empresa por este motivo.',
         'En el modo arcade no se pierde nada: las manos son aleatorias y no hay colección que desgastar.'
       ]),
       sec('El amo del calabozo', [
-        'Daniel Primo es la carta legendaria. Es inmune a la criptonita y al burnout y, si está en tu mano y no está quemado, puedes usar una vez por partida <b>Rescatar del calabozo</b> sobre un malandrín en burnout para devolverlo a la mano antes de elegir carta. ' + cfg.rival.name + ' también lo hace si le toca.'
+        'Daniel Primo es inmune a la criptonita y, como toda carta legendaria, al burnout. Su poder exclusivo permite usar una vez por partida <b>Rescatar del calabozo</b> sobre un malandrín en burnout para devolverlo a la mano antes de elegir carta. ' + cfg.rival.name + ' también lo hace si le toca.'
       ]),
       sec('Puntos malandrín', [
         'Además de la reputación de cada partida, acumulas <b>puntos malandrín</b> en tu perfil por cosas concretas: resolver como campeón (+' + cfg.scoring.champion + '), superar un giro (+' + cfg.scoring.twistSurvived + '), resolver pese a la criptonita (+' + cfg.scoring.kryptoniteDefied + '), sacar un ' + cfg.luck.dieFaces + ' y resolver (+' + cfg.scoring.perfectFriday + '), resolver tickets de dificultad 4 o 5 (+' + cfg.scoring.hardTicket + '), llevarte la paga (+' + cfg.scoring.pay + '), tres resueltos seguidos (+' + cfg.scoring.streak3 + '), rescatar del calabozo (+' + cfg.scoring.rescue + '), acabar el sprint sin burnout (+' + cfg.scoring.noBurnout + '), llevarte todas las pagas (+' + cfg.scoring.allPays + ') y ganar (+' + cfg.scoring.win + '). Contra la máquina se multiplican por ' + cfg.scoring.levelFactor.junior + ', ' + cfg.scoring.levelFactor.senior + ' o ' + cfg.scoring.levelFactor.cto + ' según su nivel.'

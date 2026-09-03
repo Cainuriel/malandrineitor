@@ -70,7 +70,7 @@ Decisión de Fernando: el arcade se queda como está (5 tickets, mano de 5); má
 
 ## Fase 4 — Catálogo, colección oculta y presentación `[x]`
 
-- [x] 115 tickets (85 nuevos) por categorías: incidente, desarrollo, migración, seguridad, datos/IA, negocio, formación e I+D. Distribución por dificultad 4/28/54/25/4 y 38 con giro.
+- [x] 123 tickets por categorías: incidente, desarrollo, migración, seguridad, datos/IA, negocio, formación e I+D. Distribución por dificultad 4/29/58/26/6 y 44 con giro.
 - [x] Vocabulario: eliminada la palabra "marrón" de todos los textos; la interfaz ya no menciona ficheros ni rutas del proyecto.
 - [x] Campaña de 10 capítulos con puntos de control (1, 4 y 7); perder devuelve al último alcanzado, conservando colección y malandricoins. Regla elegida tras medir las tres alternativas por simulación (ver `CLAUDE.md`, "Equilibrio de la campaña").
 - [x] Las repetidas se conservan y se venden desde la colección según rareza (4 / 10 / 25 / 80). Nunca la última copia.
@@ -109,7 +109,7 @@ Pendiente de la fase, aplazado a propósito:
 - [x] Corregido: en las partidas a dos, quien recibía el fichero resuelto veía ganar a la empresa de la máquina en lugar de a su rival humano, porque las frases de derrota llevaban el nombre escrito a mano.
 - [x] Acceso a la tienda de sobres desde el álbum y desde el perfil.
 - [x] Panel "Tu plantilla" en el perfil: cartas en propiedad, copias, envíos, resueltos, burnouts acumulados y venta de repetidas.
-- [x] Desgaste de las cartas: tres burnouts y el malandrín deja la empresa, con contador que se reinicia al sobrevivir un sprint y avisos de "cuerda floja". Política elegida tras medir tres variantes (ver `CLAUDE.md`, "Desgaste de las cartas").
+- [x] Desgaste de las cartas: tres burnouts y el malandrín deja la empresa, con recuperación de uno por sprint limpio, inmunidad de las legendarias y avisos de "cuerda floja".
 - [x] Modo desarrollador en un solo interruptor (`config.developer.enabled`): gobierna el botón "Descubrir toda la colección" del álbum y el campo "Semilla (opcional)" del arcade, incluida la semilla del marcador y de la pantalla final.
 - [x] UX de la pantalla de partida, pensada para el móvil:
   - La mano pasa a ser un **mazo** dentro del hueco "Tu malandrín": la carta activa delante y el resto asomando por detrás. Se cambia de carta arrastrando, con las flechas del teclado, con los botones Anterior/Siguiente o pulsando una carta lateral. La carta activa es la que se envía, así que elegir y enviar dejan de ser dos pasos.
@@ -129,6 +129,9 @@ Pendiente de la fase, aplazado a propósito:
 - [x] Botones de la partida por color: enviar en verde sobre texto negro, siguiente ticket en azul y cerrar el sprint en rojo, ambos sobre blanco. "Ver ficha completa" pasa a ser un botón con superficie propia y altura de dedo, lejos de la barra fija.
 - [x] Corregido: una carta retirada por `data/optout.js` seguía apareciendo en la plantilla y podía jugarse, aunque hubiera desaparecido del álbum.
 - [x] Documentado el procedimiento para añadir o retirar una carta y su efecto sobre los enlaces en curso (`CLAUDE.md`, "Cambiar el catálogo").
+- [x] Pulido móvil: menú superior legible, título duplicado retirado, acciones de Historia y marcador de combate flotantes, selección de cartas animada y recuperación de un burnout por sprint limpio.
+- [x] Resultado intermedio renombrado a "¡Parche puesto!": recompensa parcial y sin burnout, pero el ticket no cuenta como resuelto. La clave interna `improved` se conserva por compatibilidad.
+- [x] Documentación de dos jugadores actualizada al enlace binario `v2`: datos transportados y reconstruidos, firma, ofuscación, huella del catálogo, formato largo de respaldo y compatibilidad con enlaces anteriores.
 
 ---
 

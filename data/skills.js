@@ -15,7 +15,9 @@ MI.data.skills = [
   { id: 'legacy',       name: 'Legacy y migraciones',          short: 'LEGCY', group: 'dev',        desc: 'Código heredado, refactor a gran escala, migraciones de versión y de plataforma.' },
   { id: 'testing',      name: 'Testing y QA',                  short: 'TEST',  group: 'dev',        desc: 'Estrategia de pruebas, automatización, cobertura útil, TDD.' },
   { id: 'performance',  name: 'Rendimiento',                   short: 'PERF',  group: 'dev',        desc: 'Profiling, caché, Web Vitals, optimización de consultas y latencia.' },
-  { id: 'blockchain',   name: 'Blockchain y Web3',             short: 'CHAIN', group: 'dev',        desc: 'Smart contracts, redes permisionadas, tokens, wallets.' },
+  { id: 'blockchain',   name: 'Blockchain EVM',                short: 'EVM',   group: 'dev',        desc: 'Smart contracts y redes compatibles con Ethereum Virtual Machine.' },
+  { id: 'blockchain_non_evm', name: 'Blockchain no EVM',       short: 'NOEVM', group: 'dev',        desc: 'Bitcoin y redes blockchain construidas con Rust u otras arquitecturas no EVM.' },
+  { id: 'web3',         name: 'Web3',                          short: 'WEB3',  group: 'dev',        desc: 'Integración web con wallets, firmas, identidad y aplicaciones blockchain.' },
   { id: 'opensource',   name: 'Open source',                   short: 'OSS',   group: 'dev',        desc: 'Contribución, mantenimiento y gobernanza de proyectos abiertos.' },
 
   // Operaciones
@@ -46,6 +48,7 @@ MI.data.skills = [
   { id: 'ux',           name: 'Producto y UX',                 short: 'UX',    group: 'producto',   desc: 'Investigación con usuarios, flujos, priorización, métricas de producto.' },
   { id: 'design',       name: 'Diseño gráfico',                short: 'DISEÑ', group: 'producto',   desc: 'Identidad visual, tipografía, sistemas de diseño, ilustración.' },
   { id: 'accessibility',name: 'Accesibilidad',                 short: 'A11Y',  group: 'producto',   desc: 'WCAG, lectores de pantalla, navegación por teclado.' },
+  { id: 'seo',          name: 'SEO y posicionamiento',         short: 'SEO',   group: 'producto',   desc: 'SEO técnico, indexación, arquitectura de contenidos y rendimiento orgánico.' },
 
   // Negocio y transversales
   { id: 'erp',          name: 'ERP y CRM',                     short: 'ERP',   group: 'negocio',    desc: 'Sistemas de gestión empresarial, integraciones, procesos de negocio.' },

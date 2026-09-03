@@ -3,6 +3,4 @@
 window.MI = window.MI || {};
 MI.data = MI.data || {};
 
-MI.data.optout = [
-  // 'id-de-la-carta'
-];
+MI.data.optout = [];

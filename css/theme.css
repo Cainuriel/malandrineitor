@@ -104,7 +104,7 @@ input, select {
 .small { font-size: 12px; }
 
 /* Menú principal */
-.hero { text-align: center; padding: 60px 20px 30px; }
+.hero { text-align: center; padding: 36px 20px 20px; }
 .hero .title {
   font-size: clamp(44px, 8vw, 96px); font-weight: 900; letter-spacing: -0.04em; line-height: 0.95; margin: 0;
   background: linear-gradient(180deg, #fff 0%, var(--accent) 55%, var(--accent-2) 100%);
@@ -150,8 +150,8 @@ input, select {
   .topbar { padding: 8px 12px; gap: 6px; flex-wrap: wrap; }
   .brand .logo { font-size: 17px; }
   .brand .company { display: none; }
-  .nav { margin-left: 0; width: 100%; overflow-x: auto; gap: 4px; padding-bottom: 2px; scrollbar-width: none; }
-  .nav button { padding: 6px 9px; font-size: 12px; flex: none; }
+  .nav { margin-left: 0; width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+  .nav button { min-width: 0; padding: 8px 5px; font-size: 14px; }
   .view { padding: 16px 12px 50px; }
   .view h1 { font-size: 26px; }
   .album-toolbar { gap: 6px; }
@@ -161,7 +161,7 @@ input, select {
   .album-grid .card { --card-w: calc(50vw - 18px); }
   .modal .modal-body { gap: 14px; padding: 54px 10px 16px; align-items: flex-start; }
   .modal .close { top: calc(10px + env(safe-area-inset-top)); right: calc(10px + env(safe-area-inset-right)); padding: 9px 16px; }
-  .hero { padding: 30px 10px 10px; }
+  .hero { padding: 18px 10px 8px; }
   .menu-grid { grid-template-columns: 1fr; }
 }
 .skill-table tr.hl td { color: var(--accent); }

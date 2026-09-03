@@ -123,8 +123,8 @@ MI.story = (function () {
     return rng.shuffle(pool).slice(0, MI.data.config.arcade.handSize);
   }
 
-  /* Desgaste: suma los quemados de este sprint, retira a quien llegue al límite y pone el
-     contador a cero a quien haya aguantado el sprint entero sin quemarse. Devuelve
+    /* Desgaste: suma los quemados de este sprint, retira a quien llegue al límite y resta uno
+      a quien haya aguantado el sprint entero sin quemarse. Devuelve
      { lost: [{card, copiesLeft}], warn: [{card, strikes}] } para avisar en el resumen.
      Se aplica al terminar el sprint, no durante: quitar una carta de la mano a media partida
      dejaría al jugador sin poder jugarla y sin explicación. */
@@ -146,8 +146,13 @@ MI.story = (function () {
         s.log.unshift({ date: new Date().toISOString(), text: card.name + ' deja Malandriner S.A. tras quemarse ' + limit + ' veces.' + (s.owned[id] > 0 ? ' Te queda otra copia en plantilla.' : '') });
       }
     });
-    // El contador se reinicia para quien terminó el sprint sin quemarse
-    if (cfg().burnoutReset) (summary.hand || []).forEach((id) => { if (!played[id] || !played[id].burnouts) delete s.strikes[id]; });
+    // Cada sprint limpio cura una sola quemadura; recuperarse de dos requiere dos sprints.
+    if (cfg().burnoutReset) (summary.hand || []).forEach((id) => {
+      if ((!played[id] || !played[id].burnouts) && s.strikes[id]) {
+        s.strikes[id]--;
+        if (!s.strikes[id]) delete s.strikes[id];
+      }
+    });
     (summary.hand || []).forEach((id) => {
       const n = s.strikes[id] || 0;
       if (n > 0 && n < limit && s.owned[id]) out.warn.push({ card: cards[id], strikes: n });
@@ -159,7 +164,7 @@ MI.story = (function () {
   function reward(s, ch, summary) {
     const r = cfg().rewards;
     let coins = summary.resolved * r.resolved + summary.improved * r.improved + summary.pays * r.pay;
-    const items = [{ label: 'Tickets resueltos', coins: summary.resolved * r.resolved }, { label: 'Tickets mejorados', coins: summary.improved * r.improved }, { label: 'Pagas', coins: summary.pays * r.pay }];
+    const items = [{ label: 'Tickets resueltos', coins: summary.resolved * r.resolved }, { label: 'Parches puestos', coins: summary.improved * r.improved }, { label: 'Pagas', coins: summary.pays * r.pay }];
     let note = '';
     if (summary.result === 'win') {
       coins += r.win; items.push({ label: 'Sprint ganado', coins: r.win });
@@ -342,7 +347,7 @@ MI.story = (function () {
       el('div', { class: 'panel' }, [
         el('h2', { text: 'Cómo funciona' }),
         el('p', { class: 'small muted', text: 'Cada capítulo es un sprint de cinco tickets con tu plantilla (cinco malandrines de tu colección). ' + rivalName() + ' mejora de capítulo en capítulo: ' + cfg().chapters.length + ' capítulos hasta la auditoría, con puntos de control en el ' + (cfg().checkpoints || [1]).join(', el ') + '. Si pierdes un sprint vuelves al último punto de control, pero conservas la colección y los malandricoins. Las cartas repetidas se pueden vender. El álbum solo muestra las cartas que has tenido alguna vez.' }),
-        el('div', { class: 'actions' }, [el('button', { class: 'primary', text: 'Fichar por Malandriner S.A.', onclick: () => { const r = start(); view = 'dashboard'; cinematic(r.pack, () => render()); } })])
+        el('div', { class: 'actions floating-cta' }, [el('button', { class: 'primary', text: 'Fichar por Malandriner S.A.', onclick: () => { const r = start(); view = 'dashboard'; cinematic(r.pack, () => render()); } })])
       ])
     ]));
   }
@@ -370,7 +375,8 @@ MI.story = (function () {
       el('h2', { text: ch.name }),
       el('p', { class: 'muted', text: ch.desc }),
       el('div', { class: 'row small' }, [el('span', { class: 'pill', text: rivalName() + ': ' + ch.level }), el('span', { class: 'pill', text: 'Dificultad ' + (ch.minDifficulty || 1) + ' a ' + (ch.maxDifficulty || 5) }), s.wins[ch.id] ? el('span', { class: 'pill', text: 'Superado ' + s.wins[ch.id] + ' veces' }) : null]),
-      el('div', { class: 'actions', style: { justifyContent: 'flex-start' } }, [
+      el('p', { class: 'small muted difficulty-note', text: 'La dificultad la fija el capítulo y no se cambia durante la historia. “Capítulo ' + ch.id + ' de ' + cfg().chapters.length + '” indica tu avance, no un selector.' }),
+      el('div', { class: 'actions floating-cta' }, [
         el('button', { class: 'primary', text: owned.length >= N ? 'Elegir plantilla y jugar' : 'Necesitas ' + N + ' cartas', disabled: owned.length >= N ? null : 'disabled', onclick: () => go('squad') }),
         owned.length < N && s.coins < cfg().packs.basico.price ? el('button', { text: 'Pedir un sobre de emergencia', onclick: () => { const st = load(); const pk = openPack(st, 'basico', true); st.log.unshift({ date: new Date().toISOString(), text: 'Sobre de emergencia. Recepción te mira raro.' }); save(st); cinematic(pk, () => render()); } }) : null
       ])
@@ -480,9 +486,9 @@ MI.story = (function () {
         MI.card.render(card, { size: 'm', selectable: true, burns: s.strikes[card.id] || 0, onSelect: () => { if (picked.includes(card.id)) picked = picked.filter((x) => x !== card.id); else if (picked.length < N) picked.push(card.id); refresh(); } }),
         el('button', { class: 'ghost small-btn', text: 'Ver ficha', onclick: (e) => { e.stopPropagation(); MI.album.openDetail(card); } })
       ])));
-    c.appendChild(el('div', { class: 'row', style: { marginBottom: '12px' } }, [counter, el('button', { class: 'ghost small-btn', text: 'Elegir automáticamente', onclick: () => { picked = autoSquad(owned, N); refresh(); } })]));
+    c.appendChild(el('div', { class: 'row squad-tools' }, [counter, el('button', { class: 'ghost small-btn', text: 'Elegir automáticamente', onclick: () => { picked = autoSquad(owned, N); refresh(); } })]));
     c.appendChild(grid);
-    c.appendChild(el('div', { class: 'actions' }, [btn]));
+    c.appendChild(el('div', { class: 'actions floating-cta' }, [btn]));
     refresh();
   }
 

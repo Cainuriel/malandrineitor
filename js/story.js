@@ -469,32 +469,57 @@ MI.story = (function () {
   function renderSquad(c, s) {
     const ch = chapter(s);
     const owned = ownedCards(s);
-    const N = MI.data.config.arcade.handSize;
-    let picked = (s.lastSquad || []).filter((id) => s.owned[id]).slice(0, N);
+    // La plantilla es de cinco, salvo que alinees a alguien con plaza extra (Yuri).
+    // El cupo es dinámico: se recalcula cada vez que cambia la selección.
+    const base = MI.data.config.arcade.handSize;
+    const porId = MI.util.byId(owned);
+    const elegidas = () => picked.map((id) => porId[id]).filter(Boolean);
+    const cupo = () => base + MI.engine.extraSlots(elegidas());
+    let picked = (s.lastSquad || []).filter((id) => s.owned[id]);
+    picked = picked.slice(0, base + MI.engine.extraSlots(picked.map((id) => porId[id]).filter(Boolean)));
     c.appendChild(el('h1', { text: 'Capítulo ' + ch.id + ': ' + ch.name }));
     c.appendChild(storyNav(s, 'squad'));
-    c.appendChild(el('p', { class: 'lead', text: `Elige ${N} malandrines para este sprint. ${ch.desc}` }));
+    const leyenda = el('p', { class: 'lead' });
+    c.appendChild(leyenda);
     const counter = el('span', { class: 'pill' });
     const btn = el('button', { class: 'primary', onclick: () => {
       const st = load(); st.lastSquad = picked.slice(); save(st);
       startSprint(st, ch, picked);
     } });
-    const refresh = () => { counter.textContent = picked.length + ' / ' + N + ' elegidos'; btn.textContent = picked.length === N ? 'Empezar el sprint' : 'Elige ' + (N - picked.length) + ' más'; btn.disabled = picked.length !== N; grid.querySelectorAll('.card').forEach((n) => n.classList.toggle('selected', picked.includes(n.dataset.card))); };
+    const extraNota = el('span', { class: 'pill extra-slot' });
+    const refresh = () => {
+      const N = cupo();
+      if (picked.length > N) picked = picked.slice(0, N);   // al soltar la plaza extra sobra uno
+      counter.textContent = picked.length + ' / ' + N + ' elegidos';
+      btn.textContent = picked.length === N ? 'Empezar el sprint' : 'Elige ' + (N - picked.length) + ' más';
+      btn.disabled = picked.length !== N;
+      const conPlaza = elegidas().filter((c) => MI.engine.hasPower(c, 'extra_slot'));
+      extraNota.style.display = conPlaza.length ? '' : 'none';
+      if (conPlaza.length) extraNota.textContent = conPlaza[0].name + ' abre una plaza: ' + conPlaza[0].power.name;
+      leyenda.textContent = 'Elige ' + N + ' malandrines para este sprint. ' + ch.desc;
+      grid.querySelectorAll('.card').forEach((n) => n.classList.toggle('selected', picked.includes(n.dataset.card)));
+    };
     const grid = el('div', { class: 'album-grid squad-grid' }, owned
       .sort((a, b) => ORDER.indexOf(b.rarity) - ORDER.indexOf(a.rarity) || a.name.localeCompare(b.name))
       .map((card) => el('div', { class: 'hand-item' }, [
-        MI.card.render(card, { size: 'm', selectable: true, burns: s.strikes[card.id] || 0, onSelect: () => { if (picked.includes(card.id)) picked = picked.filter((x) => x !== card.id); else if (picked.length < N) picked.push(card.id); refresh(); } }),
+        MI.card.render(card, { size: 'm', selectable: true, burns: s.strikes[card.id] || 0, onSelect: () => { if (picked.includes(card.id)) picked = picked.filter((x) => x !== card.id); else if (picked.length < cupo()) picked.push(card.id); refresh(); } }),
         el('button', { class: 'ghost small-btn', text: 'Ver ficha', onclick: (e) => { e.stopPropagation(); MI.album.openDetail(card); } })
       ])));
-    c.appendChild(el('div', { class: 'row squad-tools' }, [counter, el('button', { class: 'ghost small-btn', text: 'Elegir automáticamente', onclick: () => { picked = autoSquad(owned, N); refresh(); } })]));
+    c.appendChild(el('div', { class: 'row squad-tools' }, [counter, extraNota, el('button', { class: 'ghost small-btn', text: 'Elegir automáticamente', onclick: () => { picked = autoSquad(owned, base); refresh(); } })]));
     c.appendChild(grid);
     c.appendChild(el('div', { class: 'actions floating-cta' }, [btn]));
     refresh();
   }
 
-  function autoSquad(owned, N) {
+  // La elección automática ficha primero a quien abre plaza: una carta más siempre
+  // compensa, porque el sprint son cinco tickets y la sexta es relevo contra el burnout.
+  function autoSquad(owned, base) {
     const score = (c) => ORDER.indexOf(c.rarity) * 10 + Object.values(c.skills).reduce((a, v) => a + v, 0) / Object.keys(c.skills).length;
-    return owned.slice().sort((a, b) => score(b) - score(a)).slice(0, N).map((c) => c.id);
+    const orden = owned.slice().sort((a, b) => score(b) - score(a));
+    const elegidos = orden.filter((c) => MI.engine.hasPower(c, 'extra_slot'));
+    const tope = base + MI.engine.extraSlots(elegidos);
+    orden.forEach((c) => { if (elegidos.length < tope && !elegidos.includes(c)) elegidos.push(c); });
+    return elegidos.slice(0, tope).map((c) => c.id);
   }
 
   function startSprint(s, ch, squadIds) {

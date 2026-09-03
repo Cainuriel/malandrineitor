@@ -91,24 +91,72 @@
     const points = cfg.points[outcome][challenge.difficulty];
     let burnout = outcome === 'complicated';
     if (burnout && card.rarity === 'legendaria') burnout = false;
-    if (burnout && opts.abilities !== false && (engine.hasAbility(card, 'dungeon_master') || engine.hasAbility(card, 'agent_swarm'))) burnout = false;
+    // Las legendarias no se queman: es su rasgo de rareza, no una habilidad suelta.
+    // Ver config.legendary.noBurnout y CLAUDE.md, "Superpoderes de las legendarias".
+    if (burnout && card.rarity === 'legendaria' && (cfg.legendary || {}).noBurnout !== false) burnout = false;
+    if (burnout && opts.abilities !== false && engine.hasAbility(card, 'agent_swarm')) burnout = false;
 
     return Object.assign(ev, { die, luck, total, threshold, outcome, points, burnout });
   };
 
   engine.outcomeLabel = { resolved: 'Resuelto', improved: '¡Parche puesto!', complicated: 'Complicado' };
 
-  // Habilidades activas: el rescate del amo del calabozo. Devuelve true si la carta puede rescatar.
+  /* ---------- Superpoderes de las legendarias ----------
+     Cada carta legendaria tiene un `power` propio, además de su `ability` pasiva.
+     Hay dos clases, y se distinguen porque se usan en momentos distintos:
+
+       kind: 'active'  se activa durante la partida, desde un botón, y se gasta.
+                       Hoy solo existe 'rescue' (Daniel Primo).
+       kind: 'roster'  no se pulsa: cambia las reglas al formar la plantilla.
+                       Hoy solo existe 'extra_slot' (Yuri).
+
+     Añadir un superpoder nuevo es añadir su `power` a la carta y su caso aquí. El
+     botón de la partida es el mismo para todos: lee el poder de la carta y usa su
+     etiqueta, así que un poder activo nuevo no toca la interfaz. */
+  // Superpoderes que el motor sabe aplicar, con su tipo. Añadir uno pasa por aquí.
+  const POWERS = { rescue: 'active', extra_slot: 'roster' };
+  engine.POWERS = POWERS;
+
+  engine.powerOf = function (card) { return (card && card.power) || null; };
+  engine.hasPower = function (card, powerId) { return !!(card && card.power && card.power.id === powerId); };
+
+  // Portador disponible de un poder activo: en mano, sin quemar y con usos pendientes.
+  engine.powerHolder = function (hand, burnout, used, powerId) {
+    return hand.find((c) => engine.hasPower(c, powerId) && !burnout[c.id] && !(used || {})[c.id]) || null;
+  };
+
+  // ¿Se puede activar ahora mismo un poder activo? Cada poder pone su condición.
+  engine.canUsePower = function (hand, burnout, used, powerId) {
+    const holder = engine.powerHolder(hand, burnout, used, powerId);
+    if (!holder) return false;
+    if (powerId === 'rescue') return Object.keys(burnout || {}).some((id) => hand.some((c) => c.id === id));
+    return true;
+  };
+
+  // Poderes activos que hay ahora mismo en la mano, con su carta y si se pueden usar.
+  engine.activePowers = function (hand, burnout, used) {
+    return hand
+      .filter((c) => c.power && c.power.kind === 'active')
+      .map((c) => ({ card: c, power: c.power, usable: engine.canUsePower(hand, burnout, used, c.power.id) }));
+  };
+
+  // Plazas extra en la plantilla que aportan las cartas elegidas (poder 'extra_slot').
+  engine.extraSlots = function (cards) {
+    return (cards || []).reduce((n, c) => n + (engine.hasPower(c, 'extra_slot') ? (c.power.value || 1) : 0), 0);
+  };
+
+  // Compatibilidad: el rescate del calabozo es el primer poder activo y su nombre
+  // sigue vivo en el protocolo a dos jugadores (`plays[i].rescue`).
   engine.canRescue = function (hand, burnout, usedRescue) {
     if (usedRescue) return false;
-    const dm = hand.find((c) => engine.hasAbility(c, 'dungeon_master') && !burnout[c.id]);
-    return !!dm && Object.keys(burnout).some((id) => hand.some((c) => c.id === id));
+    return engine.canUsePower(hand, burnout, {}, 'rescue');
   };
 
   // Validación de los catálogos: referencias huérfanas, rangos, reglas de negocio.
   engine.validate = function (data) {
     const errors = [];
     const skillIds = new Set(data.skills.map((s) => s.id));
+    const powerIds = new Set();
     const techIds = new Set(data.techs.map((t) => t.id));
     const rarities = new Set(Object.keys(data.config.rarities));
     const cardIds = new Set();
@@ -134,6 +182,15 @@
         if (c.kryptonite.tech && c.kryptonite.tech === c.expertise) errors.push(`${p}: expertise y criptonita no pueden coincidir`);
       }
       if (c.ability && (c.rarity === 'comun' || c.rarity === 'rara')) errors.push(`${p}: solo épicas y legendarias tienen habilidad especial`);
+      // Superpoderes: exclusivos de las legendarias, uno por carta y sin repetir.
+      if (c.power) {
+        if (c.rarity !== 'legendaria') errors.push(`${p}: solo las legendarias tienen superpoder`);
+        if (!POWERS[c.power.id]) errors.push(`${p}: superpoder desconocido "${c.power.id}"`);
+        else if (POWERS[c.power.id] !== c.power.kind) errors.push(`${p}: el superpoder "${c.power.id}" es de tipo ${POWERS[c.power.id]}, no ${c.power.kind}`);
+        if (!c.power.name || !c.power.text) errors.push(`${p}: el superpoder necesita nombre y descripción`);
+        if (powerIds.has(c.power.id)) errors.push(`${p}: el superpoder "${c.power.id}" ya lo tiene otra carta`);
+        powerIds.add(c.power.id);
+      }
     });
 
     const chIds = new Set();

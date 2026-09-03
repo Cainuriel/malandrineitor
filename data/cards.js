@@ -14,7 +14,9 @@ MI.data.cards = [
     expertise: 'typescript',
     kryptonite: null,
     skills: { front: 9, back: 8, apis: 8, architecture: 8, testing: 8, spec_driven: 10, ai_tools: 8, teaching: 10, ux: 7, management: 8, opensource: 8, devops: 6, legacy: 7, performance: 7, web3: 7 },
-    ability: { id: 'dungeon_master', name: 'Amo del calabozo', text: 'Inmune a la criptonita. Una vez por partida devuelve a la mano a un malandrín quemado.' },
+    ability: { id: 'dungeon_master', name: 'Amo del calabozo', text: 'Inmune a la criptonita. Ninguna legendaria se quema.' },
+    power: { id: 'rescue', kind: 'active', uses: 1, name: 'Rescate del calabozo', label: 'Rescatar del calabozo',
+             text: 'Una vez por partida saca de la quema a un malandrín y lo devuelve a la mano.' },
     quote: 'Esto también lo vamos a entender.',
     notes: ''
   },
@@ -63,6 +65,8 @@ MI.data.cards = [
     kryptonite: null,
     skills: { apis: 10, back: 9, front: 8, devops: 9, teaching: 10, architecture: 8, testing: 9, databases: 8, spec_driven: 8, security: 7, sysadmin: 7, management: 7, blockchain: 9, blockchain_non_evm: 9, web3: 8 },
     ability: { id: 'no_weakness', name: 'Sin puntos débiles', text: 'No tiene criptonita y no sufre penalización por giros del reto.' },
+    power: { id: 'extra_slot', kind: 'roster', value: 1, name: 'Convocatoria extraordinaria',
+             text: 'Si lo alineas, cabe un malandrín más en la plantilla del sprint. En su clase siempre hay un sitio libre.' },
     quote: 'Quería ser capibara y me quedé en ajolote.',
     notes: ''
   },

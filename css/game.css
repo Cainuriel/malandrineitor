@@ -451,3 +451,13 @@ button.primary.btn-cerrar:disabled { filter: grayscale(.55) brightness(.9); }
   background: color-mix(in srgb, var(--bad) 12%, transparent); }
 .wear-lost b { color: var(--bad); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
 .wear-lost p { margin: 4px 0 0; }
+
+/* Aviso del superpoder disponible en la mano. Lo pinta cualquier poder activo. */
+.power-note { text-align: center; color: var(--ok); max-width: 60ch; margin: 10px auto 0;
+  padding: 9px 14px; border-radius: var(--radius); border: 1px dashed color-mix(in srgb, var(--ok) 45%, var(--line));
+  background: color-mix(in srgb, var(--ok) 7%, transparent); }
+.power-note b { color: var(--ok); }
+.deck-btn.power { border-color: color-mix(in srgb, var(--ok) 55%, var(--line)); color: var(--ok); }
+/* Plaza extra abierta por un superpoder de plantilla (Yuri). */
+.pill.extra-slot { color: var(--rar-legendaria); border-color: color-mix(in srgb, var(--rar-legendaria) 55%, transparent);
+  background: color-mix(in srgb, var(--rar-legendaria) 10%, transparent); font-weight: 600; }

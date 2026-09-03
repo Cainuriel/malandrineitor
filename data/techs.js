@@ -17,6 +17,7 @@ MI.data.techs = [
   { id: 'kotlin',      name: 'Kotlin',           group: 'back',  aliases: [] },
   { id: 'dotnet',      name: '.NET',             group: 'back',  aliases: ['c#', 'csharp'] },
   { id: 'php',         name: 'PHP',              group: 'back',  aliases: ['laravel'] },
+  { id: 'laravel',     name: 'Laravel',          group: 'back',  aliases: ['eloquent', 'artisan'] },
   { id: 'symfony',     name: 'Symfony',          group: 'back',  aliases: [] },
   { id: 'node',        name: 'Node.js',          group: 'back',  aliases: ['express', 'nest', 'nestjs', 'bun', 'deno'] },
   { id: 'python',      name: 'Python',           group: 'back',  aliases: ['django', 'fastapi', 'flask'] },
@@ -27,9 +28,12 @@ MI.data.techs = [
   { id: 'android',     name: 'Android',          group: 'mobile', aliases: [] },
   { id: 'ios',         name: 'iOS',              group: 'mobile', aliases: ['swift'] },
 
+  { id: 'graphql',     name: 'GraphQL',          group: 'back',  aliases: ['apollo'] },
   { id: 'postgres',    name: 'PostgreSQL',       group: 'data',  aliases: ['postgresql', 'sql'] },
   { id: 'mysql',       name: 'MySQL / MariaDB',  group: 'data',  aliases: ['mariadb'] },
+  { id: 'redis',       name: 'Redis',            group: 'data',  aliases: ['valkey', 'cache'] },
   { id: 'mongodb',     name: 'MongoDB',          group: 'data',  aliases: ['mongo'] },
+  { id: 'kafka',       name: 'Kafka',            group: 'data',  aliases: ['streaming', 'rabbitmq'] },
   { id: 'spark',       name: 'Spark / big data', group: 'data',  aliases: ['hadoop', 'databricks'] },
 
   { id: 'docker',      name: 'Docker',           group: 'ops',   aliases: ['compose'] },
@@ -59,5 +63,7 @@ MI.data.techs = [
 
   { id: 'nocode',      name: 'No-code / automatización', group: 'tools', aliases: ['n8n', 'make', 'zapier', 'bubble'] },
   { id: 'erp',         name: 'ERP / CRM',        group: 'tools', aliases: ['sap', 'odoo', 'dynamics', 'salesforce'] },
+  { id: 'unreal',      name: 'Unreal / Unity',   group: 'tools', aliases: ['unity', 'godot', 'motor grafico'] },
+  { id: 'n8n',         name: 'n8n / Zapier',     group: 'tools', aliases: ['zapier', 'make', 'automatizacion'] },
   { id: 'figma',       name: 'Figma / diseño',   group: 'tools', aliases: ['adobe', 'illustrator'] }
 ];

@@ -48,6 +48,8 @@ MI.data.skills = [
   // Producto
   { id: 'ux',           name: 'Producto y UX',                 short: 'UX',    group: 'producto',   desc: 'Investigación con usuarios, flujos, priorización, métricas de producto.' },
   { id: 'design',       name: 'Diseño gráfico',                short: 'DISEÑ', group: 'producto',   desc: 'Identidad visual, tipografía, sistemas de diseño, ilustración.' },
+  { id: 'i18n',         name: 'Internacionalización',          short: 'I18N',  group: 'producto',   desc: 'Idiomas, monedas, husos horarios, formatos y normativa por país.' },
+  { id: 'gamedev',      name: 'Videojuegos',                   short: 'GAME',  group: 'dev',        desc: 'Motores gráficos, bucle de juego, físicas, optimización de fotogramas.' },
   { id: 'accessibility',name: 'Accesibilidad',                 short: 'A11Y',  group: 'producto',   desc: 'WCAG, lectores de pantalla, navegación por teclado.' },
   { id: 'seo',          name: 'SEO y posicionamiento',         short: 'SEO',   group: 'producto',   desc: 'SEO técnico, indexación, arquitectura de contenidos y rendimiento orgánico.' },
 

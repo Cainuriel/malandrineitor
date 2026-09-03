@@ -135,6 +135,18 @@ Pendiente de la fase, aplazado a propósito:
 
 ---
 
+## Fase 6b — Superpoderes y catálogo `[x]`
+
+- [x] Superpoderes de las legendarias con mecanismo reutilizable: `power` en la carta, dos tipos (`active` con botón genérico en el mazo, `roster` que cambia las reglas de la plantilla) y validación en el catálogo. Ver `CLAUDE.md`, "Superpoderes de las legendarias".
+- [x] Las legendarias no se queman nunca, por rareza y no por habilidad suelta (`config.legendary.noBurnout`).
+- [x] Daniel Primo: el rescate del calabozo pasa a ser un superpoder del sistema nuevo, sin cambiar el protocolo a dos jugadores.
+- [x] Yuri: "Convocatoria extraordinaria". Si lo alineas, la plantilla del sprint pasa de cinco a seis malandrines.
+- [x] 16 tickets nuevos (141 en total): las ocho ideas de Fernando y relleno de los huecos de cobertura. Ninguna habilidad ni tecnología se queda sin tickets.
+- [x] Catálogo ampliado: tecnologías Laravel, GraphQL, Redis, Kafka, Unreal/Unity y n8n; habilidades Internacionalización y Videojuegos.
+- [x] Corregido el bloqueo de scroll: usaba `position: fixed` sobre el body y en móvil desplazaba la página al cerrar una ficha, de modo que el primer toque siguiente se perdía.
+
+---
+
 ## Fase 7 — LLM opcional y revelado por días `[ ]`
 
 - [ ] Oponente LLM opcional: endpoint compatible OpenAI (incluye Ollama local) y Anthropic; solo elige carta y comenta la jugada. La clave se guarda en `localStorage` y nunca sale del navegador salvo hacia el endpoint configurado.

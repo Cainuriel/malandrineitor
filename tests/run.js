@@ -331,6 +331,40 @@ check(cardPower(yuri) > cardPower(dp), 'las nuevas competencias elevan ligeramen
     MI.data.optout = antes;
   }
 
+  // Superpoderes de las legendarias
+  {
+    const legendarias = MI.data.cards.filter((c) => c.rarity === 'legendaria');
+    check(legendarias.length >= 2, `hay ${legendarias.length} legendarias en el catálogo`);
+    check(legendarias.every((c) => c.power), 'toda legendaria tiene su superpoder');
+    check(MI.data.cards.filter((c) => c.rarity !== 'legendaria').every((c) => !c.power), 'ninguna carta no legendaria tiene superpoder');
+    const ids = legendarias.map((c) => c.power.id);
+    check(new Set(ids).size === ids.length, 'no hay dos legendarias con el mismo superpoder');
+
+    // Rescate: poder activo, uno por partida, solo con la carta en mano y sin quemar.
+    const dp = MI.data.cards.find((c) => c.id === 'daniel-primo');
+    const otra = MI.data.cards.find((c) => c.rarity === 'comun');
+    const mano = [dp, otra];
+    check(engine.hasPower(dp, 'rescue'), 'Daniel Primo tiene el rescate como superpoder');
+    check(!engine.canUsePower(mano, {}, {}, 'rescue'), 'sin nadie quemado no se puede rescatar');
+    check(engine.canUsePower(mano, { [otra.id]: 2 }, {}, 'rescue'), 'con alguien quemado sí');
+    check(!engine.canUsePower([otra], { [otra.id]: 2 }, {}, 'rescue'), 'sin el portador en la mano, no');
+    check(engine.activePowers(mano, { [otra.id]: 2 }, {}).length === 1, 'la mano ofrece un solo poder activo');
+
+    // Plaza extra: poder de plantilla, no se pulsa.
+    const yuri = MI.data.cards.find((c) => c.id === 'yuri');
+    check(engine.hasPower(yuri, 'extra_slot') && yuri.power.kind === 'roster', 'Yuri tiene la plaza extra como poder de plantilla');
+    check(engine.extraSlots([otra, dp]) === 0, 'sin Yuri la plantilla no crece');
+    check(engine.extraSlots([otra, yuri]) === 1, 'con Yuri la plantilla crece en uno');
+    check(engine.activePowers([yuri], {}, {}).length === 0, 'un poder de plantilla no aparece como botón en la partida');
+
+    // Ninguna legendaria se quema, sea cual sea su habilidad.
+    const durisimo = MI.data.challenges.find((ch) => ch.difficulty === 5);
+    legendarias.forEach((c) => {
+      const r = engine.resolve(c, durisimo, { withTwist: true, rng: () => 0 }, cfg);
+      check(r.burnout === false, `${c.name} no se quema ni en el peor ticket`);
+    });
+  }
+
   // El amo del calabozo no se quema nunca, así que nunca se va
   const dp = MI.data.cards.find((c) => c.id === 'daniel-primo');
   const hard = MI.data.challenges.find((c) => c.id === 'db-breach');

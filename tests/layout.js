@@ -62,8 +62,11 @@ function check(ok, msg) { console.log((ok ? 'ok   ' : 'FALLO: ') + msg); if (!ok
     // Se cierra pulsando encima de la propia carta, no solo en el botón.
     await page.locator('.modal .card').evaluate((n) => n.click()); await page.waitForTimeout(250);
     check(await page.locator('.modal').count() === 0, `${f.name} · la ficha se cierra al pulsar sobre ella`);
-    const restored = await page.evaluate(() => getComputedStyle(document.body).position);
-    check(restored !== 'fixed', `${f.name} · el scroll del fondo se restaura al cerrar la ficha`);
+    const restored = await page.evaluate(() => ({
+      pos: getComputedStyle(document.body).position,
+      ovh: document.documentElement.style.overflow, ovb: document.body.style.overflow
+    }));
+    check(restored.pos !== 'fixed' && !restored.ovh && !restored.ovb, `${f.name} · el scroll del fondo se restaura al cerrar la ficha`);
 
     // Y con el botón, sin descuadrar el contador de bloqueos de scroll.
     await page.click('.album-grid .card'); await page.waitForTimeout(300);

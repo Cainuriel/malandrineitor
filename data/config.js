@@ -39,6 +39,10 @@ MI.data.config = {
 
   burnoutTurns: 2,
 
+  // Rasgo de rareza: las legendarias no se queman nunca. Su superpoder va en la carta
+  // (campo `power`); ver CLAUDE.md, "Superpoderes de las legendarias".
+  legendary: { noBurnout: true },
+
   rarities: {
     comun:      { name: 'Común',      weight: 60 },
     rara:       { name: 'Rara',       weight: 27 },

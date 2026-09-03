@@ -75,17 +75,29 @@ MI.util = (function () {
   /* Bloqueo de scroll del fondo mientras hay una capa a pantalla completa.
      Cuenta las capas abiertas y conserva la posición: fijar el body sin guardar
      el desplazamiento hace que la página salte al principio al cerrarla. */
-  let lockCount = 0, lockedAt = 0;
+  /* Bloqueo del scroll de fondo mientras hay una capa abierta.
+
+     Antes se usaba `position: fixed` sobre el body con `top: -scrollY`, y al cerrar
+     se restauraba con scrollTo. En el móvil eso mueve la página dos veces (al abrir y
+     al cerrar) y, si la barra del navegador se ha plegado por el camino, la posición
+     restaurada no es exactamente la de antes: el contenido queda desplazado bajo el
+     dedo y el primer toque después de cerrar cae donde ya no está el botón. De ahí la
+     sensación de tener que pulsar dos veces.
+
+     Ahora se bloquea con `overflow: hidden` en la raíz, que no reposiciona nada. La
+     capa ya es `position: fixed` a pantalla completa con `overscroll-behavior: contain`,
+     así que el fondo no se ve moverse aunque algún navegador lo permita. */
+  let lockCount = 0;
+  let prevHtmlOverflow = '';
+  let prevBodyOverflow = '';
   function lockScroll() {
     if (typeof document === 'undefined') return;
     if (lockCount === 0) {
-      lockedAt = window.scrollY || window.pageYOffset || 0;
+      prevHtmlOverflow = document.documentElement.style.overflow;
+      prevBodyOverflow = document.body.style.overflow;
       const bar = window.innerWidth - document.documentElement.clientWidth;
-      document.body.style.position = 'fixed';
-      document.body.style.top = -lockedAt + 'px';
-      document.body.style.left = '0';
-      document.body.style.right = '0';
-      document.body.style.width = '100%';
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
       if (bar > 0) document.body.style.paddingRight = bar + 'px';   // evita el salto al ocultar la barra
     }
     lockCount++;
@@ -94,8 +106,9 @@ MI.util = (function () {
     if (typeof document === 'undefined') return;
     lockCount = Math.max(0, lockCount - 1);
     if (lockCount > 0) return;
-    ['position', 'top', 'left', 'right', 'width', 'paddingRight'].forEach((k) => { document.body.style[k] = ''; });
-    window.scrollTo(0, lockedAt);
+    document.documentElement.style.overflow = prevHtmlOverflow;
+    document.body.style.overflow = prevBodyOverflow;
+    document.body.style.paddingRight = '';
   }
 
   // Modo desarrollador: interruptor único de config.developer.enabled.

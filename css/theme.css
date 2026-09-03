@@ -55,6 +55,9 @@ body::before {
 a { color: var(--accent); }
 button {
   font: inherit; cursor: pointer;
+  /* Sin esto, el móvil espera 300ms por si el toque es un doble toque para hacer zoom.
+     Ese retardo se nota como "el primer toque no ha hecho nada". */
+  touch-action: manipulation;
   background: var(--panel-2); color: var(--text);
   border: 1px solid var(--line); border-radius: 10px;
   padding: 10px 16px;

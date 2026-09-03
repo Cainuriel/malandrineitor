@@ -157,6 +157,28 @@ Hay tres capas que ocupan la ventana entera: la apertura de sobres (`.opening-ov
 
 - La capa es un bloque con `overflow-y: auto` y `overscroll-behavior: contain`; **el contenido se centra en un hijo** con `min-height: 100%` y `justify-content: center`. Centrar con `place-items: center` directamente en un contenedor con scroll recorta por arriba todo lo que sea más alto que la ventana, y esa parte ya no se puede alcanzar.
 - El scroll del fondo se bloquea con `MI.util.lockScroll()` / `unlockScroll()`, que llevan un contador de capas abiertas, fijan el body guardando la posición y la restauran al cerrar. No usar `body { overflow: hidden }` a pelo: pierde la posición de lectura y no funciona bien en iOS.
+## Superpoderes de las legendarias
+
+Las legendarias tienen dos cosas que las demás no: **no se queman nunca** (rasgo de rareza, `config.legendary.noBurnout`, aplicado en `engine.resolve` por `card.rarity`, no por habilidad) y **un superpoder propio**, en el campo `power` de la carta, además de su `ability` pasiva de siempre.
+
+Hay dos clases de superpoder, y se distinguen por cuándo se usan:
+
+| `kind` | Cuándo | Interfaz | Ejemplo |
+|---|---|---|---|
+| `active` | Durante la partida, se pulsa y se gasta | Un único botón en el mazo, que lee el poder de la carta | `rescue` — Daniel Primo |
+| `roster` | Al formar la plantilla, no se pulsa | Cambia las reglas de la pantalla de plantilla | `extra_slot` — Yuri |
+
+`engine.POWERS` es el catálogo de los que el motor sabe aplicar y `engine.validate` comprueba que solo las legendarias los tengan, que el tipo cuadre y que no haya dos cartas con el mismo.
+
+**Añadir un superpoder activo nuevo** es: darlo de alta en `engine.POWERS` con `kind: 'active'`, ponerlo en la carta con `name`, `text` y `label`, y añadir su caso en `engine.canUsePower` (la condición para poder activarlo) y en `usePower` de `js/game.js` (el efecto). La interfaz **no se toca**: el botón del mazo es genérico, lee `power.label` y aparece solo cuando el poder es aplicable. Ese fue el motivo de generalizar el rescate en lugar de duplicarlo.
+
+**Los dos que existen hoy:**
+
+- **Daniel Primo · Rescate del calabozo** (`rescue`). Una vez por partida devuelve a la mano a un malandrín quemado. El botón sale sobre la carta quemada que se quiere recuperar. El nombre `rescue` sigue vivo en el protocolo a dos jugadores (`plays[i].rescue` guarda el identificador de la carta rescatada), así que **no se puede renombrar** sin romper enlaces.
+- **Yuri · Convocatoria extraordinaria** (`extra_slot`). Si lo alineas, la plantilla del sprint pasa de cinco a seis. El cupo es dinámico: `engine.extraSlots(elegidas)` se recalcula en cada cambio de selección, y al soltar a Yuri con seis elegidos se descarta el último. La elección automática lo ficha primero, porque una carta más siempre compensa: el sprint son cinco tickets y la sexta es el relevo contra el burnout.
+
+**Solo aplica al modo historia**, donde tú formas la plantilla. En arcade y en las partidas a dos las manos se reparten desde la semilla con `arcade.handSize`, y darle a uno una carta más obligaría a cambiar el reparto y la huella del catálogo. Si algún día se quiere, el formato del enlace ya lo aguanta: el índice de carta usa tres bits y el 7 está reservado para "sin carta", así que caben manos de hasta siete.
+
 ## Cambiar el catálogo: añadir o retirar una carta
 
 El reparto de una partida se deduce de su semilla recorriendo la lista de cartas activas, así que **cualquier cambio en el catálogo cambia la huella** (`M.catalogFingerprint`, que cubre los identificadores de cartas activas, los de tickets y `arcade.handSize` y `arcade.tickets`). Consecuencia única e importante:
@@ -239,6 +261,7 @@ Decisiones que conviene no deshacer sin motivo:
 - **Los bordes del mazo se difuminan** con `mask-image` en `.deck` en lugar de recortar en seco: se ve que el mazo continúa.
 - **Un malandrín quemado se puede tener delante** (para rescatarlo con Daniel Primo), pero el botón de enviar se bloquea y `play()` no lo acepta.
 
+- El bloqueo de scroll (`MI.util.lockScroll`) usa `overflow: hidden` en la raíz, **no** `position: fixed` sobre el body. Con `fixed` la página se reposiciona al abrir y al cerrar, y en el móvil, si la barra del navegador se pliega por el camino, la posición restaurada no es la misma: el contenido queda desplazado bajo el dedo y el primer toque tras cerrar una ficha cae donde ya no está el botón. Se leía como "hay que pulsar dos veces". Los botones llevan además `touch-action: manipulation`, que quita el retardo de 300 ms del doble toque para hacer zoom.
 - `MI.util.el` acepta propiedades personalizadas en `style` (`--sk`, `--q`) porque las pasa por `setProperty`. `Object.assign(node.style, …)` **las descarta en silencio**: durante un tiempo las barras de habilidad se pintaron todas del color por defecto por este motivo.
 - Los elementos de rejilla y flex que contengan texto largo necesitan `min-width: 0`; si no, no bajan del ancho de su contenido y desbordan (pasó con el marcador y con la mano de cartas).
 

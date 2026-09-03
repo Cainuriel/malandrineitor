@@ -74,6 +74,18 @@ MI.game = (function () {
 
   function current() { return S.tickets[S.ticket]; }
   function canRescue(who) { return MI.engine.canRescue(S.hands[who], S.burnout[who], S.rescueUsed[who]); }
+
+  // Superpoder activo disponible en mi mano ahora mismo, si lo hay.
+  function pendingPower() {
+    return MI.engine.activePowers(S.hands.me, S.burnout.me, S.rescueUsed.me ? { __usado: 1 } : {})
+      .filter((x) => x.usable && !(x.power.id === 'rescue' && S.rescueUsed.me))[0] || null;
+  }
+
+  function usePower(cardId) {
+    const poder = pendingPower();
+    if (!poder) return;
+    if (poder.power.id === 'rescue') { rescue('me', cardId); render(); }
+  }
   function rescue(who, cardId) {
     if (!canRescue(who) || !S.burnout[who][cardId]) return false;
     delete S.burnout[who][cardId]; S.rescueUsed[who] = true;
@@ -409,7 +421,9 @@ MI.game = (function () {
     const dots = el('div', { class: 'deck-dots' }, cards.map((card, i) => el('i', { class: S.burnout.me[card.id] ? 'burnt' : '', title: card.name, onclick: () => setIndex(i) })));
     const meta = el('div', { class: 'deck-meta' });
     const detailBtn = el('button', { class: 'deck-btn', text: 'Ver ficha completa', onclick: () => openCardDetail(cards[deckIndex], ch) });
-    const rescueBtn = el('button', { class: 'deck-btn rescue', text: 'Rescatar del calabozo', onclick: () => { rescue('me', cards[deckIndex].id); render(); } });
+    // Botón de superpoder: uno solo, reutilizable. Lee el poder que haya en la mano y
+    // usa su etiqueta, así que un poder activo nuevo no toca esta pantalla.
+    const powerBtn = el('button', { class: 'deck-btn power', onclick: () => { usePower(cards[deckIndex].id); } });
 
     function layout() {
       wraps.forEach((w, i) => {
@@ -424,6 +438,10 @@ MI.game = (function () {
         w.style.zIndex = z;
         w.style.pointerEvents = op ? 'auto' : 'none';
         w.classList.toggle('is-current', a === 0);
+        // La carta de delante es la que se envía: se marca como seleccionada para que
+        // herede el destello del perímetro y no quede duda de a quién se manda.
+        const carta = w.firstChild;
+        if (carta && carta.classList) carta.classList.toggle('selected', a === 0 && !w.classList.contains('is-burnout'));
       });
       const card = cards[deckIndex];
       const turns = S.burnout.me[card.id];
@@ -432,7 +450,11 @@ MI.game = (function () {
       meta.appendChild(el('span', { class: 'small muted', text: (deckIndex + 1) + ' de ' + cards.length }));
       if (turns) meta.appendChild(el('span', { class: 'pill burnt', text: 'Quemado · vuelve en ' + turns + (turns === 1 ? ' ticket' : ' tickets') }));
       Array.from(dots.children).forEach((dot, i) => dot.classList.toggle('on', i === deckIndex));
-      rescueBtn.style.display = (turns && canRescue('me')) ? '' : 'none';
+      // El rescate se pide desde la carta quemada que se quiere recuperar.
+      const poder = pendingPower();
+      const aplicable = poder && poder.power.id === 'rescue' && turns;
+      powerBtn.style.display = aplicable ? '' : 'none';
+      if (aplicable) powerBtn.textContent = poder.power.label || poder.power.name;
       prev.disabled = deckIndex === 0;
       nextBtn.disabled = deckIndex === cards.length - 1;
       S.selected = card;
@@ -475,7 +497,7 @@ MI.game = (function () {
       deck,
       meta,
       dots,
-      el('div', { class: 'deck-actions' }, [detailBtn, rescueBtn]),
+      el('div', { class: 'deck-actions' }, [detailBtn, powerBtn]),
       el('div', { class: 'small muted deck-hint', text: 'Desliza el mazo o pulsa una carta de detrás. En naranja, las habilidades que pide el ticket.' })
     ]);
   }
@@ -528,7 +550,12 @@ MI.game = (function () {
     if (S.phase === 'reveal' && S.mode === 'ai') left.appendChild(el('div', { class: 'pay', text: R.pay ? (R.pay === 'me' ? 'Te llevas la paga' : S.oppName + ' se lleva la paga') : 'Empate: nadie se lleva la paga' }));
     if (S.phase === 'reveal' && R.items && R.items.length) left.appendChild(el('div', { class: 'points-list center' }, R.items.map((i) => el('span', { class: 'pill', text: i.label + ' +' + i.points }))));
     if (S.phase === 'reveal') left.appendChild(el('div', { class: 'small muted center hand-left', text: available('me').length + ' de ' + S.hands.me.length + ' malandrines disponibles para el siguiente ticket.' }));
-    if (S.phase === 'choose' && canRescue('me')) left.appendChild(el('p', { class: 'small', style: { color: 'var(--ok)', textAlign: 'center' }, text: 'El amo del calabozo está en tu mano: puedes rescatar a un malandrín quemado (una vez por partida).' }));
+    if (S.phase === 'choose') {
+      const poder = pendingPower();
+      if (poder) left.appendChild(el('p', { class: 'small power-note' }, [
+        el('b', { text: poder.card.name + ' · ' + poder.power.name + ': ' }), poder.power.text
+      ]));
+    }
 
     const lastOne = S.ticket + 1 >= S.tickets.length || S.over;
     // Cada acción con su color: enviar en verde, avanzar en azul, cerrar el sprint en

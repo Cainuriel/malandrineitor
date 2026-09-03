@@ -50,7 +50,7 @@ body::before {
     linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
   background-size: 32px 32px;
 }
-#app { position: relative; z-index: 1; }
+#app { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
 
 a { color: var(--accent); }
 button {
@@ -88,7 +88,7 @@ input, select {
 .nav button { padding: 8px 14px; }
 .nav button.active { border-color: var(--accent); color: var(--accent); }
 
-.view { padding: 28px 24px 60px; max-width: 1400px; margin: 0 auto; }
+.view { width: 100%; padding: 28px 24px 60px; max-width: 1400px; margin: 0 auto; flex: 1 0 auto; }
 .view h1 { font-size: 34px; letter-spacing: -0.02em; margin: 0 0 6px; }
 .view h2 { font-size: 20px; margin: 0 0 12px; }
 .lead { color: var(--text-2); max-width: 70ch; margin: 0 0 22px; }
@@ -102,6 +102,22 @@ input, select {
 .mono { font-family: var(--mono); }
 .muted { color: var(--muted); }
 .small { font-size: 12px; }
+
+/* Firma y privacidad: un registro discreto al pie, fuera del área de juego. */
+.site-footer {
+  width: min(100% - 48px, 1352px); margin: 0 auto 24px; padding: 16px 18px;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 18px; align-items: center;
+  color: var(--muted); font-size: 12px; border-top: 1px dashed color-mix(in srgb, var(--line) 80%, transparent);
+}
+.footer-stamp {
+  padding: 6px 9px; color: var(--ok); border: 1px solid color-mix(in srgb, var(--ok) 55%, transparent);
+  font-family: var(--mono); font-size: 10px; letter-spacing: .08em; transform: rotate(-1.5deg);
+}
+.site-footer p { margin: 0; }
+.footer-signature { color: var(--text-2); }
+.site-footer a { text-underline-offset: 3px; }
+.footer-links { display: flex; align-items: flex-end; gap: 4px; flex-direction: column; text-align: right; }
+.footer-links strong { color: var(--text-2); font-weight: 600; }
 
 /* Menú principal */
 .hero { text-align: center; padding: 36px 20px 20px; }
@@ -163,5 +179,7 @@ input, select {
   .modal .close { top: calc(10px + env(safe-area-inset-top)); right: calc(10px + env(safe-area-inset-right)); padding: 9px 16px; }
   .hero { padding: 18px 10px 8px; }
   .menu-grid { grid-template-columns: 1fr; }
+  .site-footer { width: calc(100% - 24px); margin-bottom: 12px; padding: 14px 4px; grid-template-columns: auto minmax(0, 1fr); gap: 12px; }
+  .footer-links { grid-column: 1 / -1; align-items: flex-start; text-align: left; }
 }
 .skill-table tr.hl td { color: var(--accent); }

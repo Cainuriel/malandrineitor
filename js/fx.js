@@ -25,9 +25,11 @@ MI.fx = (function () {
       opts.pay ? el('div', { class: 'fx-tag', text: 'LA PAGA' }) : null,
       el('div', { class: 'fx-kicker', text: pick((P.kicker || {})[outcome] || []) })
     ]);
-    // Se desvanece sola para no tapar el desglose de puntuación.
-    if (!reduced()) setTimeout(() => { node.classList.add('fade'); setTimeout(() => node.remove(), 700); }, 1500);
-    else setTimeout(() => node.remove(), 2200);
+    // Se desvanece sola para no tapar el desglose de puntuación, pero sin prisa: el sello
+    // lleva una frase corta y antes se iba antes de que diera tiempo a leerla. Segundo y
+    // medio quieto y un segundo largo apagándose (la transición de .fade dura 1s).
+    if (!reduced()) setTimeout(() => { node.classList.add('fade'); setTimeout(() => node.remove(), 1100); }, 1500);
+    else setTimeout(() => node.remove(), 2600);
     return node;
   }
 

@@ -356,7 +356,7 @@ El desplegable de carga acepta tanto el JSON como **un enlace pegado entero**: e
 
 ### La barra flotante del enlace pendiente
 
-El enlace se comparte desde una barra fija abajo (`.share-bar`, construida en `MI.game.shareBar`), con halo intermitente y el botón como acción principal. Está así por un fallo observado en la comunidad: el botón de compartir vivía al final de la pantalla, **debajo de la tabla de resultados**, que es larga. Quien terminaba su turno no lo encontraba y copiaba **la barra de direcciones del navegador**, que contiene el enlace que esa persona *recibió*, no el que tiene que devolver. El otro jugador recibía así su propio enlace de vuelta y la partida se quedaba bloqueada sin que ninguno entendiese por qué.
+El enlace se comparte desde una barra fija abajo (`.share-bar`, construida en `MI.game.shareBar`). **El destello lo lleva solo el botón** (`.share-cta`, animación `share-cta-pulse`): si late el recuadro entero, el ojo va al marco y no a lo que hay que pulsar. Está así por un fallo observado en la comunidad: el botón de compartir vivía al final de la pantalla, **debajo de la tabla de resultados**, que es larga. Quien terminaba su turno no lo encontraba y copiaba **la barra de direcciones del navegador**, que contiene el enlace que esa persona *recibió*, no el que tiene que devolver. El otro jugador recibía así su propio enlace de vuelta y la partida se quedaba bloqueada sin que ninguno entendiese por qué.
 
 La barra aparece en las dos pantallas donde hay un enlace pendiente de mandar, y su aviso lo dice explícitamente:
 
@@ -400,6 +400,8 @@ Decisiones que conviene no deshacer sin motivo:
 `tests/layout.js` recorre las vistas y estas capas en cinco formatos (móvil vertical y apaisado, tablet, portátil y pantalla grande) comprobando que no hay desbordamiento horizontal, que nada queda recortado por arriba, que el scroll del fondo se restaura y que no hay errores de consola. **Ejecutarlo tras cualquier cambio de maquetación.**
 
 ## Efectos de tebeo (`js/fx.js`)
+
+El sello de resultado (`MI.fx.stamp`) lleva una frase corta que hay que poder leer: se queda **1,5 s quieto** y luego se apaga en **1 s** (`transition` de `.fx-stamp` y clase `.fade`), y se retira del DOM a los 1,1 s de empezar el desvanecido. Antes se iba en 0,6 s y la frase no daba tiempo. Con `prefers-reduced-motion` no hay animación: el sello simplemente se quita a los 2,6 s.
 
 - `MI.fx.stamp(outcome, { pay })` devuelve el sello que se superpone a la carta enviada al revelar un ticket: rayos, palabra grande (RESUELTO / ¡PARCHE PUESTO! / COMPLICADO), onomatopeya y coletilla, ambas sacadas al azar de `data/phrases.js`. Se desvanece solo a los 1,5 s para no tapar el desglose de puntuación y lleva `pointer-events: none`.
 - `MI.fx.splash(kind, { title, score, phrase, onDone })` es el pantallazo de fin de sprint (`win` / `loss` / `draw`), con título de tebeo, marcador, frase al azar y cierre por clic, Enter, Escape o a los 6 s. Se muestra una sola vez por partida (`S.splashDone`).

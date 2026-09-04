@@ -141,25 +141,31 @@ button.primary.btn-cerrar:disabled { filter: grayscale(.55) brightness(.9); }
 .json-import-body { margin-top: 12px; padding-top: 2px; }
 
 /* Barra flotante del enlace pendiente de mandar. Misma posición que la barra de acción
-   de la partida, con un halo que late para que no pase desapercibida: el fallo medido
-   era que el botón quedaba bajo la tabla de resultados y la gente copiaba la barra de
-   direcciones del navegador en su lugar. */
-.share-bar { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 19;
-  width: min(620px, calc(100vw - 32px)); display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
-  padding: 14px 16px; border-radius: var(--radius); text-align: left;
-  border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent);
-  background: color-mix(in srgb, var(--panel) 95%, transparent); backdrop-filter: blur(12px);
-  animation: share-glow 2.4s ease-in-out infinite; }
-.share-bar-text { flex: 1 1 220px; display: flex; flex-direction: column; gap: 3px; }
-.share-bar-text strong { font-size: 15px; }
+   de la partida. El destello lo lleva solo el botón, para que el ojo vaya a lo que hay
+   que pulsar y no al recuadro. El fallo medido era que el botón quedaba bajo la tabla
+   de resultados, nadie lo encontraba
+   y la gente copiaba la barra de direcciones del navegador, que lleva el enlace que
+   recibió y no el que debe devolver. Ver CLAUDE.md, "El enlace de la partida". */
+.share-bar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 19;
+  width: min(680px, calc(100vw - 28px)); display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+  padding: 16px 18px; border-radius: var(--radius); text-align: left;
+  border: 2px solid var(--accent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent),
+    color-mix(in srgb, var(--bg-2) 97%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 14px 40px rgba(0,0,0,.55); }
+.share-bar-text { flex: 1 1 240px; display: flex; flex-direction: column; gap: 4px; }
+.share-bar-text strong { font-size: 16px; color: var(--accent); }
 .share-bar-text .small { color: var(--text-2); }
-.share-bar .share-cta { flex: 0 0 auto; padding: 14px 20px; font-size: 15px; }
-@keyframes share-glow {
-  0%, 100% { box-shadow: 0 12px 36px rgba(0,0,0,.45), 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent); }
-  50%      { box-shadow: 0 12px 36px rgba(0,0,0,.45), 0 0 26px 6px color-mix(in srgb, var(--accent) 32%, transparent); }
+.share-bar .share-cta { flex: 0 0 auto; padding: 16px 24px; font-size: 16px; font-weight: 800;
+  animation: share-cta-pulse 1.4s ease-in-out infinite; }
+@keyframes share-cta-pulse {
+  0%, 100% { box-shadow: 0 0 14px 1px color-mix(in srgb, var(--accent) 35%, transparent); }
+  50%      { box-shadow: 0 0 34px 10px color-mix(in srgb, var(--accent) 65%, transparent); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .share-bar { animation: none; box-shadow: 0 12px 36px rgba(0,0,0,.45), 0 0 20px 2px color-mix(in srgb, var(--accent) 30%, transparent); }
+  .share-bar .share-cta { animation: none; box-shadow: 0 0 26px 6px color-mix(in srgb, var(--accent) 45%, transparent); }
 }
 
 .endgame { text-align: center; padding: 40px 20px; }
@@ -376,7 +382,7 @@ button.primary.btn-cerrar:disabled { filter: grayscale(.55) brightness(.9); }
 /* Sello sobre la carta enviada */
 .slot { position: relative; }
 .fx-stamp { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: .2em; pointer-events: none; text-align: center; transition: opacity .6s ease, transform .6s ease; --fx-c: var(--ok); }
+  gap: .2em; pointer-events: none; text-align: center; transition: opacity 1s ease, transform 1s ease; --fx-c: var(--ok); }
 .fx-stamp.fx-improved { --fx-c: var(--warn); }
 .fx-stamp.fx-improved .fx-word { max-width: 90%; font-size: clamp(28px, 6vw, 42px); white-space: nowrap; }
 .fx-stamp.fx-complicated { --fx-c: var(--bad); }

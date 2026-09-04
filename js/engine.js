@@ -37,14 +37,76 @@
     return !!(card.ability && card.ability.id === abilityId);
   };
 
+  /* ---------- Habilidades de las épicas, dirigidas por datos ----------
+     Antes cada habilidad era una línea codificada a mano en este fichero, y eso las
+     condenaba a ser estrechas: la de Symfony se activaba en 1 ticket de 141. Ahora la
+     habilidad declara su efecto en la propia carta y ajustarla es editar `data/cards.js`.
+
+     Un efecto es `{ <tipo>, when }`. Tipos:
+       die: n         suma n al factor viernes (tope: las caras del dado)
+       noTwist: true  ignora el giro del ticket, salga mejor o peor
+       twistProof     el giro nunca le perjudica: se queda con la mejor de las dos
+                      versiones del ticket. Es lo que se quiere casi siempre, porque
+                      `noTwist` a secas puede empeorar la jugada cuando el giro añade
+                      justo las habilidades que la carta domina (medido: a Sergi Edo le
+                      bajaba del 24% al 23% de tickets resueltos)
+       champion: true cuenta como campeón aunque la tecnología no sea la suya
+       noKryptonite   su criptonita no le penaliza
+       upgrade: true  un "parche puesto" pasa a "resuelto"
+
+     `when` acota cuándo se aplica; sin `when`, siempre:
+       techs: [...]        la tecnología del ticket es alguna de estas
+       skills: [...]       el ticket pide alguna de estas habilidades
+       minDifficulty / maxDifficulty
+     Con `techs` y `skills` a la vez basta con que se cumpla una de las dos: así se
+     cubren familias enteras (todo el PHP, todo el front) en vez de una sola etiqueta.
+
+     Un matiz que importa: `noTwist` se decide ANTES de aplicar el giro, así que su
+     `when` mira el ticket tal como viene; los demás miran el ticket ya resuelto, con
+     el giro aplicado si lo hubiera. Si no, un giro que cambia la tecnología decidiría
+     si se ignora ese mismo giro. */
+  function effectsOf(card) {
+    const a = card && card.ability;
+    if (!a) return [];
+    if (Array.isArray(a.effects)) return a.effects;
+    return a.effect ? [a.effect] : [];
+  }
+
+  function matchWhen(when, challenge, tech, weights) {
+    if (!when) return true;
+    if (when.minDifficulty && challenge.difficulty < when.minDifficulty) return false;
+    if (when.maxDifficulty && challenge.difficulty > when.maxDifficulty) return false;
+    const pideTech = !!(when.techs && when.techs.length);
+    const pideSkill = !!(when.skills && when.skills.length);
+    if (!pideTech && !pideSkill) return true;
+    if (pideTech && tech && when.techs.indexOf(tech) >= 0) return true;
+    if (pideSkill && when.skills.some((k) => (weights || {})[k])) return true;
+    return false;
+  }
+
+  // Efectos que se cumplen ahora mismo, de un tipo concreto.
+  function activeEffects(card, kind, challenge, tech, weights) {
+    return effectsOf(card).filter((e) => e[kind] !== undefined && e[kind] !== false && matchWhen(e.when, challenge, tech, weights));
+  }
+
   engine.evaluate = function (card, challenge, opts, cfg) {
     opts = opts || {};
     const useAbilities = opts.abilities !== false;
-    // Habilidad "hydration": ignora el giro. "no_weakness": ignora el giro también.
+
+    // El giro se decide sobre el ticket sin retorcer (ver el comentario de arriba).
     let withTwist = !!opts.withTwist;
-    if (useAbilities && engine.hasAbility(card, 'no_weakness')) withTwist = false;
-    if (useAbilities && engine.hasAbility(card, 'researcher') && (challenge.skills || {}).rd) withTwist = false;
-    if (useAbilities && engine.hasAbility(card, 'cartographer') && (challenge.skills || {}).data_mining) withTwist = false;
+    if (useAbilities && activeEffects(card, 'noTwist', challenge, challenge.tech, challenge.skills).length) withTwist = false;
+
+    // "El giro nunca le perjudica": se calculan las dos versiones del ticket y se
+    // devuelve la mejor. `_twistDone` corta la recursión; el resto de habilidades
+    // (campeón, criptonita) se siguen aplicando en las dos ramas.
+    if (withTwist && useAbilities && !opts._twistDone
+        && activeEffects(card, 'twistProof', challenge, challenge.tech, challenge.skills).length) {
+      const base = { abilities: opts.abilities, _twistDone: true };
+      const con = engine.evaluate(card, challenge, Object.assign({ withTwist: true }, base), cfg);
+      const sin = engine.evaluate(card, challenge, Object.assign({ withTwist: false }, base), cfg);
+      return sin.score > con.score ? sin : con;
+    }
 
     const weights = effectiveWeights(challenge, withTwist);
     const tech = effectiveTech(challenge, withTwist);
@@ -55,11 +117,12 @@
 
     let score = base;
     let champion = !!(tech && card.expertise === tech);
-    if (!champion && useAbilities && engine.hasAbility(card, 'mentor') && weights.teaching) champion = true;
+    if (!champion && useAbilities && activeEffects(card, 'champion', challenge, tech, weights).length) champion = true;
     if (champion) score = cfg.champion.floor + base * cfg.champion.factor;
 
     let kryptonite = false;
-    if (card.kryptonite && !(useAbilities && engine.hasAbility(card, 'dungeon_master'))) {
+    const inmune = useAbilities && activeEffects(card, 'noKryptonite', challenge, tech, weights).length;
+    if (card.kryptonite && !inmune) {
       if (card.kryptonite.tech && tech && card.kryptonite.tech === tech) kryptonite = true;
       if (card.kryptonite.skill && topSkill(weights) === card.kryptonite.skill) kryptonite = true;
     }
@@ -71,13 +134,16 @@
   engine.resolve = function (card, challenge, opts, cfg) {
     opts = opts || {};
     const rnd = opts.rng || Math.random;
+    const useAbilities = opts.abilities !== false;
     const ev = engine.evaluate(card, challenge, opts, cfg);
 
+    // El dado se tira siempre igual y solo después se le suman los bonos: así una
+    // partida a dos se reproduce con el dado guardado, pase lo que pase con las cartas.
     let die = 1 + Math.floor(rnd() * cfg.luck.dieFaces);
-    if (opts.abilities !== false && engine.hasAbility(card, 'autoscaling') && challenge.difficulty >= 4) die = Math.min(cfg.luck.dieFaces, die + 1);
-    if (opts.abilities !== false && engine.hasAbility(card, 'reactionary') && challenge.tech === 'react') die = Math.min(cfg.luck.dieFaces, die + 2);
-    if (opts.abilities !== false && engine.hasAbility(card, 'root_access') && challenge.tech === 'linux') die = Math.min(cfg.luck.dieFaces, die + 1);
-    if (opts.abilities !== false && engine.hasAbility(card, 'symfony_guard') && challenge.tech === 'symfony') die = Math.min(cfg.luck.dieFaces, die + 1);
+    if (useAbilities) {
+      const bono = activeEffects(card, 'die', challenge, ev.tech, ev.weights).reduce((n, e) => n + (e.die || 0), 0);
+      if (bono) die = Math.max(1, Math.min(cfg.luck.dieFaces, die + bono));
+    }
     const luck = die * cfg.luck.scale;
 
     const total = ev.score + luck;
@@ -86,15 +152,13 @@
     if (total >= threshold) outcome = 'resolved';
     else if (total >= threshold - cfg.improvedMargin) outcome = 'improved';
     else outcome = 'complicated';
-    if (outcome === 'improved' && opts.abilities !== false && engine.hasAbility(card, 'craftsman') && challenge.difficulty <= 2) outcome = 'resolved';
+    if (outcome === 'improved' && useAbilities && activeEffects(card, 'upgrade', challenge, ev.tech, ev.weights).length) outcome = 'resolved';
 
     const points = cfg.points[outcome][challenge.difficulty];
-    let burnout = outcome === 'complicated';
-    if (burnout && card.rarity === 'legendaria') burnout = false;
-    // Las legendarias no se queman: es su rasgo de rareza, no una habilidad suelta.
+    // Las legendarias no se queman: es su rasgo de rareza, y de ninguna otra.
     // Ver config.legendary.noBurnout y CLAUDE.md, "Superpoderes de las legendarias".
+    let burnout = outcome === 'complicated';
     if (burnout && card.rarity === 'legendaria' && (cfg.legendary || {}).noBurnout !== false) burnout = false;
-    if (burnout && opts.abilities !== false && engine.hasAbility(card, 'agent_swarm')) burnout = false;
 
     return Object.assign(ev, { die, luck, total, threshold, outcome, points, burnout });
   };
@@ -115,6 +179,7 @@
      etiqueta, así que un poder activo nuevo no toca la interfaz. */
   // Superpoderes que el motor sabe aplicar, con su tipo. Añadir uno pasa por aquí.
   const POWERS = { rescue: 'active', extra_slot: 'roster' };
+  const EFFECT_KINDS = ['die', 'noTwist', 'twistProof', 'champion', 'noKryptonite', 'upgrade'];
   engine.POWERS = POWERS;
 
   engine.powerOf = function (card) { return (card && card.power) || null; };
@@ -182,6 +247,27 @@
         if (c.kryptonite.tech && c.kryptonite.tech === c.expertise) errors.push(`${p}: expertise y criptonita no pueden coincidir`);
       }
       if (c.ability && (c.rarity === 'comun' || c.rarity === 'rara')) errors.push(`${p}: solo épicas y legendarias tienen habilidad especial`);
+      if (c.rarity === 'epica' && !c.ability) errors.push(`${p}: toda épica debe tener habilidad`);
+      // Los efectos se declaran en la carta: si están mal escritos no hacen nada y no
+      // se notaría jugando, así que se comprueban aquí.
+      const efectos = c.ability ? (Array.isArray(c.ability.effects) ? c.ability.effects : (c.ability.effect ? [c.ability.effect] : [])) : [];
+      if (c.ability && !efectos.length) errors.push(`${p}: la habilidad "${c.ability.id}" no declara ningún efecto`);
+      efectos.forEach((e, i) => {
+        const q = `${p}: efecto ${i + 1} de "${c.ability.id}"`;
+        const tipos = EFFECT_KINDS.filter((k) => e[k] !== undefined);
+        if (!tipos.length) errors.push(`${q}: no hace nada (tipos válidos: ${EFFECT_KINDS.join(', ')})`);
+        Object.keys(e).forEach((k) => { if (k !== 'when' && EFFECT_KINDS.indexOf(k) < 0) errors.push(`${q}: propiedad desconocida "${k}"`); });
+        if (e.die !== undefined && (typeof e.die !== 'number' || e.die < 1 || e.die > data.config.luck.dieFaces)) errors.push(`${q}: el bono al dado debe estar entre 1 y ${data.config.luck.dieFaces}`);
+        // Inmunidad al burnout: es rasgo de rareza, ninguna habilidad puede darla.
+        if (e.noBurnout !== undefined) errors.push(`${q}: el burnout lo decide la rareza, no una habilidad`);
+        const w = e.when;
+        if (w) {
+          Object.keys(w).forEach((k) => { if (['techs', 'skills', 'minDifficulty', 'maxDifficulty'].indexOf(k) < 0) errors.push(`${q}: condición desconocida "${k}"`); });
+          (w.techs || []).forEach((t) => { if (!techIds.has(t)) errors.push(`${q}: tecnología desconocida "${t}"`); });
+          (w.skills || []).forEach((k) => { if (!skillIds.has(k)) errors.push(`${q}: habilidad desconocida "${k}"`); });
+          if ((w.techs && !w.techs.length) || (w.skills && !w.skills.length)) errors.push(`${q}: lista de condiciones vacía`);
+        }
+      });
       // Superpoderes: exclusivos de las legendarias, uno por carta y sin repetir.
       if (c.power) {
         if (c.rarity !== 'legendaria') errors.push(`${p}: solo las legendarias tienen superpoder`);

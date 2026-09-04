@@ -77,15 +77,58 @@ const mapChallenge = { tech: 'python', difficulty: 3, skills: { data_mining: 3 }
 const mapEval = engine.evaluate(sergi, mapChallenge, { withTwist: true }, cfg);
 check(!mapEval.withTwist && !mapEval.weights.security, 'Cartógrafo de datos ignora el giro en tickets de análisis de datos');
 
-const alexAvalos = MI.data.cards.find((c) => c.id === 'alex-avalos');
-const linuxChallenge = MI.data.challenges.find((c) => c.tech === 'linux');
-const rootResult = engine.resolve(alexAvalos, linuxChallenge, { rng: () => 0 }, cfg);
-check(rootResult.die === 2, 'Acceso root suma +1 al dado en tickets Linux');
+/* Habilidades de las épicas. Se declaran como efectos en la propia carta; lo que se
+   comprueba aquí es que se disparan donde deben, que no se disparan donde no, y sobre
+   todo que ninguna invade lo que es exclusivo de las legendarias. */
+{
+  const die0 = { rng: () => 0 };                 // dado natural = 1
+  const carta = (id) => MI.data.cards.find((c) => c.id === id);
+  const conTech = (t) => MI.data.challenges.find((c) => c.tech === t);
+  const conSkill = (k) => MI.data.challenges.find((c) => (c.skills || {})[k] && !c.twist);
 
-const joseAngel = MI.data.cards.find((c) => c.id === 'jose-angel-socarrades');
-const symfonyChallenge = MI.data.challenges.find((c) => c.tech === 'symfony');
-const symfonyResult = engine.resolve(joseAngel, symfonyChallenge, { rng: () => 0 }, cfg);
-check(symfonyResult.die === 2, 'Symfony de guardia suma +1 al dado en tickets Symfony');
+  const alex = carta('alex-avalos');
+  check(engine.resolve(alex, conTech('linux'), die0, cfg).die === 3, 'Acceso root suma +2 en tickets de Linux');
+  check(engine.resolve(alex, conSkill('sysadmin'), die0, cfg).die === 3, 'y también en los de administración de sistemas, que es lo que lo hace útil');
+  check(engine.resolve(alex, conTech('react'), die0, cfg).die === 1, 'pero no en un ticket de front-end');
+
+  const socarrades = carta('jose-angel-socarrades');
+  check(engine.resolve(socarrades, conTech('php'), die0, cfg).die === 3, 'El turno de guardia en PHP cubre PHP');
+  check(engine.resolve(socarrades, conTech('symfony'), die0, cfg).die === 3, 'y Symfony');
+  check(engine.resolve(socarrades, conTech('wordpress'), die0, cfg).die === 3, 'y el gestor de contenidos de turno');
+  check(engine.resolve(socarrades, conTech('python'), die0, cfg).die === 1, 'pero no un ticket de Python');
+
+  const joseM = carta('jose-manuel-gomez');
+  check(engine.resolve(joseM, conTech('react'), die0, cfg).die === 4, 'El reactionario suma +1 de front y +2 más si es React');
+  check(engine.resolve(joseM, conTech('angular'), die0, cfg).die === 2, 'en otro framework de front, solo el +1');
+
+  const andres = carta('andres-cabrera');
+  check(engine.resolve(andres, conSkill('ai_tools'), die0, cfg).die === 3, 'El enjambre de agentes se activa en tickets de IA');
+  check(engine.resolve(andres, conSkill('spec_driven'), die0, cfg).die === 3, 'y en los de especificación');
+
+  const camilo = carta('camilo-nevot');
+  const facil = MI.data.challenges.find((c) => c.difficulty <= 2);
+  const dificil = MI.data.challenges.find((c) => c.difficulty >= 4);
+  check(engine.resolve(camilo, dificil, die0, cfg).die === 2, 'Autoscaling solo aparece cuando aprieta');
+  check(engine.resolve(camilo, facil, die0, cfg).die === 1, 'y no en un ticket fácil');
+
+  // Lo importante: quemarse o no es cosa de la rareza, no de una habilidad suelta.
+  const durisimo = MI.data.challenges.find((c) => c.difficulty === 5);
+  const flojo = MI.data.cards.find((c) => c.rarity === 'comun');
+  MI.data.cards.filter((c) => c.rarity === 'epica').forEach((c) => {
+    const r = engine.resolve(c, durisimo, { withTwist: true, rng: () => 0 }, cfg);
+    check(r.outcome !== 'complicated' || r.burnout === true, c.name + ' se quema si complica el ticket, como cualquier épica');
+  });
+  check(engine.resolve(flojo, durisimo, { withTwist: true, rng: () => 0 }, cfg).burnout === true, 'y una común también');
+
+  // Ninguna carta que no sea legendaria puede declarar inmunidad al burnout.
+  const invasoras = MI.data.cards.filter((c) => c.rarity !== 'legendaria' && JSON.stringify(c.ability || {}).indexOf('burnout') >= 0 && !/se quema/.test((c.ability || {}).text || ''));
+  check(invasoras.length === 0, 'ninguna carta no legendaria promete inmunidad al burnout');
+
+  // Toda épica tiene habilidad, y con efecto de verdad, no solo texto.
+  const epicas = MI.data.cards.filter((c) => c.rarity === 'epica');
+  check(epicas.every((c) => c.ability), `las ${epicas.length} épicas tienen habilidad`);
+  check(epicas.every((c) => (c.ability.effect || c.ability.effects)), 'y todas declaran su efecto, no solo el texto');
+}
 
 const pantic = MI.data.cards.find((c) => c.id === 'pantic');
 const seoChallenge = MI.data.challenges.find((c) => c.id === 'seo-javascript-indexing');

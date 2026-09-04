@@ -161,6 +161,17 @@ Seis añadidos pensados para el estreno en la comunidad. Ninguno toca el motor d
 
 ---
 
+## Fase 6d — Habilidades de las épicas `[x]`
+
+- [x] Las habilidades pasan del motor a los datos: cada carta declara su `effect` o `effects`, con seis tipos y condiciones por tecnología, habilidad y dificultad. Ajustar una habilidad ya no toca código.
+- [x] Retirada la inmunidad al burnout de Andrés Cabrera: es rasgo exclusivo de las legendarias y el validador ahora lo impide en cualquier carta.
+- [x] Ampliadas las habilidades que apuntaban a una sola tecnología y casi nunca se disparaban (la de Symfony, en 1 ticket de 141).
+- [x] Efecto `twistProof`: el giro nunca perjudica. `noTwist` a secas empeoraba a Sergi Edo.
+- [x] La habilidad de Daniel Primo dejaba de hacer nada (inmunidad a una criptonita que no tiene); ahora juega como campeón en tickets de docencia.
+- [x] Validación de efectos en el catálogo: tipo desconocido, condición desconocida, tecnología o habilidad inexistente, bono fuera de rango y épica sin habilidad.
+
+---
+
 ## Fase 7 — LLM opcional y revelado por días `[ ]`
 
 - [ ] Oponente LLM opcional: endpoint compatible OpenAI (incluye Ollama local) y Anthropic; solo elige carta y comenta la jugada. La clave se guarda en `localStorage` y nunca sale del navegador salvo hacia el endpoint configurado.

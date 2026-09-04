@@ -197,6 +197,50 @@ La ruta `#carta=<id>` abre el juego directamente en la ficha de ese malandrín, 
 
 Tres decisiones deliberadas: el enlace **muestra la carta aunque el receptor no la haya descubierto** —es justo para lo que sirve— pero **no la marca como descubierta**, así que no estropea su álbum; un identificador que no existe no rompe nada, avisa y deja el álbum como estaba; y el botón de compartir **solo aparece con `opts.share`**, que activan el álbum, la colección del modo historia (que es el álbum personal de cada uno) y el propio enlace compartido. Durante una partida la ficha se abre para decidir, no para presumir, así que ahí no sale.
 
+## Habilidades de las épicas
+
+Cada épica tiene una **habilidad pasiva** declarada en la propia carta, no en el motor. Antes cada una era una línea codificada a mano en `engine.resolve`, y eso las condenaba a ser estrechas: la de Symfony se disparaba en **1 ticket de 141**. Ahora ajustar una habilidad es editar `data/cards.js`.
+
+Una habilidad lleva `effect` (uno) o `effects` (varios, que se acumulan). Cada efecto es `{ <tipo>, when }`:
+
+| Tipo | Qué hace |
+|---|---|
+| `die: n` | Suma n al factor viernes, con tope en las caras del dado |
+| `noTwist` | Ignora el giro del ticket, salga mejor o peor |
+| `twistProof` | El giro **nunca le perjudica**: se queda con la mejor de las dos versiones |
+| `champion` | Cuenta como campeón aunque la tecnología no sea la suya |
+| `noKryptonite` | Su criptonita no le penaliza |
+| `upgrade` | Un "parche puesto" pasa a "resuelto" |
+
+`when` acota cuándo se aplica; sin `when`, siempre. Admite `techs`, `skills`, `minDifficulty` y `maxDifficulty`. **Con `techs` y `skills` a la vez basta con que se cumpla una de las dos**, que es lo que permite cubrir familias enteras (todo el PHP, todo el front) en vez de una sola etiqueta.
+
+Dos detalles del motor que no conviene tocar sin entenderlos:
+
+- **`noTwist` y `twistProof` se deciden antes de aplicar el giro**, así que su `when` mira el ticket tal como viene. Los demás miran el ticket ya resuelto. Si no fuera así, un giro que cambia la tecnología decidiría si se ignora ese mismo giro.
+- **El dado se tira siempre igual y los bonos se suman después.** Nunca introducir efectos que tiren el dado otra vez: las partidas a dos se reproducen con el dado guardado en la jugada, y una tirada extra rompería la reproducción.
+
+### Reglas de diseño, aprendidas midiendo
+
+1. **La inmunidad al burnout es exclusiva de las legendarias.** `engine.validate` rechaza cualquier efecto `noBurnout`. Andrés Cabrera tenía `agent_swarm`, que se la daba; se sustituyó.
+2. **Ninguna habilidad debe poder perjudicar a su carta.** `noTwist` a secas puede empeorar la jugada cuando el giro añade justo las habilidades que la carta domina: medido, a Sergi Edo le bajaba del 24% al 23% de tickets resueltos. Para eso está `twistProof`.
+3. **Ninguna habilidad debe ser inerte.** La de Daniel Primo prometía inmunidad a la criptonita y él no tiene criptonita: no hacía nada. Ahora juega como campeón en los tickets de docencia.
+4. **Apuntar a una sola tecnología es apuntar a nada.** Conviene que una habilidad se dispare en el **10-20%** de los tickets. La forma de comprobarlo es medir, no leer.
+
+Situación medida (tickets donde la habilidad cambia algo, y tasa de resueltos ahí sin y con ella):
+
+| Carta | Sus tickets | Sin / con |
+|---|---|---|
+| Daniel Primo | 12 (9%) | 66% → 100% |
+| Yuri | 33 (23%) | 34% → 42% |
+| José Manuel Gómez | 26 (18%) | 55% → 62% |
+| Alex Ávalos | 21 (15%) | 51% → 63% |
+| Andrés Cabrera | 19 (13%) | 37% → 44% |
+| Sergi Edo | 19 (13%) | 20% → 25% |
+| José Ángel Socarrades | 13 (9%) | 75% → 93% |
+| Camilo Nevot | 42 (30%) | 10% → 13% |
+
+Camilo se dispara en el 30% porque su condición es la dificultad, pero solo suma +1 y en tickets donde todos sufren: por eso mueve poco. Es el equilibrio buscado, no un descuido.
+
 ## Superpoderes de las legendarias
 
 Las legendarias tienen dos cosas que las demás no: **no se queman nunca** (rasgo de rareza, `config.legendary.noBurnout`, aplicado en `engine.resolve` por `card.rarity`, no por habilidad) y **un superpoder propio**, en el campo `power` de la carta, además de su `ability` pasiva de siempre.

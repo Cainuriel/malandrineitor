@@ -197,6 +197,23 @@ La ruta `#carta=<id>` abre el juego directamente en la ficha de ese malandrín, 
 
 Tres decisiones deliberadas: el enlace **muestra la carta aunque el receptor no la haya descubierto** —es justo para lo que sirve— pero **no la marca como descubierta**, así que no estropea su álbum; un identificador que no existe no rompe nada, avisa y deja el álbum como estaba; y el botón de compartir **solo aparece con `opts.share`**, que activan el álbum, la colección del modo historia (que es el álbum personal de cada uno) y el propio enlace compartido. Durante una partida la ficha se abre para decidir, no para presumir, así que ahí no sale.
 
+## Dos contadores de burnout que no se pueden mezclar
+
+Hay dos números distintos y en la interfaz **nunca deben compartir sitio ni palabra**:
+
+| | Qué es | Dónde vive | Sube y baja |
+|---|---|---|---|
+| **Desgaste de la campaña** | Cuántas quemadas lleva acumuladas *en esta campaña* | `story.strikes[id]` | Sube al quemarse; baja una por cada sprint que la carta juega sin quemarse. En el banquillo **no** se cura |
+| **Histórico** | Cuántas veces se ha quemado esa carta *en toda tu vida de jugador*, en todos los modos | `profile.cardStats[id].burnouts` | Solo sube. Nunca se reinicia |
+
+Compartían la misma casilla del panel "Tu plantilla" y la misma palabra ("burnouts"), y el resultado era ilegible: un "2 de 3" se leía como "ya se fue" y un "3 burnouts" histórico parecía un peligro inminente cuando la carta estaba intacta. Ahora:
+
+- El **histórico** va en la línea de estadísticas, junto a envíos y resueltos: "26 envíos · 11 resueltos · 3 quemadas en total".
+- El **desgaste** va en su columna, dicho con palabras: "Tocado: 1 de 3" en ámbar, o "A una quemada de irse" en rojo. Vacío si no hay desgaste.
+- El aviso del título explica que en el banquillo no se recupera, que es la causa de que un número parezca estancado.
+
+**Quien deja la empresa queda anotado** en `story.gone`, y el panel lo lista tachado bajo "Han dejado la empresa". Sin eso, una carta que se va desaparece de la plantilla sin rastro y no hay manera de distinguir "se fue" de "nunca la tuve". Las partidas guardadas antiguas no tienen ese campo: se trata como vacío.
+
 ## Habilidades de las épicas
 
 Cada épica tiene una **habilidad pasiva** declarada en la propia carta, no en el motor. Antes cada una era una línea codificada a mano en `engine.resolve`, y eso las condenaba a ser estrechas: la de Symfony se disparaba en **1 ticket de 141**. Ahora ajustar una habilidad es editar `data/cards.js`.

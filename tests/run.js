@@ -420,6 +420,18 @@ check(cardPower(yuri) > cardPower(dp), 'las nuevas competencias elevan ligeramen
     check(!todas.some((f) => /marr[oó]n/i.test(f)), 'ninguna frase nueva usa la palabra prohibida');
   }
 
+  // Quien deja la empresa queda anotado: si no, la carta desaparece de la plantilla
+  // sin rastro y no hay forma de saber si se fue o si nunca se tuvo.
+  {
+    const st2 = MI.story;
+    const L = cfg.story.burnoutLimit;
+    const s3 = { coins: 0, owned: { 'holtrix': 1 }, seen: {}, strikes: { 'holtrix': L - 1 }, chapter: 1, wins: {}, opened: 0, sprints: 0, log: [] };
+    const r3 = st2.wearAndTear(s3, { hand: ['holtrix'], cards: { 'holtrix': { sent: 1, resolved: 0, burnouts: 1 } } });
+    check(r3.lost.length === 1 && !s3.owned['holtrix'], 'al llegar al límite, el malandrín deja la empresa');
+    check((s3.gone || {})['holtrix'] === 1, 'y queda anotado en la lista de quienes se fueron');
+    check(!s3.strikes['holtrix'], 'con el contador de desgaste a cero');
+  }
+
   // El amo del calabozo no se quema nunca, así que nunca se va
   const dp = MI.data.cards.find((c) => c.id === 'daniel-primo');
   const hard = MI.data.challenges.find((c) => c.id === 'db-breach');

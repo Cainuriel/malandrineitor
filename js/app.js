@@ -89,9 +89,16 @@ MI.app = (function () {
     c.appendChild(el('div', { class: 'panel', style: { marginTop: '16px' } }, [
       el('h2', { text: 'Historia' }),
       story
-        ? el('div', { class: 'row' }, [
-            el('span', { class: 'pill', text: 'Capítulo ' + story.chapter }), el('span', { class: 'pill', text: story.coins + ' malandricoins' }),
-            el('span', { class: 'pill', text: MI.story.ownedCards(story).length + ' cartas' }), el('span', { class: 'pill', text: story.sprints + ' sprints' })
+        ? el('div', { class: 'story-summary' }, [
+            el('div', { class: 'coins' }, [
+              el('div', { class: 'coins-n', text: String(story.coins) }),
+              el('div', { class: 'coins-lbl', text: story.coins === 1 ? 'malandricoin' : 'malandricoins' })
+            ]),
+            el('div', { class: 'row' }, [
+              el('span', { class: 'pill', text: 'Capítulo ' + story.chapter }),
+              el('span', { class: 'pill', text: MI.story.ownedCards(story).length + ' cartas' }),
+              el('span', { class: 'pill', text: story.sprints + (story.sprints === 1 ? ' sprint' : ' sprints') })
+            ])
           ])
         : el('p', { class: 'muted small', text: 'Todavía no has fichado por Malandriner S.A. Las cartas se consiguen abriendo sobres en el modo historia.' }),
       el('div', { class: 'row', style: { marginTop: '10px' } }, [
@@ -137,28 +144,58 @@ MI.app = (function () {
     return el('div', { class: 'panel', style: { marginTop: '16px' } }, [
       el('h2', { text: 'Tu plantilla' }),
       el('p', { class: 'small muted', text: owned.length
-        ? `${owned.length} malandrines en propiedad` + (dups ? ` · ${dups} repetida${dups === 1 ? '' : 's'} para vender` : '') + (burned ? ` · ${burned} con algún burnout a sus espaldas` : '')
-          + `. Quien se queme ${cfg.story.burnoutLimit} veces deja la empresa; cada sprint limpio resta un burnout. Las cartas legendarias son inmunes.`
+        ? `${owned.length} malandrines en propiedad` + (dups ? ` · ${dups} repetida${dups === 1 ? '' : 's'} para vender` : '')
+          + `. Un malandrín deja la empresa al acumular ${cfg.story.burnoutLimit} quemadas en esta campaña; cada sprint que juega sin quemarse le quita una. Las legendarias son inmunes.`
         : 'Todavía no tienes cartas. Abre un sobre en la tienda.' }),
+      // Dos columnas con nombres distintos a propósito: el "estado" es el desgaste de
+      // esta campaña, que sube y baja; las "quemadas" del histórico son de toda la vida
+      // del jugador y en todos los modos. Antes compartían casilla y la misma palabra,
+      // así que un 2 de 3 se leía como "ya se fue" y un 3 histórico como un peligro.
+      el('p', { class: 'small muted squad-legend', text: 'La columna de estado es el desgaste de esta campaña. Los envíos y las quemadas de la derecha son el histórico completo, de todas tus partidas.' }),
       owned.length ? el('div', { class: 'squad-list' }, owned.map((card) => {
         const n = story.owned[card.id];
         const cs = stats[card.id] || { sent: 0, resolved: 0, burnouts: 0 };
         const price = cfg.story.sellPrice[card.rarity] || 0;
         const limit = cfg.story.burnoutLimit;
         const st = (story.strikes || {})[card.id] || 0;      // desgaste de la campaña en curso
-        return el('div', { class: 'squad-row rarity-' + card.rarity + (st >= limit - 1 ? ' at-risk' : (st || cs.burnouts ? ' burned' : '')) }, [
+        const alBorde = st >= limit - 1;
+        // Estado de esta campaña, dicho con palabras y no con un marcador ambiguo.
+        const estado = !st ? ''
+          : (alBorde ? 'A una quemada de irse' : 'Tocado: ' + st + ' de ' + limit);
+        const porQue = !st ? ''
+          : 'Desgaste de esta campaña: ' + st + ' de ' + limit + '. Se le quita una por cada sprint que juegue sin quemarse; en el banquillo no se recupera.';
+        const historico = cs.sent
+          ? `${cs.sent} ${cs.sent === 1 ? 'envío' : 'envíos'} · ${cs.resolved} ${cs.resolved === 1 ? 'resuelto' : 'resueltos'}`
+            + (cs.burnouts ? ` · ${cs.burnouts} ${cs.burnouts === 1 ? 'quemada' : 'quemadas'} en total` : '')
+          : 'sin jugar';
+        return el('div', { class: 'squad-row rarity-' + card.rarity + (alBorde && st ? ' at-risk' : (st ? ' burned' : '')) }, [
           el('span', { class: 'sq-gem' }),
           el('span', { class: 'sq-name', text: card.name }),
           el('span', { class: 'sq-rar', text: cfg.rarities[card.rarity].name }),
           el('span', { class: 'sq-n', text: n > 1 ? '×' + n : '' }),
-          el('span', { class: 'sq-stats', text: cs.sent ? `${cs.sent} envíos · ${cs.resolved} resueltos` : 'sin jugar' }),
-          el('span', { class: 'sq-burn' + (st ? ' risk' : (cs.burnouts ? ' on' : '')), title: cs.burnouts ? cs.burnouts + ' burnouts en total' : '',
-            text: st ? st + ' de ' + limit + (st >= limit - 1 ? ' · en la cuerda floja' : '') : (cs.burnouts ? cs.burnouts + (cs.burnouts === 1 ? ' burnout' : ' burnouts') : '') }),
+          el('span', { class: 'sq-stats', title: 'Histórico de todas tus partidas, en todos los modos', text: historico }),
+          el('span', { class: 'sq-burn' + (alBorde && st ? ' risk' : (st ? ' on' : '')), title: porQue, text: estado }),
           el('span', { class: 'sq-act' }, n > 1
             ? el('button', { class: 'small-btn sell', text: 'Vender una (+' + price + ')', onclick: () => { const st = MI.story.load(); MI.story.sell(st, card.id); MI.story.save(st); go('perfil'); toast('Vendida una copia de ' + card.name + '.'); } })
             : el('button', { class: 'ghost small-btn', text: 'Ver ficha', onclick: () => MI.album.openDetail(card) }))
         ]);
-      })) : null
+      })) : null,
+      renderGone(story)
+    ]);
+  }
+
+  // Quién ha dejado la empresa en esta campaña. Sin esto, una carta que se va
+  // desaparece de la plantilla sin dejar rastro y no hay forma de saber si se fue
+  // o si nunca llegó a tenerse.
+  function renderGone(story) {
+    const gone = (story && story.gone) || {};
+    const cards = MI.util.byId(MI.data.cards);
+    const idos = Object.keys(gone).filter((id) => gone[id] > 0 && cards[id]);
+    if (!idos.length) return null;
+    return el('div', { class: 'gone-box' }, [
+      el('div', { class: 'gone-kicker', text: 'Han dejado la empresa' }),
+      el('div', { class: 'row' }, idos.map((id) => el('span', { class: 'pill gone', text: cards[id].name + (gone[id] > 1 ? ' (×' + gone[id] + ')' : '') }))),
+      el('p', { class: 'small muted', style: { margin: '8px 0 0' }, text: 'Se quemaron demasiadas veces. Si aún tienes otra copia, sigue en la plantilla; si no, hay que volver a encontrarla en un sobre.' })
     ]);
   }
 

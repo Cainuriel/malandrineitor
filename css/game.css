@@ -426,14 +426,14 @@ button.primary.btn-cerrar:disabled { filter: grayscale(.55) brightness(.9); }
 .squad-row { --rar: var(--rar-comun); display: grid; grid-template-columns: 10px 1.4fr .8fr 40px 1.4fr 1fr auto; gap: 10px; align-items: center;
   padding: 8px 12px; border-radius: 8px; background: var(--bg-2); border: 1px solid var(--line); font-size: 13px; }
 .squad-row.rarity-rara { --rar: var(--rar-rara); } .squad-row.rarity-epica { --rar: var(--rar-epica); } .squad-row.rarity-legendaria { --rar: var(--rar-legendaria); }
-.squad-row.burned { border-color: color-mix(in srgb, var(--bad) 35%, var(--line)); }
+.squad-row.burned { border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
 .squad-row > * { min-width: 0; }
 .sq-gem { width: 10px; height: 10px; border-radius: 50%; background: var(--rar); box-shadow: 0 0 8px color-mix(in srgb, var(--rar) 70%, transparent); }
 .sq-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sq-rar { color: var(--rar); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
 .sq-n { font-family: var(--mono); color: var(--accent); font-weight: 700; }
 .sq-stats { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sq-burn { font-size: 12px; color: transparent; } .sq-burn.on { color: var(--bad); font-weight: 700; }
+.sq-burn { font-size: 12px; color: transparent; } .sq-burn.on { color: var(--warn); font-weight: 700; }
 .sq-act { justify-self: end; }
 @media (max-width: 720px) {
   .squad-row { grid-template-columns: 10px 1fr auto; row-gap: 4px; }
@@ -521,4 +521,23 @@ button.primary.btn-cerrar:disabled { filter: grayscale(.55) brightness(.9); }
 @media (max-width: 720px) {
   body.en-partida .hud-menu { display: inline-block; margin-top: 6px; padding: 5px 12px; font-size: 12px;
     border-radius: 999px; color: var(--text-2); background: color-mix(in srgb, var(--panel-2) 80%, transparent); }
+}
+
+/* Los malandricoins son la moneda de la campaña: merecen tamaño, no una píldora más. */
+.story-summary { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.coins { display: flex; flex-direction: column; align-items: flex-start; padding: 10px 18px;
+  border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.coins-n { font-size: 34px; font-weight: 900; line-height: 1; letter-spacing: -0.02em; color: var(--accent); }
+.coins-lbl { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-2); margin-top: 4px; }
+
+/* Plantilla: el estado de la campaña y el histórico no se confunden. */
+.squad-legend { margin-top: -6px; }
+.gone-box { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
+.gone-kicker { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--bad); margin-bottom: 8px; }
+.pill.gone { color: var(--text-2); border-color: color-mix(in srgb, var(--bad) 40%, var(--line));
+  background: color-mix(in srgb, var(--bad) 8%, transparent); text-decoration: line-through; }
+@media (max-width: 720px) {
+  .coins-n { font-size: 28px; }
+  .story-summary { gap: 12px; }
 }

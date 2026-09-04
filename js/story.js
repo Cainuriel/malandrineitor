@@ -142,6 +142,10 @@ MI.story = (function () {
         s.owned[id]--;
         s.strikes[id] = 0;
         const card = cards[id];
+        // Se deja constancia de quién se fue: si no, la carta desaparece de la
+        // plantilla sin rastro y no hay forma de saber si se fue o nunca se tuvo.
+        s.gone = s.gone || {};
+        s.gone[id] = (s.gone[id] || 0) + 1;
         out.lost.push({ card, copiesLeft: s.owned[id] });
         s.log.unshift({ date: new Date().toISOString(), text: card.name + ' deja Malandriner S.A. tras quemarse ' + limit + ' veces.' + (s.owned[id] > 0 ? ' Te queda otra copia en plantilla.' : '') });
       }

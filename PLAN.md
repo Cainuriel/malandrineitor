@@ -172,6 +172,15 @@ Seis añadidos pensados para el estreno en la comunidad. Ninguno toca el motor d
 
 ---
 
+## Fase 6e — Perfil legible `[x]`
+
+- [x] Los malandricoins dejan de ser una píldora más y tienen su bloque, con el número en grande.
+- [x] Separados los dos contadores de burnout, que compartían casilla y palabra: el desgaste de la campaña se dice con palabras ("A una quemada de irse") y el histórico se va con envíos y resueltos. Ver `CLAUDE.md`, "Dos contadores de burnout que no se pueden mezclar".
+- [x] Ámbar para el aviso, rojo solo para quien está a una quemada de marcharse.
+- [x] Nueva lista "Han dejado la empresa" (`story.gone`): antes una carta que se iba desaparecía sin rastro.
+
+---
+
 ## Fase 7 — LLM opcional y revelado por días `[ ]`
 
 - [ ] Oponente LLM opcional: endpoint compatible OpenAI (incluye Ollama local) y Anthropic; solo elige carta y comenta la jugada. La clave se guarda en `localStorage` y nunca sale del navegador salvo hacia el endpoint configurado.

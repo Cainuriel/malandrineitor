@@ -501,7 +501,9 @@ MI.story = (function () {
       c.appendChild(renderSummary(lastSummary));
       lastSummary = null;
       // La cinemática de fin de campaña se lanza una vez, justo al volver a la oficina.
-      if (esFinal) setTimeout(() => finale(() => render()), 400);
+      // Algo más de espera que el resto de avisos: da tiempo a leer "Sprint ganado:
+      // La auditoría final" antes de que la cinemática se coma la pantalla.
+      if (esFinal) setTimeout(() => finale(() => render()), 1200);
     }
     const chapterCard = el('div', { class: 'panel chapter-card' }, [
       el('div', { class: 'tag', text: 'Capítulo ' + ch.id + ' de ' + cfg().chapters.length }),

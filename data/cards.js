@@ -278,7 +278,7 @@ MI.data.cards = [
     kryptonite: { skill: 'design' }, skills: { back: 8, front: 7, apis: 6, architecture: 6, testing: 6, spec_driven: 6, databases: 5, design: 1 },
     ability: null, quote: 'Del componente al controlador sin cambiar de teclado.', notes: '' },
   { id: 'samuel-baute', name: 'Samuel Baute', title: 'Desarrollador de banca · COBOL, Delphi y Pascal', rarity: 'comun', expertise: 'cobol',
-    kryptonite: { tech: 'react' }, skills: { legacy: 9, back: 6, databases: 6, testing: 5, erp: 6, spec_driven: 4, management: 4, front: 1, web3: 1, ai_tools: 1 },
+    kryptonite: { skill: 'front' }, skills: { legacy: 9, back: 6, databases: 6, testing: 5, erp: 6, spec_driven: 4, management: 4, front: 1, web3: 1, ai_tools: 1 },
     ability: null, quote: 'Ese código lleva cuarenta años funcionando. Toca con respeto.', notes: '' },
   { id: 'marty', name: 'Marty', title: 'Especialista de guardia para los rincones menos transitados', rarity: 'comun', expertise: 'onprem',
     kryptonite: { skill: 'design' }, skills: { sovereignty: 6, privacy: 6, saas: 5, mlops: 5, gdpr: 5, opensource: 5, observability: 4, spec_driven: 5, design: 1 },

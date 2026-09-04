@@ -354,6 +354,19 @@ Tres averías, tres mensajes. Confundirlos manda a la gente a buscar donde no es
 
 El desplegable de carga acepta tanto el JSON como **un enlace pegado entero**: es la vía de rescate cuando el chat solo hace pulsable un trozo pero el texto completo se puede copiar. El fichero JSON conserva `result` y el reparto: es la copia legible y autosuficiente.
 
+### La barra flotante del enlace pendiente
+
+El enlace se comparte desde una barra fija abajo (`.share-bar`, construida en `MI.game.shareBar`), con halo intermitente y el botón como acción principal. Está así por un fallo observado en la comunidad: el botón de compartir vivía al final de la pantalla, **debajo de la tabla de resultados**, que es larga. Quien terminaba su turno no lo encontraba y copiaba **la barra de direcciones del navegador**, que contiene el enlace que esa persona *recibió*, no el que tiene que devolver. El otro jugador recibía así su propio enlace de vuelta y la partida se quedaba bloqueada sin que ninguno entendiese por qué.
+
+La barra aparece en las dos pantallas donde hay un enlace pendiente de mandar, y su aviso lo dice explícitamente:
+
+- Al terminar el turno de quien crea la partida (`renderExport`): "la dirección del navegador todavía no lleva la partida".
+- Al resolver, para quien juega segundo (`renderResolved` con `role === 'B'`): "la dirección que ves arriba en el navegador es la que te llegó a ti, no sirve".
+
+El contenedor `.endgame` recibe la clase `with-share-bar`, que reserva el hueco inferior para que la barra no tape el final del contenido. **No se puede escribir el enlace en la barra de direcciones** con `history.replaceState` para que copiarla funcione: al recargar, esa dirección volvería a abrir la partida por la ruta `#match=` y pisaría la sesión guardada en `mi.game`. El aviso es más barato y no toca el protocolo.
+
+`tests/screenshots.js` obtiene los dos enlaces pulsando `.share-bar .share-cta`; si se cambia la barra, ese selector es el que hay que mantener.
+
 ## Quemaduras de las cartas
 
 Cada burnout acumulado de la campaña (`story.strikes[id]`) pinta una esquina chamuscada en la carta: `MI.card.render(card, { burns: n })`. Como al llegar a `config.story.burnoutLimit` (3) el malandrín deja la empresa, en pantalla nunca se ven más de dos.

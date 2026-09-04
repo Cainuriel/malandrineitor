@@ -317,6 +317,22 @@ MI.game = (function () {
     }
   }
 
+  /* Barra flotante del enlace que hay que devolver. Vive fija abajo porque el problema
+     medido era este: al terminar el turno, el botón de compartir quedaba debajo de la
+     tabla de resultados, nadie lo encontraba y la gente copiaba la barra de direcciones
+     del navegador, que contiene el enlace que RECIBIÓ, no el que tiene que devolver.
+     Ver CLAUDE.md, "El enlace de la partida". */
+  function shareBar(match, titulo, aviso, etiqueta) {
+    const btn = el('button', { class: 'primary share-cta', text: etiqueta, onclick: (e) => shareMatch(match, e.currentTarget) });
+    return el('div', { class: 'share-bar' }, [
+      el('div', { class: 'share-bar-text' }, [
+        el('strong', { text: titulo }),
+        el('span', { class: 'small', text: aviso })
+      ]),
+      btn
+    ]);
+  }
+
   function loadMatch(match, name) {
     if (match.status === 'resolved') { S = { mode: 'p2p', match, role: MI.match.role.get(match.id) }; if (S.role) recordP2p(match, S.role); screen = 'resolved'; render(); return; }
     if (match.status === 'A-done') {
@@ -778,9 +794,10 @@ MI.game = (function () {
       el('h1', { text: 'Sprint terminado' }),
       el('div', { class: 'score', text: `Has acabado con ${S.rep.me} de reputación. Ahora le toca a tu rival.` }),
       el('p', { class: 'lead', style: { margin: '0 auto 18px' }, text: 'Comparte el enlace con tu rival. Tus jugadas van ofuscadas: no podrá verlas hasta que termine las suyas. Después te devolverá otro enlace con el resultado.' }),
-      el('div', { class: 'actions' }, [el('button', { class: 'primary', text: 'Compartir enlace', onclick: (e) => shareMatch(S.match, e.currentTarget) }), el('button', { text: 'Descargar copia JSON', onclick: () => download(text, fname) })]),
-      el('div', { class: 'actions' }, [el('button', { text: 'Volver al inicio', onclick: () => { S = null; clearSave(); screen = 'setup'; render(); } })])
+      el('div', { class: 'actions' }, [el('button', { text: 'Descargar copia JSON', onclick: () => download(text, fname) }), el('button', { text: 'Volver al inicio', onclick: () => { S = null; clearSave(); screen = 'setup'; render(); } })])
     ]));
+    c.querySelector('.endgame').classList.add('with-share-bar');
+    c.appendChild(shareBar(S.match, 'Falta mandarle el enlace a ' + (S.match.players.B.name || 'tu rival'), 'Usa este botón: la dirección del navegador todavía no lleva la partida.', 'Copiar el enlace de la partida'));
   }
 
   function renderResolved(c) {
@@ -818,11 +835,11 @@ MI.game = (function () {
       el('div', { class: 'res-table' }, [el('div', { class: 'res-row head' }, [el('div', { text: '' }), el('div', { text: A }), el('div', { text: B }), el('div', { text: '' })]), ...rows]),
       role === 'B' ? el('p', { class: 'lead', style: { margin: '18px auto' }, text: 'Comparte el enlace resuelto con ' + A + ' para que vea el resultado.' }) : null,
       el('div', { class: 'actions' }, [
-        role === 'B' ? el('button', { class: 'primary', text: 'Compartir resultado', onclick: (e) => shareMatch(m, e.currentTarget) }) : null,
         role === 'B' ? el('button', { text: 'Descargar copia JSON', onclick: () => download(text, fname) }) : null,
         el('button', { text: 'Volver al inicio', onclick: () => { S = null; clearSave(); screen = 'setup'; render(); } })
       ])
     ]));
+    if (role === 'B') { c.querySelector('.endgame').classList.add('with-share-bar'); c.appendChild(shareBar(m, 'Falta devolverle el resultado a ' + A, 'Usa este botón: la dirección que ves arriba en el navegador es la que te llegó a ti, no sirve.', 'Copiar el enlace para ' + A)); }
   }
 
   // Al entrar en la partida y al cambiar de ticket hay que llevar la vista arriba: si

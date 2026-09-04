@@ -143,13 +143,13 @@ const { chromium } = require('playwright');
      A crea la partida y juega; comparte el enlace; B lo abre, juega y resuelve;
      comparte el enlace del resultado; A lo abre y ve quién ha ganado.
      El desplegable con el JSON se comprueba aparte, al final. */
-  const linkOf = async (page, boton) => {
+  const linkOf = async (page) => {
     await page.evaluate(() => {
       window.__enlace = null;
       Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: (t) => { window.__enlace = t; return Promise.resolve(); } } });
       delete navigator.share;   // en el navegador de escritorio no existe; el juego cae al portapapeles
     });
-    await page.locator('text=' + boton).evaluate((b) => b.click());
+    await page.locator('.share-bar .share-cta').first().evaluate((b) => b.click());
     await page.waitForTimeout(200);
     return page.evaluate(() => window.__enlace);
   };
@@ -190,7 +190,7 @@ const { chromium } = require('playwright');
   await jugarSprint(A, false);
   await A.screenshot({ path: path.join(out, 'p2p-export.png'), fullPage: true });
 
-  const enlaceA = await linkOf(A, 'Compartir enlace');
+  const enlaceA = await linkOf(A);
   check(!!enlaceA && enlaceA.includes('#match='), 'A obtiene un enlace para compartir');
   const base = await A.evaluate(() => MI.data.config.shareBaseUrl);
   check(enlaceA.startsWith(base), 'el enlace apunta al juego publicado (' + base + ')');
@@ -221,7 +221,7 @@ const { chromium } = require('playwright');
   check(await B.locator('.res-table').count() > 0, 'B ve la partida resuelta con los dos marcadores');
   await B.screenshot({ path: path.join(out, 'p2p-resolved.png'), fullPage: true });
 
-  const enlaceB = await linkOf(B, 'Compartir resultado');
+  const enlaceB = await linkOf(B);
   check(!!enlaceB && enlaceB.includes('#match='), 'B obtiene el enlace del resultado');
 
   check(enlaceB.length < 2000, 'el enlace del resultado cabe en un mensaje: ' + enlaceB.length + ' caracteres');

@@ -186,7 +186,7 @@ Las frases nuevas siguen la regla de siempre: humor de oficina, el gracioso es e
 
 La ruta `#carta=<id>` abre el juego directamente en la ficha de ese malandrín, y la propia ficha ofrece "Compartir esta ficha" (`MI.album.cardUrl`). Existe porque lo primero que hace cualquiera al ver el juego es buscarse, y lo segundo, enseñárselo a alguien.
 
-Tres decisiones deliberadas: el enlace **muestra la carta aunque el receptor no la haya descubierto** —es justo para lo que sirve— pero **no la marca como descubierta**, así que no estropea su álbum; un identificador que no existe no rompe nada, avisa y deja el álbum como estaba; y el botón de compartir **solo aparece con `opts.share`**, que activan el álbum y el propio enlace. Durante una partida la ficha se abre para decidir, no para presumir, así que ahí no sale.
+Tres decisiones deliberadas: el enlace **muestra la carta aunque el receptor no la haya descubierto** —es justo para lo que sirve— pero **no la marca como descubierta**, así que no estropea su álbum; un identificador que no existe no rompe nada, avisa y deja el álbum como estaba; y el botón de compartir **solo aparece con `opts.share`**, que activan el álbum, la colección del modo historia (que es el álbum personal de cada uno) y el propio enlace compartido. Durante una partida la ficha se abre para decidir, no para presumir, así que ahí no sale.
 
 ## Superpoderes de las legendarias
 

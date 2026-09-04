@@ -454,7 +454,7 @@ MI.story = (function () {
       .map((card) => {
         const n = s.owned[card.id] || 0;
         const st = s.strikes[card.id] || 0;
-        const node = n ? MI.card.render(card, { selectable: true, burns: st, onSelect: (cd) => MI.album.openDetail(cd, { burns: st }) }) : MI.card.renderHidden(card);
+        const node = n ? MI.card.render(card, { selectable: true, burns: st, onSelect: (cd) => MI.album.openDetail(cd, { burns: st, share: true }) }) : MI.card.renderHidden(card);
         const price = cfg().sellPrice[card.rarity] || 0;
         return el('div', { class: 'hand-item' }, [node,
           el('div', { class: 'row', style: { gap: '6px', justifyContent: 'center' } }, [

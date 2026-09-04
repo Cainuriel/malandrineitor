@@ -122,8 +122,10 @@ MI.album = (function () {
           opts.context ? el('p', { class: 'small', style: { color: 'var(--accent)' }, text: 'Ticket en curso: ' + opts.context.title + (opts.context.tech ? ' · tecnología ' + (techs[opts.context.tech] || {}).name : '') }) : null,
           el('p', { class: 'small muted', text: 'Las habilidades que no aparecen valen ' + cfg.skills.defaultValue + '.' }),
           table,
-          // Enlace directo a esta ficha, solo desde el álbum: durante una partida
-          // estorba, y la ficha se abre ahí para decidir, no para presumir.
+          // Enlace directo a esta ficha. Sale en el álbum y en la colección del modo
+          // historia, que es el álbum personal de cada uno, y en el propio enlace
+          // compartido. No sale durante una partida: ahí la ficha se abre para
+          // decidir, no para presumir.
           opts.share ? el('div', { class: 'row card-share' }, [
             el('button', { class: 'primary', text: 'Compartir esta ficha', onclick: (e) => { e.stopPropagation(); shareCard(card, e.currentTarget); } }),
             el('span', { class: 'small muted', text: 'Copia un enlace que abre el juego en esta carta.' })

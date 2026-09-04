@@ -17,9 +17,9 @@ MI.data.phrases = {
 
   // Coletilla pequeña bajo el sello
   kicker: {
-    resolved: ['Ticket cerrado sin despeinarse', 'Se cierra y se factura', 'Producción respira', 'Y sin tocar el viernes', 'El cliente ni se ha enterado'],
-    improved: ['Deuda técnica apuntada', 'Aguanta hasta el lunes', 'Funciona, no preguntes', 'Se ha ganado tiempo', 'Mejor de lo que estaba'],
-    complicated: ['A la pila de "ya lo miro"', 'El ticket vuelve, y con amigos', 'Esto ya no es un ticket, es un proyecto', 'Alguien ha abierto un incidente sobre el incidente', 'Café. Mucho café.']
+    resolved: ['Ticket cerrado sin despeinarse', 'Se cierra y se factura', 'Producción respira', 'Y en viernes...', 'El cliente ni se ha enterado'],
+    improved: ['Deuda técnica apuntada', '¿Aguantará hasta el lunes?', 'Funciona, no preguntes',  'Mejor de lo que estaba'],
+    complicated: ['Síndrome del impostor 100%', 'Alucinó el modelo', 'El ticket para otro', 'Esto ya no es un ticket, es un proyecto', 'Abro incidente sobre el incidente', 'Café. Mucho café.']
   },
 
   /* Pulla del rival tras cada ticket. `win` es cuando la paga se la lleva quien juega,

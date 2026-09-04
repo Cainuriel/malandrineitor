@@ -197,6 +197,14 @@ La ruta `#carta=<id>` abre el juego directamente en la ficha de ese malandrín, 
 
 Tres decisiones deliberadas: el enlace **muestra la carta aunque el receptor no la haya descubierto** —es justo para lo que sirve— pero **no la marca como descubierta**, así que no estropea su álbum; un identificador que no existe no rompe nada, avisa y deja el álbum como estaba; y el botón de compartir **solo aparece con `opts.share`**, que activan el álbum, la colección del modo historia (que es el álbum personal de cada uno) y el propio enlace compartido. Durante una partida la ficha se abre para decidir, no para presumir, así que ahí no sale.
 
+## El sorteo de los sobres
+
+`MI.story.openPack` elige primero **rareza por peso** y luego una carta **al azar entre las activas de esa rareza**, leyendo el catálogo en cada apertura. Ese orden es lo que hace que añadir o retirar cartas no desequilibre nada: la proporción de rarezas es idéntica con 50 cartas que con 500. Verificado con 40.000 aperturas por tipo de sobre: la distribución obtenida coincide con la configurada hasta la décima.
+
+**Dentro de un mismo sobre no sale dos veces la misma carta.** El caso que lo complica es el sobre calabozo: saca tres cartas y solo hay dos legendarias, así que si la tercera vuelve a salir legendaria hay que **bajar de rareza** en lugar de repetir. Se reutiliza el mismo descenso que ya existía para cuando una rareza no tiene cartas. Queda un último recurso, hoy inalcanzable, que permite la repetición antes que devolver un sobre incompleto.
+
+Dos cosas que conviene no confundir: **repetidas dentro de un sobre** (ya no ocurren) y **repetidas respecto a tu colección** (siguen ocurriendo, y deben: son el 80% de lo que sale y se venden desde la colección; sin ellas, completar el álbum sería trivial). Los sobres gratuitos, además, prefieren cartas que no tengas.
+
 ## Dos contadores de burnout que no se pueden mezclar
 
 Hay dos números distintos y en la interfaz **nunca deben compartir sitio ni palabra**:

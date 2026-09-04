@@ -67,12 +67,23 @@ MI.story = (function () {
     const active = MI.album.activeCards();
     const n = rng.int(pack.cards[0], pack.cards[1]);
     const result = { packId, pack, cards: [], spent: free ? 0 : pack.price };
+    // Dentro de un mismo sobre no sale dos veces la misma carta. Importa por el caso
+    // límite: el sobre calabozo saca tres cartas y solo hay dos legendarias, así que
+    // si la tercera vuelve a salir legendaria hay que bajar de rareza en vez de
+    // repetir. Se reutiliza el mismo descenso que cuando una rareza no tiene cartas.
+    const yaSalidas = new Set();
+    const libres = (r) => active.filter((c) => c.rarity === r && !yaSalidas.has(c.id));
     for (let i = 0; i < n; i++) {
       let rar = pickRarity(pack.weights, rng);
-      let pool = active.filter((c) => c.rarity === rar);
-      while (!pool.length && ORDER.indexOf(rar) > 0) { rar = ORDER[ORDER.indexOf(rar) - 1]; pool = active.filter((c) => c.rarity === rar); }
+      let pool = libres(rar);
+      while (!pool.length && ORDER.indexOf(rar) > 0) { rar = ORDER[ORDER.indexOf(rar) - 1]; pool = libres(rar); }
+      // Último recurso, hoy inalcanzable: si no queda ninguna carta sin repetir en
+      // ninguna rareza, antes que no dar carta se permite la repetición.
+      if (!pool.length) pool = active.filter((c) => c.rarity === rar);
+      if (!pool.length) pool = active;
       let card = rng.pick(pool);
       if (free) { const fresh = pool.filter((c) => !s.owned[c.id]); if (fresh.length) card = rng.pick(fresh); }
+      yaSalidas.add(card.id);
       const dup = !!s.owned[card.id];
       s.owned[card.id] = (s.owned[card.id] || 0) + 1;
       s.seen = s.seen || {}; s.seen[card.id] = true;

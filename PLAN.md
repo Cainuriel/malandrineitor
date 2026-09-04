@@ -177,6 +177,7 @@ Seis añadidos pensados para el estreno en la comunidad. Ninguno toca el motor d
 - [x] Los malandricoins dejan de ser una píldora más y tienen su bloque, con el número en grande.
 - [x] Separados los dos contadores de burnout, que compartían casilla y palabra: el desgaste de la campaña se dice con palabras ("A una quemada de irse") y el histórico se va con envíos y resueltos. Ver `CLAUDE.md`, "Dos contadores de burnout que no se pueden mezclar".
 - [x] Ámbar para el aviso, rojo solo para quien está a una quemada de marcharse.
+- [x] Ningún sobre da dos veces la misma carta. El caso difícil es el sobre calabozo, que saca tres y solo hay dos legendarias: baja de rareza en vez de repetir.
 - [x] Nueva lista "Han dejado la empresa" (`story.gone`): antes una carta que se iba desaparecía sin rastro.
 
 ---

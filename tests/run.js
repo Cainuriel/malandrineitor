@@ -420,6 +420,37 @@ check(cardPower(yuri) > cardPower(dp), 'las nuevas competencias elevan ligeramen
     check(!todas.some((f) => /marr[oó]n/i.test(f)), 'ninguna frase nueva usa la palabra prohibida');
   }
 
+  // Ningún sobre puede dar dos veces la misma carta.
+  {
+    const st4 = MI.story;
+    const nuevo = () => ({ coins: 1e9, owned: {}, seen: {}, strikes: {}, chapter: 1, wins: {}, opened: 0, sprints: 0, log: [] });
+    let repetidas = 0, abiertos = 0;
+    Object.keys(cfg.story.packs).forEach((id) => {
+      for (let i = 0; i < 400; i++) {
+        const r = st4.openPack(nuevo(), id, cfg.story.packs[id].price === 0);
+        const ids = r.cards.map((x) => x.card.id);
+        if (new Set(ids).size !== ids.length) repetidas++;
+        abiertos++;
+      }
+    });
+    check(repetidas === 0, `ningún sobre repite carta (${abiertos} abiertos)`);
+
+    // El caso que lo hace difícil: solo hay dos legendarias. Un sobre que pidiera más
+    // debe bajar de rareza en vez de repetir.
+    const legs = MI.album.activeCards().filter((c) => c.rarity === 'legendaria').length;
+    cfg.story.packs.__prueba = { name: 'Prueba', price: 0, cards: [legs + 2, legs + 2], weights: { comun: 0, rara: 0, epica: 0, legendaria: 100 }, hidden: true };
+    let malos = 0, bajaron = 0;
+    for (let i = 0; i < 200; i++) {
+      const r = st4.openPack(nuevo(), '__prueba', true);
+      const ids = r.cards.map((x) => x.card.id);
+      if (new Set(ids).size !== ids.length) malos++;
+      if (r.cards.some((x) => x.card.rarity !== 'legendaria')) bajaron++;
+    }
+    delete cfg.story.packs.__prueba;
+    check(malos === 0, 'pidiendo más legendarias de las que hay, tampoco repite');
+    check(bajaron === 200, 'y baja de rareza para completar el sobre');
+  }
+
   // Quien deja la empresa queda anotado: si no, la carta desaparece de la plantilla
   // sin rastro y no hay forma de saber si se fue o si nunca se tuvo.
   {

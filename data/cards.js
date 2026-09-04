@@ -168,7 +168,7 @@ MI.data.cards = [
     kryptonite: { tech: 'drupal' }, skills: { seo: 10, cms: 8, front: 8, performance: 8, spec_driven: 9, ux: 7, back: 6, management: 6, accessibility: 6, security: 5, web3: 5 },
     ability: null, quote: 'Si no lo encuentra Google, habrá que darle mejores pistas.', notes: '' },
   { id: 'jose-angel-socarrades', name: 'José Ángel Martínez Socarrades', title: 'FullStack e IT Developer · PHP (Symfony), Flutter, Python, Flet', rarity: 'epica', expertise: 'symfony',
-    kryptonite: { tech: 'evm' }, skills: { back: 9, front: 8, mobile: 8, legacy: 7, apis: 7, cms: 5, spec_driven: 7, databases: 6, testing: 6, web3: 5 },
+    kryptonite: { tech: 'evm' }, skills: { back: 9, front: 8, cms: 8, mobile: 7, legacy: 7, apis: 7,  spec_driven: 7, databases: 7, testing: 6, spec_driven: 5 },
     ability: { id: 'symfony_guard', name: 'Symfony de guardia', text: 'Si la tecnología principal del ticket es Symfony, suma +1 al dado.' }, quote: 'Symfony por la mañana, Flutter por la tarde.', notes: '' },
   { id: 'alfredo-gimenez', name: 'Alfredo Giménez', title: 'Node.js Backend Developer · Concebollista', rarity: 'rara', expertise: 'node',
     kryptonite: { tech: 'java' }, skills: { back: 9, apis: 8, databases: 6, testing: 6, spec_driven: 7, performance: 6, devops: 5 },

@@ -1,6 +1,6 @@
 # CLAUDE.md — Guía de continuidad para ¡MALANDRINEITOR!
 
-Este fichero existe para que cualquier modelo o persona que retome el proyecto sepa qué es, qué decisiones están tomadas y cómo continuar sin romper nada. Léelo entero antes de tocar código. El plan de fases está en `PLAN.md`; el estado de cada fase se actualiza allí, no aquí.
+Este fichero existe para que cualquier modelo o persona que retome el proyecto sepa qué es, qué decisiones están tomadas y cómo continuar sin romper nada. Léelo entero antes de tocar código. No hay documento de plan: el juego está publicado y las decisiones tomadas viven aquí, en el fichero al que afectan.
 
 ## Qué es
 
@@ -12,7 +12,7 @@ Idioma del producto y de la documentación: **español**. Idioma de identificado
 
 1. **Sin framework y sin build.** HTML + CSS + JS vanilla. Debe funcionar abriendo `index.html` con doble clic (protocolo `file://`) y servido desde GitHub Pages. Por eso los datos NO son JSON cargados con `fetch()` ni módulos ES (`import`), que el navegador bloquea en `file://`: son ficheros `.js` clásicos que asignan a `window.MI` y se cargan con `<script>` en orden.
 2. **Cartas renderizadas como DOM (HTML/CSS/SVG), nunca como imágenes.** Los retratos son avatares SVG procedurales y deterministas generados a partir del nombre (`js/avatar.js`). **No se usan fotos de la web de la comunidad** ni ningún dato que no sea el nombre público y la descripción pública. Quien no quiera aparecer se retira añadiendo su `id` a `data/optout.js`.
-3. **Oponente heurístico por defecto** (`js/ai.js`). Un LLM es opcional y futuro (Fase 4), solo para "personalidad" y comentarios, nunca imprescindible para jugar.
+3. **Oponente heurístico por defecto** (`js/ai.js`). Un LLM es opcional y futuro, solo para "personalidad" y comentarios, nunca imprescindible para jugar.
 4. **Sin NFTs ni blockchain en el núcleo.** Si algún día hay cartas exclusivas, será con códigos firmados en cliente. Fuera del alcance actual.
 5. **Todo configurable desde `data/`.** Añadir una habilidad, una tecnología, una carta o un reto es añadir una entrada a un fichero de datos. El motor no debe contener nombres de habilidades ni de tecnologías codificados.
 6. **Sin iconos emoji en la interfaz ni en la documentación.** Iconografía solo SVG inline.
@@ -27,7 +27,6 @@ Idioma del producto y de la documentación: **español**. Idioma de identificado
 ```
 index.html          Menú, álbum y partida (una sola página, vistas conmutadas por JS)
 CLAUDE.md           Este fichero
-PLAN.md             Fases, estado y criterios de aceptación
 README.md           Para jugadores y contribuidores
 css/theme.css       Variables de diseño (colores, tipografías, rarezas) y layout general
 css/cards.css       Anatomía de la carta, rarezas, efecto holográfico, dorso
@@ -46,16 +45,17 @@ js/engine.js        Cálculo de puntuación y resolución de un ticket (puro, si
 js/ai.js            Elección de carta por parte de la máquina
 js/match.js         Partidas a dos jugadores por URL/JSON (reparto, ofuscación, firma, resolución) y perfil en localStorage
 js/scoring.js       Puntos malandrín (elementos que puntúan además de la reputación), puro
-js/story.js         Modo historia: economía, sobres y su arte SVG, apertura cinematográfica, colección, descubrimiento y capítulos
+js/story.js         Modo historia: economía, sobres y su arte SVG, apertura cinematográfica, colección, descubrimiento, capítulos y final de campaña
 js/fx.js            Efectos de tebeo: sello de resultado por ticket y pantallazo de fin de sprint
 js/rules.js         Vista de normas (lee los números de config)
 js/album.js         Vista álbum
 js/game.js          Estado de partida y pantallas del modo arcade (contra la máquina y a dos jugadores)
-js/app.js           Router, alta de cuenta (nombre#0000), vista de perfil e histórico
-docs/               Documentación de diseño (reglas, fórmula, guía de cartas)
+js/app.js           Router, alta de cuenta (nombre#0000), vista de perfil, trofeo de campeón e histórico
+docs/DOS_JUGADORES.md  Protocolo de las partidas a dos jugadores (enlace, firma, formato binario)
+docs/img/           Capturas generadas por tests/screenshots.js (fuera del repositorio)
 ```
 
-## Modelo de datos (resumen; detalle en `docs/REGLAS.md`)
+## Modelo de datos
 
 **Habilidad** (`data/skills.js`): `{ id, name, short, group, desc }`. Valores de carta de 1 a 10. Si una carta no declara una habilidad, vale `config.skills.defaultValue`. La habilidad `spec_driven` (IA: desarrollo dirigido por especificación) la tienen todos los malandrines porque la comunidad desarrolla agénticamente; el valor lo fija cada carta.
 
@@ -135,7 +135,7 @@ docs/               Documentación de diseño (reglas, fórmula, guía de cartas
 ## Cómo probar
 
 - Abrir `index.html` en el navegador (doble clic o `npx serve .`).
-- Motor: `node tests/run.js` (comprueba validación de datos, regla de campeón, criptonita y reproducibilidad).
+- Motor: `node tests/run.js` (unas doscientas comprobaciones: validación del catálogo, regla de campeón, criptonita, habilidades, economía de sobres, desgaste y reproducibilidad). Es la prueba obligatoria después de tocar `data/` o `js/engine.js`.
 - Capturas y flujo completo a dos jugadores: `CHROME_PATH=/ruta/a/chrome node tests/screenshots.js` (Playwright, opcional). Genera `docs/img/*.png` en escritorio y móvil y falla si hay errores de consola.
 - Maquetación en cinco formatos: `CHROME_PATH=/ruta/a/chrome node tests/layout.js`.
 
@@ -149,7 +149,15 @@ docs/               Documentación de diseño (reglas, fórmula, guía de cartas
 
 ## Pendiente conocido / no hacer todavía
 
-Ver `PLAN.md`. En particular: el LLM opcional y los retratos NO están implementados y no deben empezarse sin cerrar la fase en curso. Los avatares procedurales son provisionales: al final del proyecto se sustituirán por retratos inspirados en cada persona (con su permiso), usando `card.portrait`.
+El juego está publicado y jugable de principio a fin. Lo que queda abierto, sin fecha ni compromiso:
+
+- **Retratos**: los avatares procedurales son provisionales. La idea es sustituirlos por retratos inspirados en cada persona (con su permiso), usando `card.portrait`. Nunca fotos de la web de la comunidad.
+- **Bios técnicas**: quedan unas veinticinco fichas del directorio con `notes` vacío.
+- **Oponente con LLM**: opcional y siempre prescindible. Solo para comentarios y personalidad, jamás para decidir la jugada.
+- **Accesibilidad**: navegación por teclado, `aria-*` y revisión de contraste. Es lo que más falta hace de esta lista.
+- **Revelado progresivo por fecha**: idea aparcada, no empezada.
+
+Nada de esto se empieza sin hablarlo con Fernando.
 
 ## Capas a pantalla completa y scroll
 

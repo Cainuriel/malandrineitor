@@ -2,7 +2,7 @@
 
 Juego de cartas en HTML, homenaje a la comunidad premium de Web Reactiva. Cada carta es un malandrín; los jugadores dirigen **Malandriner S.A., "Especialistas en todo tipo de software"**, y resuelven tickets enviando a la persona adecuada.
 
-Estado: **Fase 6** (58 cartas, 123 tickets, modo historia de 10 capítulos con sobres y álbum por descubrir). Ver `PLAN.md`.
+Publicado: 58 cartas, 142 tickets, modo historia de diez capítulos con sobres, álbum por descubrir y final de campaña, más partidas arcade contra la máquina o contra otra persona por enlace.
 
 ## Jugar
 
@@ -57,4 +57,4 @@ Después de tocar `data/`, `node tests/run.js` valida el catálogo.
 
 ## Para continuar el desarrollo
 
-Lee `CLAUDE.md` (decisiones, estructura, fórmula) y `PLAN.md` (fases y estado).
+Lee `CLAUDE.md`: decisiones, estructura, fórmula de resolución y todo lo que no se debe romper.

@@ -557,10 +557,16 @@ button.primary.btn-cerrar:disabled { filter: grayscale(.55) brightness(.9); }
   padding: 12px 18px; margin: 6px 0 12px; border-radius: 12px; color: var(--accent);
   border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); background: color-mix(in srgb, var(--accent) 10%, transparent);
   word-break: break-all; max-width: 100%; }
-/* Invitación a la comunidad: presente pero al pie, nunca compitiendo con el premio. */
-.fin-invite { color: var(--muted); max-width: 56ch; margin: 22px auto 0;
-  padding-top: 14px; border-top: 1px dashed color-mix(in srgb, var(--line) 85%, transparent); }
-.fin-invite a { text-underline-offset: 3px; }
+/* Invitación a la comunidad. Va al pie, pero se lee: quien llega aquí ha terminado la
+   campaña y es justo el momento de contarle de dónde sale todo esto. */
+.fin-invite { color: var(--text-2); font-size: clamp(15px, 2.4vw, 18px); line-height: 1.5;
+  max-width: 46ch; margin: 26px auto 0; padding: 18px 20px; border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.fin-invite p { margin: 0; }
+.fin-invite a { display: inline-block; margin-top: 10px; font-size: 1.15em; font-weight: 700;
+  color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.fin-invite a:hover { color: var(--accent-2); }
 @keyframes fin-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @keyframes fin-pop { from { opacity: 0; transform: scale(.6) rotate(-6deg); } to { opacity: 1; transform: none; } }
 

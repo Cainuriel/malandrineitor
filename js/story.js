@@ -274,8 +274,8 @@ MI.story = (function () {
      son los dos únicos sitios donde alguien ya sabe de qué va todo esto. Ver CLAUDE.md,
      "El final de la campaña". */
   function invitation() {
-    return el('p', { class: 'fin-invite small' }, [
-      el('span', { text: 'Si no eres malandriner, y te gustaría serlo, y quién sabe si algún día ganarte el derecho a tener tu propia carta, únete aquí: ' }),
+    return el('div', { class: 'fin-invite' }, [
+      el('p', { text: 'Si no eres malandriner, y te gustaría serlo, y quién sabe si algún día ganarte el derecho a tener tu propia carta, únete aquí:' }),
       el('a', { href: 'https://www.webreactiva.com/', target: '_blank', rel: 'noopener noreferrer', text: 'webreactiva.com' })
     ]);
   }

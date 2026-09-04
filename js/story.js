@@ -178,6 +178,7 @@ MI.story = (function () {
   // Recompensa de un sprint terminado. summary: { result, resolved, improved, pays, hand, cards }
   function reward(s, ch, summary) {
     const r = cfg().rewards;
+    let finale_ = false;
     let coins = summary.resolved * r.resolved + summary.improved * r.improved + summary.pays * r.pay;
     const items = [{ label: 'Tickets resueltos', coins: summary.resolved * r.resolved }, { label: 'Parches puestos', coins: summary.improved * r.improved }, { label: 'Pagas', coins: summary.pays * r.pay }];
     let note = '';
@@ -186,7 +187,16 @@ MI.story = (function () {
       if (!s.wins[ch.id]) { coins += r.chapterFirstWin; items.push({ label: 'Capítulo superado por primera vez', coins: r.chapterFirstWin }); }
       s.wins[ch.id] = (s.wins[ch.id] || 0) + 1;
       if (s.chapter === ch.id && s.chapter < cfg().chapters.length) s.chapter++;
-      else if (s.chapter === ch.id) { s.finished = (s.finished || 0) + 1; note = 'Has superado la auditoría final. La historia se puede volver a jugar desde el principio con toda tu colección.'; }
+      else if (s.chapter === ch.id) {
+        // Auditoría final superada. El premio es doble: se abre el álbum entero, que
+        // hasta ahora solo mostraba lo conseguido, y se gana el derecho a proponer una
+        // carta. Ver CLAUDE.md, "El final de la campaña".
+        s.finished = (s.finished || 0) + 1;
+        if (!s.finishedAt) s.finishedAt = new Date().toISOString();
+        setRevealAll(true);
+        finale_ = true;
+        note = 'Has superado la auditoría final.';
+      }
     } else if (summary.result === 'loss' && s.chapter > 1) {
       const mode = cfg().onLoss;
       if (mode === 'restart') {
@@ -208,7 +218,7 @@ MI.story = (function () {
     s.coins += coins; s.sprints++;
     s.log.unshift({ date: new Date().toISOString(), text: `${ch.name}: ${({ win: 'victoria', loss: 'derrota', draw: 'empate' })[summary.result]} · +${coins} malandricoins` + (note ? ' · ' + note : '') });
     s.log = s.log.slice(0, 30);
-    return { coins, items, note, wear };
+    return { coins, items, note, wear , finale: finale_ };
   }
 
   /* ---------- Arte de los sobres (SVG) ---------- */
@@ -260,7 +270,82 @@ MI.story = (function () {
 </svg>`;
   }
 
+  /* Invitación a la comunidad. Aparece al cerrar la campaña y en el trofeo del perfil:
+     son los dos únicos sitios donde alguien ya sabe de qué va todo esto. Ver CLAUDE.md,
+     "El final de la campaña". */
+  function invitation() {
+    return el('p', { class: 'fin-invite small' }, [
+      el('span', { text: 'Si no eres malandriner, y te gustaría serlo, y quién sabe si algún día ganarte el derecho a tener tu propia carta, únete aquí: ' }),
+      el('a', { href: 'https://www.webreactiva.com/', target: '_blank', rel: 'noopener noreferrer', text: 'webreactiva.com' })
+    ]);
+  }
+
   /* ---------- Apertura cinematográfica ---------- */
+  /* Cinemática de final de campaña. Reutiliza la capa a pantalla completa de la
+     apertura de sobres para no inventar otro patrón de superposición. Tres actos:
+     el titular, el álbum que se abre de golpe con la plantilla entera desfilando, y
+     el premio con su código. */
+  function finale(onDone) {
+    const s = load();
+    const overlay = el('div', { class: 'opening-overlay finale' });
+    const stage = el('div', { class: 'opening-stage' });
+    overlay.appendChild(stage);
+    MI.util.lockScroll();
+    document.body.appendChild(overlay);
+    const cleanup = () => { overlay.remove(); MI.util.unlockScroll(); document.removeEventListener('keydown', onKey); if (onDone) onDone(); };
+    let acto = 0;
+    const onKey = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); avanzar(); } if (e.key === 'Escape') premio(); };
+    document.addEventListener('keydown', onKey);
+    const avanzar = () => { acto++; if (acto === 1) desfile(); else premio(); };
+
+    function titular() {
+      stage.innerHTML = '';
+      stage.appendChild(el('div', { class: 'fin-kicker', text: 'Auditoría final superada' }));
+      stage.appendChild(el('h1', { class: 'fin-title', text: 'HAS GANADO EL CONTRATO' }));
+      stage.appendChild(el('p', { class: 'fin-sub', text: 'Diez capítulos, ' + (s.sprints || 0) + ' sprints y una empresa rival que sigue sin entender qué ha pasado. ' + MI.data.config.company.name + ' se queda la cuenta.' }));
+      stage.appendChild(el('button', { class: 'primary op-btn', text: 'Continuar', onclick: avanzar }));
+    }
+
+    // La plantilla entera desfila: es el momento de enseñar que el álbum ya está abierto.
+    function desfile() {
+      stage.innerHTML = '';
+      const activas = MI.album.activeCards();
+      stage.appendChild(el('div', { class: 'fin-kicker', text: 'El álbum queda abierto' }));
+      stage.appendChild(el('h2', { class: 'fin-h2', text: 'Los ' + activas.length + ' malandrines, al descubierto' }));
+      const tira = el('div', { class: 'fin-parade' });
+      const orden = ['legendaria', 'epica', 'rara', 'comun'];
+      activas.slice().sort((a, b) => orden.indexOf(a.rarity) - orden.indexOf(b.rarity)).forEach((card, i) => {
+        const n = MI.card.render(card, { size: 's', tilt: false });
+        n.style.animationDelay = (i * 45) + 'ms';
+        tira.appendChild(n);
+      });
+      stage.appendChild(tira);
+      stage.appendChild(el('p', { class: 'fin-sub', text: 'Ya no hay siluetas: la plantilla completa es visible en el álbum, la hayas conseguido o no.' }));
+      stage.appendChild(el('button', { class: 'primary op-btn', text: 'Y hay más', onclick: avanzar }));
+    }
+
+    function premio() {
+      stage.innerHTML = '';
+      const codigo = championCode(s);
+      stage.appendChild(el('div', { class: 'fin-kicker', text: 'Premio de campeón' }));
+      stage.appendChild(el('h2', { class: 'fin-h2', text: 'Te has ganado una carta' }));
+      stage.appendChild(el('p', { class: 'fin-sub', text: 'Quien termina la campaña tiene derecho a proponer un malandrín nuevo para el juego: el suyo, el de otra persona o el que se le ocurra. Habla con Fernando López y enséñale este código.' }));
+      stage.appendChild(el('div', { class: 'fin-code', text: codigo }));
+      stage.appendChild(el('p', { class: 'small muted', text: 'El código lleva tu nombre y la fecha firmados. Lo tienes siempre a mano en tu perfil.' }));
+      const copiar = el('button', { class: 'op-btn', text: 'Copiar el código', onclick: async () => {
+        try { await navigator.clipboard.writeText(codigo); copiar.textContent = 'Copiado'; }
+        catch (e) { prompt('Copia tu código de campeón:', codigo); }
+      } });
+      stage.appendChild(el('div', { class: 'row', style: { justifyContent: 'center', gap: '10px' } }, [
+        copiar,
+        el('button', { class: 'primary op-btn', text: 'Volver a la oficina', onclick: cleanup })
+      ]));
+      stage.appendChild(invitation());
+    }
+
+    titular();
+  }
+
   function cinematic(pack, onDone) {
     const total = pack.cards.length;
     let idx = -1;
@@ -367,6 +452,33 @@ MI.story = (function () {
     ]));
   }
 
+  /* ---------- Campeón de la campaña ----------
+     Quien termina los diez capítulos se lleva dos cosas: el álbum entero desbloqueado
+     y el derecho a proponer una carta nueva. Lo segundo se hace por fuera del juego,
+     hablando con Fernando, así que hace falta algo que se pueda enseñar y comprobar.
+
+     El código firma el nombre del jugador y la fecha con la misma semilla que el resto
+     del juego. No es seguridad —quien lea el código fuente lo genera— pero evita que
+     valga con decir "yo lo he terminado", que es todo lo que se pretende. */
+  function championCode(s, profile) {
+    const p = profile || MI.match.profile.load();
+    const tag = p.tag || p.name || 'malandrin';
+    const fecha = (s && s.finishedAt ? s.finishedAt : '').slice(0, 10);
+    const firma = MI.match.sign({ tag, fecha, hito: 'auditoria-final' }).toUpperCase();
+    return tag + '/' + fecha + '/' + firma.slice(0, 8);
+  }
+
+  // Para comprobar un código que alguien enseñe: MI.story.verifyChampion('...')
+  function verifyChampion(code) {
+    const partes = String(code || '').trim().split('/');
+    if (partes.length !== 3) return { ok: false, motivo: 'El código no tiene la forma esperada.' };
+    const [tag, fecha, firma] = partes;
+    const esperada = MI.match.sign({ tag, fecha, hito: 'auditoria-final' }).toUpperCase().slice(0, 8);
+    return esperada === firma.toUpperCase()
+      ? { ok: true, tag, fecha }
+      : { ok: false, motivo: 'La firma no coincide: el código no lo ha emitido el juego.' };
+  }
+
   function coinsPill(s) { return el('span', { class: 'pill coins', html: '<b>' + s.coins + '</b> malandricoins' }); }
 
   function storyNav(s, active) {
@@ -384,7 +496,13 @@ MI.story = (function () {
     c.appendChild(el('h1', { text: 'Malandriner S.A. · Oficina' }));
     c.appendChild(storyNav(s, 'dashboard'));
     if (s.tampered) c.appendChild(el('p', { class: 'small', style: { color: 'var(--bad)' }, text: 'La partida guardada no supera la comprobación de integridad y se ha reiniciado.' }));
-    if (lastSummary) { c.appendChild(renderSummary(lastSummary)); lastSummary = null; }
+    if (lastSummary) {
+      const esFinal = lastSummary.finale;
+      c.appendChild(renderSummary(lastSummary));
+      lastSummary = null;
+      // La cinemática de fin de campaña se lanza una vez, justo al volver a la oficina.
+      if (esFinal) setTimeout(() => finale(() => render()), 400);
+    }
     const chapterCard = el('div', { class: 'panel chapter-card' }, [
       el('div', { class: 'tag', text: 'Capítulo ' + ch.id + ' de ' + cfg().chapters.length }),
       el('h2', { text: ch.name }),
@@ -548,7 +666,7 @@ MI.story = (function () {
       const st = load();
       const rw = reward(st, ch, summary);
       save(st);
-      lastSummary = { title: summary.result === 'win' ? 'Sprint ganado: ' + ch.name : (summary.result === 'draw' ? 'Empate en ' + ch.name : rivalName() + ' gana ' + ch.name), items: rw.items, coins: rw.coins, points: summary.points, note: rw.note, wear: rw.wear };
+      lastSummary = { title: summary.result === 'win' ? 'Sprint ganado: ' + ch.name : (summary.result === 'draw' ? 'Empate en ' + ch.name : rivalName() + ' gana ' + ch.name), items: rw.items, coins: rw.coins, points: summary.points, note: rw.note, wear: rw.wear, finale: !!rw.finale };
       view = 'dashboard';
     };
   }
@@ -568,5 +686,5 @@ MI.story = (function () {
     MI.app.go('game');
   }
 
-  return { render, load, save, start, reset, finisher, openPack, sell, ownedCards, chapter, checkpointFor, reward, wearAndTear, go, openView, discovered, revealAll, setRevealAll, packSvg, cinematic };
+  return { render, load, save, start, reset, finisher, championCode, verifyChampion, finale, invitation, openPack, sell, ownedCards, chapter, checkpointFor, reward, wearAndTear, go, openView, discovered, revealAll, setRevealAll, packSvg, cinematic };
 })();

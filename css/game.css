@@ -541,3 +541,43 @@ button.primary.btn-cerrar:disabled { filter: grayscale(.55) brightness(.9); }
   .coins-n { font-size: 28px; }
   .story-summary { gap: 12px; }
 }
+
+/* ---------- Final de la campaña ---------- */
+.opening-overlay.finale .opening-stage { max-width: 900px; text-align: center; }
+.fin-kicker { font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+.fin-title { font-size: clamp(34px, 8vw, 76px); font-weight: 900; letter-spacing: -0.03em; line-height: .95; margin: 0 0 14px;
+  background: linear-gradient(180deg, #fff 0%, var(--accent) 55%, var(--accent-2) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 10px 30px rgba(255,183,3,.3)); animation: fin-in .6s ease both; }
+.fin-h2 { font-size: clamp(22px, 4vw, 34px); margin: 0 0 12px; animation: fin-in .5s ease both; }
+.fin-sub { color: var(--text-2); max-width: 60ch; margin: 0 auto 18px; animation: fin-in .5s ease .1s both; }
+.fin-parade { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-height: 46vh; overflow: hidden; margin-bottom: 16px; }
+.fin-parade .card { --card-w: 92px; animation: fin-pop .45s cubic-bezier(.2,.8,.3,1.2) both; }
+.fin-code { display: inline-block; font-family: var(--mono); font-size: clamp(13px, 3.4vw, 20px); letter-spacing: .04em;
+  padding: 12px 18px; margin: 6px 0 12px; border-radius: 12px; color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); background: color-mix(in srgb, var(--accent) 10%, transparent);
+  word-break: break-all; max-width: 100%; }
+/* Invitación a la comunidad: presente pero al pie, nunca compitiendo con el premio. */
+.fin-invite { color: var(--muted); max-width: 56ch; margin: 22px auto 0;
+  padding-top: 14px; border-top: 1px dashed color-mix(in srgb, var(--line) 85%, transparent); }
+.fin-invite a { text-underline-offset: 3px; }
+@keyframes fin-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes fin-pop { from { opacity: 0; transform: scale(.6) rotate(-6deg); } to { opacity: 1; transform: none; } }
+
+/* Trofeo en el perfil */
+.panel.champion { margin-top: 16px; border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+  background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 10%, var(--panel)), var(--panel)); }
+.champion-head { display: flex; gap: 14px; align-items: center; margin-bottom: 10px; }
+.champion-cup { width: 52px; height: 52px; flex: none; color: var(--accent);
+  border-radius: 50%; border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.2); }
+.champion-cup svg { width: 30px; height: 30px; }
+.champion-kicker { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+.panel.champion h2 { margin: 2px 0; }
+.champion-code { font-family: var(--mono); font-size: 14px; padding: 10px 14px; margin: 12px 0; border-radius: 10px;
+  color: var(--accent); border: 1px dashed color-mix(in srgb, var(--accent) 50%, transparent);
+  background: rgba(0,0,0,.22); word-break: break-all; }
+@media (max-width: 720px) {
+  .fin-parade .card { --card-w: 68px; }
+  .fin-parade { max-height: 38vh; }
+}

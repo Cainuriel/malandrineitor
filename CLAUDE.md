@@ -407,6 +407,41 @@ Decisiones y por qué:
 - El texto dice **"deja Malandriner S.A."**, no "destruida": son personas reales de la comunidad y el tono importa.
 - Solo aplica al modo historia. El arcade reparte manos aleatorias y no tiene colección que desgastar.
 
+## El final de la campaña
+
+Ganar el capítulo 10 ("La auditoría final") cierra la historia. Todo el final está en `js/story.js` (`reward`, `championCode`, `verifyChampion`, `finale`, `invitation`) y en `js/app.js` (`renderChampion`).
+
+**Lo que ocurre al ganar.** `reward()` detecta que el capítulo es el último y, además de repartir los malandricoins de siempre, hace tres cosas y devuelve `finale: true` en el resumen:
+
+1. Incrementa `s.finished` (cuántas veces se ha terminado la campaña) y guarda `s.finishedAt` con la fecha.
+2. Llama a `setRevealAll(true)`: el álbum deja de mostrar siluetas y enseña la plantilla entera, se tenga o no cada carta. Es el mismo interruptor que usa el modo desarrollador, así que **no** regala copias: las cartas se ven, no se poseen.
+3. Marca el resumen para que el panel de la campaña dispare la cinemática una sola vez (`lastSummary.finale`).
+
+**La cinemática.** `MI.story.finale(onDone)` monta una capa a pantalla completa reutilizando `.opening-overlay` (la misma que abre los sobres; no se inventa otro patrón de superposición) con tres actos encadenados por botón:
+
+1. *Titular*: "Has ganado el contrato", con el número de sprints que ha costado.
+2. *Desfile*: todas las cartas activas ordenadas de legendaria a común, entrando escalonadas. Es la forma de enseñar que el álbum ya está abierto.
+3. *Premio*: el derecho a proponer una carta y el código de campeón, con botón de copia.
+
+La capa bloquea el scroll con `MI.util.lockScroll()` y lo libera en `cleanup()`. Si se toca, mantener ese par: dejarlo a medias deja la página sin poder desplazarse.
+
+**El código de campeón.** `championCode(story, profile)` devuelve `tag/YYYY-MM-DD/FIRMA8`, por ejemplo `Fernando#4677/2026-09-04/A33AA2F7`. La firma son los ocho primeros caracteres de `MI.match.sign({ tag, fecha, hito: 'auditoria-final' })`, la misma firma doble FNV que valida los enlaces de partida, con el secreto de `config.secret`.
+
+Para comprobar un código que alguien enseñe, abrir la consola del juego y ejecutar:
+
+```js
+MI.story.verifyChampion('Fernando#4677/2026-09-04/A33AA2F7')
+// { ok: true, tag: 'Fernando#4677', fecha: '2026-09-04' }
+```
+
+Un código inventado o retocado devuelve `{ ok: false, motivo: '...' }`. Esto **no es seguridad**: quien sepa leer el código fuente puede emitirse uno. Sirve para lo que sirve, que es filtrar el "lo he terminado, palabra" sin más. El premio se cobra hablando con Fernando López, y ahí hay una persona mirando.
+
+**El trofeo del perfil.** `renderChampion()` dibuja un panel con una copa (SVG, constante `CUP` en `js/app.js`), el código y su botón de copia, encima de "Tu plantilla". Solo aparece si `story.finished` es mayor que cero, y si se ha terminado más de una vez lo dice. Es la manera de tener el código siempre a mano: la cinemática se ve una vez, el perfil está siempre.
+
+**La invitación a la comunidad.** `MI.story.invitation()` devuelve el párrafo con el enlace a Web Reactiva, y lo usan tanto el tercer acto de la cinemática como el trofeo del perfil. Son los dos únicos sitios donde aparece, y a propósito: quien llega ahí ya conoce el juego. Va al pie, en `.fin-invite`, separado por una línea de puntos para que no compita con el premio. Si hace falta cambiar el texto o la dirección, se cambia en esa única función.
+
+**Al retomar la campaña.** Terminar no reinicia nada: la partida sigue en el capítulo 10 y se puede volver a jugar. `s.finished` se acumula, el álbum permanece abierto (`mi.revealAll` es una clave aparte de `mi.story`) y el trofeo se queda. Reiniciar la campaña desde el perfil borra `mi.story`, así que el trofeo desaparece, pero el álbum sigue revelado: es deliberado, lo ganado no se quita.
+
 ## Equilibrio de la campaña
 
 Medido con simulaciones de la campaña completa (200 partidas, jugador que compra el mejor sobre que puede pagar y manda siempre a su mejor carta). Sprints necesarios para superar los diez capítulos según `config.story.onLoss`:

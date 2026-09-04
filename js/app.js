@@ -2,6 +2,8 @@
 window.MI = window.MI || {};
 
 MI.app = (function () {
+  // Copa del trofeo, dibujada como el resto de marcas del juego.
+  const CUP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/></svg>';
   const el = MI.util.el;
   const views = {};
   let current = 'menu';
@@ -106,6 +108,7 @@ MI.app = (function () {
         story ? el('button', { text: 'Ir a la oficina', onclick: () => MI.story.openView('dashboard') }) : null
       ])
     ]));
+    c.appendChild(renderChampion(story, p));
     c.appendChild(renderSquadPanel(story, p));
     const hist = p.history || [];
     c.appendChild(el('div', { class: 'panel', style: { marginTop: '16px' } }, [
@@ -133,6 +136,33 @@ MI.app = (function () {
   /* Tu plantilla: las cartas en propiedad, con las copias que tienes, las veces que se
      han quemado y el botón de venta, que solo aparece a partir de la segunda copia
      (la última nunca se vende). */
+  /* Trofeo de quien ha terminado la campaña. Lleva el código firmado a mano, porque
+     el premio de verdad (proponer una carta) se cobra hablando con Fernando y hay que
+     poder enseñar algo. Ver CLAUDE.md, "El final de la campaña". */
+  function renderChampion(story, prof) {
+    if (!story || !story.finished) return el('span');
+    const codigo = MI.story.championCode(story, prof);
+    const veces = story.finished;
+    const copiar = el('button', { class: 'primary', text: 'Copiar el código', onclick: async () => {
+      try { await navigator.clipboard.writeText(codigo); copiar.textContent = 'Copiado'; toast('Código de campeón copiado.'); }
+      catch (e) { prompt('Copia tu código de campeón:', codigo); }
+    } });
+    return el('div', { class: 'panel champion' }, [
+      el('div', { class: 'champion-head' }, [
+        el('div', { class: 'champion-cup', html: CUP }),
+        el('div', {}, [
+          el('div', { class: 'champion-kicker', text: 'Auditoría final superada' }),
+          el('h2', { text: 'Campeón de la campaña' }),
+          el('p', { class: 'small muted', text: veces > 1 ? 'La has terminado ' + veces + ' veces.' : 'Has ganado el contrato final.' })
+        ])
+      ]),
+      el('p', { class: 'small', text: 'Dos premios: el álbum queda abierto con la plantilla entera, y tienes derecho a proponer un malandrín nuevo para el juego. Para lo segundo, habla con Fernando López y enséñale este código.' }),
+      el('div', { class: 'champion-code', text: codigo }),
+      el('div', { class: 'row' }, [copiar, el('span', { class: 'small muted', text: 'Lleva tu nombre y la fecha firmados: no vale con decirlo.' })]),
+      MI.story.invitation()
+    ]);
+  }
+
   function renderSquadPanel(story, prof) {
     const cfg = MI.data.config;
     if (!story) return el('span');

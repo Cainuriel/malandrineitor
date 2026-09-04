@@ -176,8 +176,11 @@ MI.app = (function () {
           el('span', { class: 'sq-stats', title: 'Histórico de todas tus partidas, en todos los modos', text: historico }),
           el('span', { class: 'sq-burn' + (alBorde && st ? ' risk' : (st ? ' on' : '')), title: porQue, text: estado }),
           el('span', { class: 'sq-act' }, n > 1
-            ? el('button', { class: 'small-btn sell', text: 'Vender una (+' + price + ')', onclick: () => { const st = MI.story.load(); MI.story.sell(st, card.id); MI.story.save(st); go('perfil'); toast('Vendida una copia de ' + card.name + '.'); } })
-            : el('button', { class: 'ghost small-btn', text: 'Ver ficha', onclick: () => MI.album.openDetail(card) }))
+            ? el('button', { class: 'small-btn sell', text: 'Vender una (+' + price + ')', onclick: () => { const guardado = MI.story.load(); MI.story.sell(guardado, card.id); MI.story.save(guardado); go('perfil'); toast('Vendida una copia de ' + card.name + '.'); } })
+            // La ficha se abre como en la colección: con sus quemaduras y con el
+            // botón de compartir. Si la fila dice "a una quemada de irse", la carta
+            // tiene que enseñar esas dos esquinas chamuscadas.
+            : el('button', { class: 'ghost small-btn', text: 'Ver ficha', onclick: () => MI.album.openDetail(card, { burns: st, share: true }) }))
         ]);
       })) : null,
       renderGone(story)

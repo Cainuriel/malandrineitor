@@ -212,6 +212,8 @@ Compartían la misma casilla del panel "Tu plantilla" y la misma palabra ("burno
 - El **desgaste** va en su columna, dicho con palabras: "Tocado: 1 de 3" en ámbar, o "A una quemada de irse" en rojo. Vacío si no hay desgaste.
 - El aviso del título explica que en el banquillo no se recupera, que es la causa de que un número parezca estancado.
 
+Las tres puertas a la ficha de una carta pasan el desgaste actual, para que lo que se lee y lo que se ve cuadren: si la fila dice "a una quemada de irse", la carta enseña sus dos esquinas chamuscadas. Son la colección del modo historia, el panel "Tu plantilla" del perfil y el enlace `#carta=`.
+
 **Quien deja la empresa queda anotado** en `story.gone`, y el panel lo lista tachado bajo "Han dejado la empresa". Sin eso, una carta que se va desaparece de la plantilla sin rastro y no hay manera de distinguir "se fue" de "nunca la tuve". Las partidas guardadas antiguas no tienen ese campo: se trata como vacío.
 
 ## Habilidades de las épicas

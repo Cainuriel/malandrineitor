@@ -505,3 +505,20 @@ button.primary.btn-cerrar:disabled { filter: grayscale(.55) brightness(.9); }
 .abandon-row { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); justify-content: center; }
 .small-btn.abandon { color: var(--muted); }
 .small-btn.abandon:hover { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 50%, transparent); }
+
+/* Durante la partida, en móvil, la barra superior se retira: sus ~110px de alto son
+   justo lo que hace que al entrar se vea el mazo y no el ticket. El marcador es
+   pegajoso y pasa a hacer de cabecera, así que no se pierde la referencia. En pantalla
+   grande no se toca: allí el espacio sobra y quitar la navegación solo estorbaría.
+   Para revertirlo basta con borrar este bloque. */
+@media (max-width: 720px) {
+  body.en-partida .topbar { display: none; }
+  body.en-partida .hud { top: 0; }
+  body.en-partida .view { padding-top: 12px; }
+}
+/* Solo aparece cuando la barra superior está oculta, es decir, en móvil jugando. */
+.hud-menu { display: none; }
+@media (max-width: 720px) {
+  body.en-partida .hud-menu { display: inline-block; margin-top: 6px; padding: 5px 12px; font-size: 12px;
+    border-radius: 999px; color: var(--text-2); background: color-mix(in srgb, var(--panel-2) 80%, transparent); }
+}

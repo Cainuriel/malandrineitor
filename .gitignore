@@ -3,3 +3,7 @@ package-lock.json
 package.json
 # Capturas de verificación: se regeneran con tests/screenshots.js y pesan más que el proyecto
 docs/img/
+
+# Paquetes temporales de despliegue
+_deploy.tgz
+_sync.tgz

@@ -157,6 +157,15 @@ Hay tres capas que ocupan la ventana entera: la apertura de sobres (`.opening-ov
 
 - La capa es un bloque con `overflow-y: auto` y `overscroll-behavior: contain`; **el contenido se centra en un hijo** con `min-height: 100%` y `justify-content: center`. Centrar con `place-items: center` directamente en un contenedor con scroll recorta por arriba todo lo que sea más alto que la ventana, y esa parte ya no se puede alcanzar.
 - El scroll del fondo se bloquea con `MI.util.lockScroll()` / `unlockScroll()`, que llevan un contador de capas abiertas, fijan el body guardando la posición y la restauran al cerrar. No usar `body { overflow: hidden }` a pelo: pierde la posición de lectura y no funciona bien en iOS.
+## La pantalla de partida en móvil
+
+Dos reglas que van juntas y conviene no separar:
+
+- **La vista sube al principio al entrar en la partida y al cambiar de ticket**, y solo en esos dos momentos (`enfocarTicket`). Sin eso se hereda el desplazamiento de la pantalla anterior —la de plantilla es larga— y en el móvil se aterriza sobre el mazo sin haber leído el ticket. Hacerlo en cada pintado pelearía con el desplazamiento del jugador: al enviar una carta la vista se queda donde está, a propósito.
+- **En móvil, jugando, se oculta la barra superior** (`body.en-partida`, que `MI.game.render` pone y quita, y `MI.app.go` retira al salir del juego). Son unos 110px, justo lo que hacía que el ticket no entrase. El marcador es pegajoso y pasa a hacer de cabecera. En pantalla grande no se toca: allí sobra espacio y quitar la navegación solo estorbaría.
+
+Como al ocultar la barra no se puede llegar a las Normas ni al álbum a media partida, el marcador lleva un botón **"Menú"** que solo aparece en ese caso. No pierde nada, porque el sprint queda guardado: al volver a "Arcade" o a "Historia" se retoma donde estaba. Si algún día se repone la barra en móvil, ese botón sobra.
+
 ## La partida en curso sobrevive a la pestaña
 
 El estado de la partida (`S`) vive en memoria, y el móvil descarta la pestaña en cuanto pasa a segundo plano: al volver, la partida se perdía. Ahora se guarda una instantánea en `localStorage['mi.game']` después de cada pintado, en `visibilitychange` y en `pagehide`, y se recupera **una sola vez por carga** al primer `render` sin partida.

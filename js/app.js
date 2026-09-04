@@ -8,6 +8,8 @@ MI.app = (function () {
 
   function go(name) {
     current = name;
+    // Al salir de la partida se recupera la barra superior (ver body.en-partida).
+    if (name !== 'game') document.body.classList.remove('en-partida');
     document.querySelectorAll('.nav button').forEach((b) => b.classList.toggle('active', b.dataset.view === name));
     const c = document.getElementById('view');
     c.innerHTML = '';

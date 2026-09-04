@@ -156,6 +156,7 @@ Seis añadidos pensados para el estreno en la comunidad. Ninguno toca el motor d
 - [x] La carta enviada dice su cita al salir a jugar.
 - [x] Malandrín del sprint en la pantalla final, calculado con las estadísticas que ya se guardaban.
 - [x] "Ha ido el becario" cuando no queda nadie disponible: mismo resultado, mejor contado.
+- [x] En móvil, la barra superior se oculta durante la partida y la vista sube al principio al entrar y al cambiar de ticket: el ticket se lee entero sin desplazarse. Con botón "Menú" en el marcador para salir sin perder el sprint.
 - [x] La partida en curso sobrevive a que el móvil descarte la pestaña: instantánea en `localStorage`, con el generador aleatorio y el cierre del sprint reconstruidos. Con botón para abandonar, que sin él la recuperación automática dejaría atrapado a quien quiera empezar otra.
 
 ---

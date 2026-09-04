@@ -416,7 +416,11 @@ MI.game = (function () {
       el('div', { class: 'center' }, [
         el('div', { class: 'ticket-n', text: `Ticket ${Math.min(S.ticket + 1, S.tickets.length)} de ${S.tickets.length}` }),
         el('div', { class: 'progress' }, S.tickets.map((_, i) => el('i', { class: i < S.ticket ? 'done' : (i === S.ticket ? 'now' : '') }))),
-        el('div', { class: 'small muted', text: S.mode === 'ai' ? 'Nivel ' + S.level + (MI.util.devMode() ? ' · semilla ' + S.seed : '') : 'Partida ' + S.match.id })
+        el('div', { class: 'small muted', text: S.mode === 'ai' ? 'Nivel ' + S.level + (MI.util.devMode() ? ' · semilla ' + S.seed : '') : 'Partida ' + S.match.id }),
+        // Salida al menú, solo visible en móvil, donde la barra superior se oculta
+        // durante la partida. No pierde nada: el sprint queda guardado y al volver a
+        // "Arcade" o a "Historia" se retoma donde estaba.
+        el('button', { class: 'hud-menu', text: 'Menú', title: 'Ir al menú sin perder el sprint', onclick: () => MI.app.go('menu') })
       ]),
       el('div', { class: 'player' }, [el('div', { class: 'who', text: S.oppName + (S.mode === 'ai' ? '' : ' · ' + cfg.company.name) }), el('div', { class: 'rep', html: oppRep + '<small>reputación</small>' })])
     ]);
@@ -821,12 +825,30 @@ MI.game = (function () {
     ]));
   }
 
+  // Al entrar en la partida y al cambiar de ticket hay que llevar la vista arriba: si
+  // no, se hereda el desplazamiento de la pantalla anterior (la plantilla es larga) y
+  // en el móvil se aterriza sobre el mazo sin haber leído el ticket. Solo en esos dos
+  // momentos: hacerlo en cada pintado pelearía con el desplazamiento del jugador.
+  let ultimoFoco = null;
+  function enfocarTicket() {
+    if (screen !== 'play' || !S) { ultimoFoco = null; return; }
+    const marca = S.seed + '|' + S.ticket + '|' + S.phase;
+    const clave = S.seed + '|' + S.ticket;
+    if (ultimoFoco === clave || (ultimoFoco && ultimoFoco.split('|')[1] === String(S.ticket))) { ultimoFoco = clave; return; }
+    ultimoFoco = clave;
+    try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch (e) { window.scrollTo(0, 0); }
+  }
+
   function render(c) {
     if (c) container = c;
     // Una sola vez por carga: si hay partida guardada, se recupera donde se dejó.
     if (!S && !restoreTried) { restoreTried = true; restoreState(); }
     if (!S) screen = 'setup';
     ({ setup: renderSetup, play: renderPlay, end: renderEnd, export: renderExport, resolved: renderResolved })[screen](container);
+    // Marca de "estoy jugando": en móvil la barra superior se oculta para dar el alto
+    // de pantalla al ticket y al mazo, que es lo que se mira. Ver css/game.css.
+    if (typeof document !== 'undefined') document.body.classList.toggle('en-partida', screen === 'play');
+    enfocarTicket();
     saveState();
   }
 

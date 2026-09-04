@@ -157,6 +157,24 @@ Hay tres capas que ocupan la ventana entera: la apertura de sobres (`.opening-ov
 
 - La capa es un bloque con `overflow-y: auto` y `overscroll-behavior: contain`; **el contenido se centra en un hijo** con `min-height: 100%` y `justify-content: center`. Centrar con `place-items: center` directamente en un contenedor con scroll recorta por arriba todo lo que sea más alto que la ventana, y esa parte ya no se puede alcanzar.
 - El scroll del fondo se bloquea con `MI.util.lockScroll()` / `unlockScroll()`, que llevan un contador de capas abiertas, fijan el body guardando la posición y la restauran al cerrar. No usar `body { overflow: hidden }` a pelo: pierde la posición de lectura y no funciona bien en iOS.
+## Detalles narrativos del sprint
+
+Cinco añadidos de septiembre de 2026 que **no tocan ninguna regla**: son datos y pintado. Se listan aquí para que no se confundan con mecánicas.
+
+- **Pulla del rival** (`phrases.rivalTaunt`, tres listas: `win`, `loss`, `draw`). Tras cada ticket la rival comenta la jugada. Solo en modo máquina: en las partidas a dos no hay comparación hasta resolver. Usa `config.rival.name` y no `S.oppName`, porque en la campaña ese nombre lleva el capítulo pegado ("· cap. 3") y dentro de una frase queda raro.
+- **La cita de la carta enviada** (`.card-say`). El `quote` ya estaba escrito en cada cromo, en letra diminuta; al enviar al malandrín se muestra como bocadillo.
+- **Ha ido el becario** (`phrases.intern`). Cuando no queda nadie disponible, el resultado es exactamente el mismo de siempre; solo cambia cómo se cuenta.
+- **Malandrín del sprint** (`renderMvp`). El mejor de los tuyos al terminar, con `resueltos × 3 + envíos − burnouts × 2` sobre `S.stats.cards`, que ya se guardaba. No aparece si nadie resolvió nada.
+- **Campeón y criptonita en el mazo**. Dos etiquetas sobre la carta que tienes delante, según el ticket en curso. **No calculan nada ni recomiendan a nadie**: hacen visible un dato ya impreso en el cromo que en el móvil no se lee. La regla sigue siendo que la interfaz no señala la mejor carta; decidir es el juego.
+
+Las frases nuevas siguen la regla de siempre: humor de oficina, el gracioso es el proceso y nunca una persona, `{rival}` en vez del nombre escrito a mano, y `tests/run.js` lo vigila.
+
+## Enlace a una ficha
+
+La ruta `#carta=<id>` abre el juego directamente en la ficha de ese malandrín, y la propia ficha ofrece "Compartir esta ficha" (`MI.album.cardUrl`). Existe porque lo primero que hace cualquiera al ver el juego es buscarse, y lo segundo, enseñárselo a alguien.
+
+Dos decisiones deliberadas: el enlace **muestra la carta aunque el receptor no la haya descubierto** —es justo para lo que sirve— pero **no la marca como descubierta**, así que no estropea su álbum. Y un identificador que no existe no rompe nada: avisa y deja el álbum como estaba.
+
 ## Superpoderes de las legendarias
 
 Las legendarias tienen dos cosas que las demás no: **no se queman nunca** (rasgo de rareza, `config.legendary.noBurnout`, aplicado en `engine.resolve` por `card.rarity`, no por habilidad) y **un superpoder propio**, en el campo `power` de la carta, además de su `ability` pasiva de siempre.

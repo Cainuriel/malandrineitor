@@ -147,6 +147,19 @@ Pendiente de la fase, aplazado a propósito:
 
 ---
 
+## Fase 6c — Sabor y difusión `[x]`
+
+Seis añadidos pensados para el estreno en la comunidad. Ninguno toca el motor de resolución, el protocolo a dos jugadores ni el formato del enlace.
+
+- [x] Ruta `#carta=<id>` y botón "Compartir esta ficha": cada malandrín tiene un enlace propio para enseñarse.
+- [x] Pulla de la empresa rival tras cada ticket, con tres listas según quién se lleve la paga.
+- [x] La carta enviada dice su cita al salir a jugar.
+- [x] Malandrín del sprint en la pantalla final, calculado con las estadísticas que ya se guardaban.
+- [x] Campeón y criptonita marcados junto al mazo según el ticket en curso.
+- [x] "Ha ido el becario" cuando no queda nadie disponible: mismo resultado, mejor contado.
+
+---
+
 ## Fase 7 — LLM opcional y revelado por días `[ ]`
 
 - [ ] Oponente LLM opcional: endpoint compatible OpenAI (incluye Ollama local) y Anthropic; solo elige carta y comenta la jugada. La clave se guarda en `localStorage` y nunca sale del navegador salvo hacia el endpoint configurado.

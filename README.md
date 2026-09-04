@@ -40,6 +40,10 @@ Todo está en `data/`: `cards.js` (cartas), `skills.js` (habilidades), `techs.js
 
 El interruptor `developer.enabled`, en `data/config.js`. Con `true` aparecen el botón "Descubrir toda la colección" del álbum y el campo "Semilla (opcional)" del arcade, útiles para enseñar el juego sin jugarlo entero y para repetir un reparto concreto. La versión pública lo lleva a `false`.
 
+## Buscarte y compartir tu ficha
+
+En el álbum, cualquier ficha tiene un botón "Compartir esta ficha" que copia un enlace corto. Quien lo abra entra directamente en esa carta, aunque no la haya conseguido todavía.
+
 ## Añadir o retirar una carta
 
 Los nombres proceden del directorio público de la comunidad; los retratos son avatares generados, no fotos. Si no quieres aparecer, añade tu `id` a `data/optout.js` (o pídeselo a Fernando): la carta deja de mostrarse, de entrar en los repartos y de poder jugarse, aunque alguien ya la tuviera. Para añadir una, basta con una entrada nueva en `data/cards.js` con un `id` único.

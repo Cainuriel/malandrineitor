@@ -347,9 +347,23 @@ MI.game = (function () {
     ]);
   }
 
+  // Frase al azar, pero estable dentro del mismo ticket: si se repinta la pantalla no
+  // debe cambiar el texto delante del jugador.
+  function fraseFija(lista, semilla) {
+    if (!lista || !lista.length) return '';
+    return lista[MI.util.hash(String(semilla)) % lista.length];
+  }
+
   function renderResult(r, bonus) {
     const cfg = MI.data.config;
-    if (r.nobody) return el('div', { class: 'result' }, [el('div', { class: 'outcome complicated' }, [el('span', { text: 'Nadie disponible' }), el('span', { class: 'pts', text: sign(r.points) })])]);
+    if (r.nobody) {
+      // Mismo resultado de siempre, contado con más gracia: no cambia ninguna regla.
+      const becario = fraseFija((MI.data.phrases || {}).intern, S.match ? S.match.id + S.ticket : S.seed + '|' + S.ticket);
+      return el('div', { class: 'result' }, [
+        el('div', { class: 'outcome complicated' }, [el('span', { text: 'Sin nadie disponible' }), el('span', { class: 'pts', text: sign(r.points) })]),
+        becario ? el('div', { class: 'intern-note', text: becario }) : null
+      ]);
+    }
     return el('div', { class: 'result reveal' }, [
       el('div', { class: 'r' }, [el('span', { text: 'Media ponderada' }), el('span', { text: fmt(r.base) })]),
       r.champion ? el('div', { class: 'r' }, [el('span', { class: 'tag-champ', text: 'Campeón de la tecnología' }), el('span', { text: '→ ' + fmt(r.score / (r.kryptonite ? cfg.kryptonite.factor : 1)) })]) : null,
@@ -449,6 +463,11 @@ MI.game = (function () {
       meta.appendChild(el('strong', { text: card.name }));
       meta.appendChild(el('span', { class: 'small muted', text: (deckIndex + 1) + ' de ' + cards.length }));
       if (turns) meta.appendChild(el('span', { class: 'pill burnt', text: 'Quemado · vuelve en ' + turns + (turns === 1 ? ' ticket' : ' tickets') }));
+      // Dos datos que ya están impresos en el cromo, pero que en móvil no se leen:
+      // no calculan nada ni recomiendan a nadie, solo evitan el despiste.
+      if (ch.tech && card.expertise === ch.tech) meta.appendChild(el('span', { class: 'pill is-champ', text: 'Campeón de esta tecnología' }));
+      const kry = card.kryptonite || {};
+      if ((kry.tech && kry.tech === ch.tech) || (kry.skill && (ch.skills || {})[kry.skill])) meta.appendChild(el('span', { class: 'pill is-kry', text: 'Aquí está su criptonita' }));
       Array.from(dots.children).forEach((dot, i) => dot.classList.toggle('on', i === deckIndex));
       // El rescate se pide desde la carta quemada que se quiere recuperar.
       const poder = pendingPower();
@@ -529,6 +548,10 @@ MI.game = (function () {
       ]);
     } else {
       mySlot.appendChild(R.myCard ? MI.card.render(R.myCard, { size: 'm', highlight: Object.keys(R.me.weights || ch.skills), burns: strikesMap()[R.myCard.id] || 0 }) : el('div', { class: 'placeholder', text: 'Sin carta' }));
+      // La cita de la carta, que hasta ahora solo se leía en letra diminuta del cromo.
+      if (R.myCard && R.myCard.quote) mySlot.appendChild(el('div', { class: 'card-say' }, [
+        el('span', { class: 'who', text: R.myCard.name }), '“' + R.myCard.quote + '”'
+      ]));
       mySlot.appendChild(renderResult(R.me, R.pay === 'me' ? cfg.points.payBonus : 0));
       if (!R.me.nobody) mySlot.appendChild(MI.fx.stamp(R.me.outcome, { pay: R.pay === 'me' }));
       if (S.mode === 'ai') {
@@ -547,7 +570,20 @@ MI.game = (function () {
 
     left.appendChild(el('div', { class: 'table' + (slots.length === 1 ? ' single' : '') }, slots));
     if (strip) left.appendChild(strip);
-    if (S.phase === 'reveal' && S.mode === 'ai') left.appendChild(el('div', { class: 'pay', text: R.pay ? (R.pay === 'me' ? 'Te llevas la paga' : S.oppName + ' se lleva la paga') : 'Empate: nadie se lleva la paga' }));
+    if (S.phase === 'reveal' && S.mode === 'ai') {
+      left.appendChild(el('div', { class: 'pay', text: R.pay ? (R.pay === 'me' ? 'Te llevas la paga' : S.oppName + ' se lleva la paga') : 'Empate: nadie se lleva la paga' }));
+      // La rival deja de ser un marcador mudo y comenta la jugada.
+      const T = (MI.data.phrases || {}).rivalTaunt || {};
+      const lista = R.pay === 'me' ? T.win : (R.pay === 'opp' ? T.loss : T.draw);
+      const pulla = fraseFija(lista, S.seed + '|pulla|' + S.ticket);
+      // En el modo historia S.oppName lleva el capítulo pegado ("· cap. 3"), que dentro
+      // de una frase queda raro. Para hablar de la rival se usa su nombre a secas.
+      const rival = MI.data.config.rival.name;
+      if (pulla) left.appendChild(el('div', { class: 'taunt' }, [
+        el('span', { class: 'who', text: rival }),
+        el('span', { text: MI.fx.fill(pulla, rival) })
+      ]));
+    }
     if (S.phase === 'reveal' && R.items && R.items.length) left.appendChild(el('div', { class: 'points-list center' }, R.items.map((i) => el('span', { class: 'pill', text: i.label + ' +' + i.points }))));
     if (S.phase === 'reveal') left.appendChild(el('div', { class: 'small muted center hand-left', text: available('me').length + ' de ' + S.hands.me.length + ' malandrines disponibles para el siguiente ticket.' }));
     if (S.phase === 'choose') {
@@ -594,11 +630,41 @@ MI.game = (function () {
       el('h1', { text: msg }),
       el('div', { class: 'score', text: `${S.myName} ${S.rep.me} · ${S.oppName} ${S.rep.opp}` + (S.story || !MI.util.devMode() ? '' : ' · semilla ' + S.seed) }),
       renderPoints(S.stats.items, S.points, S.level),
+      renderMvp(),
       el('div', { class: 'actions' }, S.story
         ? [el('button', { class: 'primary', text: 'Volver a la oficina', onclick: () => { S = null; screen = 'setup'; MI.app.go('story'); } })]
         : [el('button', { class: 'primary', text: 'Jugar otra vez', onclick: () => { S = null; screen = 'setup'; render(); } }), el('button', { text: 'Ver álbum', onclick: () => MI.app.go('album') })]),
       el('div', { class: 'panel log static' }, [el('h3', { text: 'Registro del sprint' }), ...S.log.map((e) => el('div', { class: 'entry ' + e.cls, html: e.html }))])
     ]));
+  }
+
+  // El mejor de los tuyos en este sprint. Se calcula con lo que ya se guarda en
+  // S.stats.cards: envíos, resueltos y burnouts por carta.
+  function renderMvp() {
+    const stats = S.stats.cards || {};
+    const cards = byId().cards;
+    const puntua = (x) => x.resolved * 3 + x.sent - x.burnouts * 2;
+    const lista = Object.keys(stats)
+      .map((id) => ({ id, card: cards[id], s: stats[id] }))
+      .filter((x) => x.card && x.s.sent)
+      .sort((a, b) => puntua(b.s) - puntua(a.s) || b.s.resolved - a.s.resolved);
+    const mejor = lista[0];
+    if (!mejor || !mejor.s.resolved) return null;
+    const s = mejor.s;
+    const detalle = s.resolved + (s.resolved === 1 ? ' ticket resuelto' : ' tickets resueltos')
+      + ' de ' + s.sent + (s.sent === 1 ? ' envío' : ' envíos')
+      + (s.burnouts ? ', y salió chamuscado' : '');
+    return el('div', { class: 'mvp panel' }, [
+      el('div', { class: 'mvp-kicker', text: 'Malandrín del sprint' }),
+      el('div', { class: 'mvp-body' }, [
+        el('div', { class: 'mvp-face', html: MI.avatar.svg(mejor.card, {}) }),
+        el('div', {}, [
+          el('h3', { text: mejor.card.name }),
+          el('p', { class: 'small muted', text: detalle }),
+          mejor.card.quote ? el('p', { class: 'small mvp-quote', text: '“' + mejor.card.quote + '”' }) : null
+        ])
+      ])
+    ]);
   }
 
   function renderExport(c) {

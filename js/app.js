@@ -202,11 +202,13 @@ MI.app = (function () {
     const fromHash = () => {
       const h = (location.hash || '').replace('#', '');
       if (h.startsWith('match=')) { go('game'); MI.game.openShared(h.slice(6)); return; }
+      if (h.startsWith('carta=')) { go('album'); MI.album.openById(decodeURIComponent(h.slice(6))); return; }
       if (views[h] && h !== current) go(h);
     };
     window.addEventListener('hashchange', fromHash);
     const h = (location.hash || '').replace('#', '');
     if (h.startsWith('match=')) { go('game'); MI.game.openShared(h.slice(6)); }
+    else if (h.startsWith('carta=')) { go('album'); MI.album.openById(decodeURIComponent(h.slice(6))); }
     else go(views[h] ? h : 'menu');
     const p = MI.match.profile.load();
     if (!p.tag) onboarding();

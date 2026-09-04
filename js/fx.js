@@ -65,5 +65,5 @@ MI.fx = (function () {
     return overlay;
   }
 
-  return { stamp, splash, reduced };
+  return { stamp, splash, reduced, fill };
 })();

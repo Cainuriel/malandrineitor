@@ -54,6 +54,34 @@ MI.album = (function () {
 
   function rarityRank(c) { return { comun: 0, rara: 1, epica: 2, legendaria: 3 }[c.rarity] || 0; }
 
+  function cardUrl(card) {
+    const base = location.protocol === 'file:' ? MI.data.config.shareBaseUrl : location.href.split('#')[0];
+    return base + '#carta=' + card.id;
+  }
+
+  async function shareCard(card, button) {
+    const url = cardUrl(card);
+    const texto = card.name + ' en ¡MALANDRINEITOR!';
+    if (navigator.share) {
+      try { await navigator.share({ title: texto, text: texto, url }); return; } catch (e) { if (e.name === 'AbortError') return; }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      if (button) button.textContent = 'Enlace copiado';
+      MI.app.toast('Enlace de la ficha copiado.');
+    } catch (e) {
+      prompt('Copia este enlace para compartir la ficha:', url);
+    }
+  }
+
+  // Abre la ficha de una carta por su identificador (ruta #carta=<id>).
+  function openById(id) {
+    const card = activeCards().find((c) => c.id === id);
+    if (!card) { MI.app.toast('Ese malandrín no está en la plantilla.'); return false; }
+    openDetail(card, { shared: true });
+    return true;
+  }
+
   function openDetail(card, opts) {
     opts = opts || {};
     const cfg = MI.data.config;
@@ -93,7 +121,13 @@ MI.album = (function () {
           el('p', {}, [el('span', { class: 'pill', text: cfg.rarities[card.rarity].name }), ' ', el('span', { class: 'pill', text: 'Campeón: ' + (techs[card.expertise] || {}).name })]),
           opts.context ? el('p', { class: 'small', style: { color: 'var(--accent)' }, text: 'Ticket en curso: ' + opts.context.title + (opts.context.tech ? ' · tecnología ' + (techs[opts.context.tech] || {}).name : '') }) : null,
           el('p', { class: 'small muted', text: 'Las habilidades que no aparecen valen ' + cfg.skills.defaultValue + '.' }),
-          table
+          table,
+          // Enlace directo a esta ficha: lo primero que hace cualquiera al ver el juego
+          // es buscarse, y lo segundo, enseñárselo a alguien.
+          el('div', { class: 'row card-share' }, [
+            el('button', { class: 'primary', text: 'Compartir esta ficha', onclick: (e) => { e.stopPropagation(); shareCard(card, e.currentTarget); } }),
+            el('span', { class: 'small muted', text: 'Copia un enlace que abre el juego en esta carta.' })
+          ])
         ])
       ])
     ]);
@@ -102,5 +136,5 @@ MI.album = (function () {
     document.addEventListener('keydown', onKey);
   }
 
-  return { render, activeCards, openDetail };
+  return { render, activeCards, openDetail, openById, cardUrl };
 })();

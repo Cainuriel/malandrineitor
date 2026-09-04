@@ -365,6 +365,18 @@ check(cardPower(yuri) > cardPower(dp), 'las nuevas competencias elevan ligeramen
     });
   }
 
+  // Frases nuevas: ninguna puede llevar el nombre del rival escrito a mano.
+  {
+    const P = MI.data.phrases;
+    const T = P.rivalTaunt || {};
+    ['win', 'loss', 'draw'].forEach((k) => check(Array.isArray(T[k]) && T[k].length >= 3, `hay pullas del rival para "${k}" (${(T[k] || []).length})`));
+    check(Array.isArray(P.intern) && P.intern.length >= 5, `hay ${(P.intern || []).length} frases de becario`);
+    const rival = MI.data.config.rival.name;
+    const todas = [].concat(T.win || [], T.loss || [], T.draw || [], P.intern || []);
+    check(!todas.some((f) => f.includes(rival)), 'ninguna frase nueva lleva el nombre del rival escrito a mano');
+    check(!todas.some((f) => /marr[oó]n/i.test(f)), 'ninguna frase nueva usa la palabra prohibida');
+  }
+
   // El amo del calabozo no se quema nunca, así que nunca se va
   const dp = MI.data.cards.find((c) => c.id === 'daniel-primo');
   const hard = MI.data.challenges.find((c) => c.id === 'db-breach');

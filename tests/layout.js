@@ -74,6 +74,17 @@ function check(ok, msg) { console.log((ok ? 'ok   ' : 'FALLO: ') + msg); if (!ok
     check(await page.locator('.modal').count() === 0, `${f.name} · la ficha se cierra con el botón`);
     check((await page.evaluate(() => getComputedStyle(document.body).position)) !== 'fixed', `${f.name} · un solo desbloqueo de scroll por cierre`);
 
+    // Enlace directo a una ficha: es la vía por la que la gente se busca y se comparte.
+    await page.goto(url + '#carta=daniel-primo'); await page.waitForTimeout(450);
+    check(await page.locator('.modal .detail h2').count() === 1, `${f.name} · el enlace de una ficha la abre directamente`);
+    check(await page.locator('.card-share button').count() === 1, `${f.name} · la ficha ofrece compartirse`);
+    const ov = await overflow();
+    check(ov.sw <= ov.iw + 1, `${f.name} · la ficha compartida no desborda` + (ov.sw > ov.iw + 1 ? ` (${ov.culprits.join(', ')})` : ''));
+    await page.locator('.modal .close').evaluate((b) => b.click()); await page.waitForTimeout(250);
+    await page.goto(url + '#carta=no-existe-esta-carta'); await page.waitForTimeout(400);
+    check(await page.locator('.modal').count() === 0, `${f.name} · un enlace de ficha inexistente no rompe nada`);
+    await page.goto(url + '#album'); await page.waitForTimeout(300);
+
     // Quemaduras: una esquina por burnout acumulado, con el filtro de ruido aplicado.
     const quemadas = await page.evaluate(() => {
       const c = MI.data.cards[0];

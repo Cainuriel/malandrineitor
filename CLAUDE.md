@@ -157,6 +157,19 @@ Hay tres capas que ocupan la ventana entera: la apertura de sobres (`.opening-ov
 
 - La capa es un bloque con `overflow-y: auto` y `overscroll-behavior: contain`; **el contenido se centra en un hijo** con `min-height: 100%` y `justify-content: center`. Centrar con `place-items: center` directamente en un contenedor con scroll recorta por arriba todo lo que sea más alto que la ventana, y esa parte ya no se puede alcanzar.
 - El scroll del fondo se bloquea con `MI.util.lockScroll()` / `unlockScroll()`, que llevan un contador de capas abiertas, fijan el body guardando la posición y la restauran al cerrar. No usar `body { overflow: hidden }` a pelo: pierde la posición de lectura y no funciona bien en iOS.
+## La partida en curso sobrevive a la pestaña
+
+El estado de la partida (`S`) vive en memoria, y el móvil descarta la pestaña en cuanto pasa a segundo plano: al volver, la partida se perdía. Ahora se guarda una instantánea en `localStorage['mi.game']` después de cada pintado, en `visibilitychange` y en `pagehide`, y se recupera **una sola vez por carga** al primer `render` sin partida.
+
+Se guardan **identificadores, no objetos**: cartas y tickets se vuelven a buscar en el catálogo al recuperar. Dos cosas no se pueden serializar y se reconstruyen:
+
+- **El generador aleatorio.** Por eso las partidas usan `makeRng`, que envuelve `MI.util.rng` con un contador de tiradas: al recuperar se rehace con la misma semilla y se adelanta tantas tiradas como llevara. Sin el contador, los dados que quedan repetirían los ya salidos.
+- **El cierre del sprint del modo historia.** `startSprint` ya no captura el capítulo en un cierre: `MI.story.finisher(chapterId)` lo construye a partir de un número, que sí se puede guardar. Así la recompensa se aplica igual en una partida recuperada.
+
+Tres salvaguardas: la instantánea lleva la **huella del catálogo** y se descarta si el catálogo ha cambiado (las manos guardadas ya no describirían esa partida); **todo el camino de recuperación va en `try/catch`**, de modo que en el peor caso el juego se comporta como antes de existir esto; y hay un botón **"Abandonar el sprint"** al pie del registro, que es imprescindible: si la partida se recupera sola, sin él quien quisiera empezar otra se quedaría atrapado.
+
+La instantánea se borra al abandonar, al volver a la oficina y al pulsar "Jugar otra vez". **No** se borra al terminar el sprint: así, cerrar la pestaña en la pantalla de resultado tampoco pierde el resumen.
+
 ## Detalles narrativos del sprint
 
 Cinco añadidos de septiembre de 2026 que **no tocan ninguna regla**: son datos y pintado. Se listan aquí para que no se confundan con mecánicas.
@@ -165,7 +178,7 @@ Cinco añadidos de septiembre de 2026 que **no tocan ninguna regla**: son datos 
 - **La cita de la carta enviada** (`.card-say`). El `quote` ya estaba escrito en cada cromo, en letra diminuta; al enviar al malandrín se muestra como bocadillo.
 - **Ha ido el becario** (`phrases.intern`). Cuando no queda nadie disponible, el resultado es exactamente el mismo de siempre; solo cambia cómo se cuenta.
 - **Malandrín del sprint** (`renderMvp`). El mejor de los tuyos al terminar, con `resueltos × 3 + envíos − burnouts × 2` sobre `S.stats.cards`, que ya se guardaba. No aparece si nadie resolvió nada.
-- **Campeón y criptonita en el mazo**. Dos etiquetas sobre la carta que tienes delante, según el ticket en curso. **No calculan nada ni recomiendan a nadie**: hacen visible un dato ya impreso en el cromo que en el móvil no se lee. La regla sigue siendo que la interfaz no señala la mejor carta; decidir es el juego.
+- *(Retirado)* Se probaron etiquetas de campeón y criptonita junto al mazo. Fernando las quitó: aunque no calculaban nada, daban demasiado hecho. **La gracia es que haya que abrir la ficha y mirarla.** No reponerlas.
 
 Las frases nuevas siguen la regla de siempre: humor de oficina, el gracioso es el proceso y nunca una persona, `{rival}` en vez del nombre escrito a mano, y `tests/run.js` lo vigila.
 
@@ -173,7 +186,7 @@ Las frases nuevas siguen la regla de siempre: humor de oficina, el gracioso es e
 
 La ruta `#carta=<id>` abre el juego directamente en la ficha de ese malandrín, y la propia ficha ofrece "Compartir esta ficha" (`MI.album.cardUrl`). Existe porque lo primero que hace cualquiera al ver el juego es buscarse, y lo segundo, enseñárselo a alguien.
 
-Dos decisiones deliberadas: el enlace **muestra la carta aunque el receptor no la haya descubierto** —es justo para lo que sirve— pero **no la marca como descubierta**, así que no estropea su álbum. Y un identificador que no existe no rompe nada: avisa y deja el álbum como estaba.
+Tres decisiones deliberadas: el enlace **muestra la carta aunque el receptor no la haya descubierto** —es justo para lo que sirve— pero **no la marca como descubierta**, así que no estropea su álbum; un identificador que no existe no rompe nada, avisa y deja el álbum como estaba; y el botón de compartir **solo aparece con `opts.share`**, que activan el álbum y el propio enlace. Durante una partida la ficha se abre para decidir, no para presumir, así que ahí no sale.
 
 ## Superpoderes de las legendarias
 

@@ -522,6 +522,22 @@ MI.story = (function () {
     return elegidos.slice(0, tope).map((c) => c.id);
   }
 
+  /* Cierre del sprint de un capítulo. Se llama al terminar (no al pulsar el botón de
+     la pantalla final), para que cerrar la pestaña ahí no haga perder monedas ni
+     avance de capítulo. Se construye a partir del identificador del capítulo y no de
+     una variable capturada, para poder rehacerlo al recuperar una partida guardada:
+     una función no se puede serializar, un número sí. */
+  function finisher(chapterId) {
+    return (summary) => {
+      const ch = cfg().chapters.find((x) => x.id === chapterId) || cfg().chapters[0];
+      const st = load();
+      const rw = reward(st, ch, summary);
+      save(st);
+      lastSummary = { title: summary.result === 'win' ? 'Sprint ganado: ' + ch.name : (summary.result === 'draw' ? 'Empate en ' + ch.name : rivalName() + ' gana ' + ch.name), items: rw.items, coins: rw.coins, points: summary.points, note: rw.note, wear: rw.wear };
+      view = 'dashboard';
+    };
+  }
+
   function startSprint(s, ch, squadIds) {
     const rng = MI.util.rng(Math.random() * 1e9);
     const cards = lk().cards;
@@ -531,18 +547,11 @@ MI.story = (function () {
     MI.game.newStoryGame({
       hand: myHand, oppHand, tickets, level: ch.level,
       oppName: MI.data.config.rival.name + ' · cap. ' + ch.id,
-      // Se llama al terminar el sprint (no al pulsar el botón), para que cerrar la
-      // pestaña en la pantalla final no haga perder monedas ni avance de capítulo.
-      onFinish: (summary) => {
-        const st = load();
-        const rw = reward(st, ch, summary);
-        save(st);
-        lastSummary = { title: summary.result === 'win' ? 'Sprint ganado: ' + ch.name : (summary.result === 'draw' ? 'Empate en ' + ch.name : rivalName() + ' gana ' + ch.name), items: rw.items, coins: rw.coins, points: summary.points, note: rw.note, wear: rw.wear };
-        view = 'dashboard';
-      }
+      chapterId: ch.id,
+      onFinish: finisher(ch.id)
     });
     MI.app.go('game');
   }
 
-  return { render, load, save, start, reset, openPack, sell, ownedCards, chapter, checkpointFor, reward, wearAndTear, go, openView, discovered, revealAll, setRevealAll, packSvg, cinematic };
+  return { render, load, save, start, reset, finisher, openPack, sell, ownedCards, chapter, checkpointFor, reward, wearAndTear, go, openView, discovered, revealAll, setRevealAll, packSvg, cinematic };
 })();

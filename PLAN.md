@@ -155,8 +155,8 @@ Seis añadidos pensados para el estreno en la comunidad. Ninguno toca el motor d
 - [x] Pulla de la empresa rival tras cada ticket, con tres listas según quién se lleve la paga.
 - [x] La carta enviada dice su cita al salir a jugar.
 - [x] Malandrín del sprint en la pantalla final, calculado con las estadísticas que ya se guardaban.
-- [x] Campeón y criptonita marcados junto al mazo según el ticket en curso.
 - [x] "Ha ido el becario" cuando no queda nadie disponible: mismo resultado, mejor contado.
+- [x] La partida en curso sobrevive a que el móvil descarte la pestaña: instantánea en `localStorage`, con el generador aleatorio y el cierre del sprint reconstruidos. Con botón para abandonar, que sin él la recuperación automática dejaría atrapado a quien quiera empezar otra.
 
 ---
 

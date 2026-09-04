@@ -15,6 +15,102 @@ MI.game = (function () {
   const sign = (n) => (n >= 0 ? '+' : '') + n;
   const byId = () => ({ cards: MI.util.byId(MI.data.cards), challenges: MI.util.byId(MI.data.challenges), techs: MI.util.byId(MI.data.techs), skills: MI.util.byId(MI.data.skills) });
 
+  /* ---------- Persistencia de la partida en curso ----------
+     El estado vive en memoria y el móvil descarta la pestaña en cuanto pasa a segundo
+     plano: al volver, la partida se había perdido. Ahora se guarda una instantánea en
+     localStorage después de cada cambio de pantalla y se recupera al abrir el juego.
+
+     Lo que se guarda son identificadores, no objetos: cartas y tickets se vuelven a
+     buscar en el catálogo al recuperar. Dos cosas no se pueden serializar y se
+     reconstruyen: el generador de números aleatorios, que se rehace con su semilla y
+     se adelanta tantas tiradas como llevara (por eso `makeRng` lleva contador), y el
+     cierre del sprint del modo historia, que se rehace con `MI.story.finisher` a
+     partir del identificador del capítulo.
+
+     Todo el camino de recuperación va envuelto en try/catch: si algo no cuadra se
+     descarta la instantánea y el juego se comporta como antes de existir esto. */
+  const SAVE_KEY = 'mi.game';
+  let restoreTried = false;
+
+  function makeRng(seed, skip) {
+    const base = MI.util.rng(seed);
+    let n = 0;
+    const f = function () { n++; return base(); };
+    f.int = (min, max) => min + Math.floor(f() * (max - min + 1));
+    f.pick = (arr) => arr[Math.floor(f() * arr.length)];
+    f.shuffle = (arr) => {
+      const a2 = arr.slice();
+      for (let i = a2.length - 1; i > 0; i--) { const j = Math.floor(f() * (i + 1)); [a2[i], a2[j]] = [a2[j], a2[i]]; }
+      return a2;
+    };
+    f.calls = () => n;
+    f.seed = seed;
+    for (let i = 0; i < (skip || 0); i++) f();
+    return f;
+  }
+
+  function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* nada */ } }
+
+  function saveState() {
+    try {
+      if (!S || screen === 'setup') { clearSave(); return; }
+      const ids = (arr) => (arr || []).map((c) => c.id);
+      const R = S.lastResult;
+      localStorage.setItem(SAVE_KEY, JSON.stringify({
+        v: 1, fp: MI.match.catalogFingerprint(), screen, deckIndex,
+        mode: S.mode, seed: S.seed, level: S.level,
+        rngSeed: S.rng && S.rng.seed, rngCalls: S.rng && S.rng.calls ? S.rng.calls() : 0,
+        myName: S.myName, oppName: S.oppName,
+        hands: { me: ids(S.hands.me), opp: ids(S.hands.opp) },
+        tickets: ids(S.tickets),
+        ticket: S.ticket, phase: S.phase, rep: S.rep, burnout: S.burnout,
+        rescueUsed: S.rescueUsed, pendingRescue: S.pendingRescue || null,
+        plays: S.plays, log: S.log, stats: S.stats, points: S.points || 0,
+        over: S.over || null, splashDone: !!S.splashDone,
+        lastResult: R ? Object.assign({}, R, { myCard: R.myCard ? R.myCard.id : null, oppCard: R.oppCard ? R.oppCard.id : null }) : null,
+        chapterId: S.story ? S.story.chapterId : null,
+        match: S.match || null, role: S.role || null, playerSeed: S.playerSeed || null
+      }));
+    } catch (e) { /* almacenamiento lleno o bloqueado: se juega igual, sin red de seguridad */ }
+  }
+
+  function restoreState() {
+    let raw = null;
+    try { raw = localStorage.getItem(SAVE_KEY); } catch (e) { return false; }
+    if (!raw) return false;
+    try {
+      const d = JSON.parse(raw);
+      if (!d || d.v !== 1) { clearSave(); return false; }
+      // Si el catálogo ha cambiado, las manos guardadas ya no describen esta partida.
+      if (d.fp !== MI.match.catalogFingerprint()) { clearSave(); return false; }
+      const lk = byId();
+      const carta = (id) => (id ? lk.cards[id] : null);
+      const manoMe = (d.hands.me || []).map(carta).filter(Boolean);
+      const manoOpp = (d.hands.opp || []).map(carta).filter(Boolean);
+      const tickets = (d.tickets || []).map((id) => lk.challenges[id]).filter(Boolean);
+      if (manoMe.length !== (d.hands.me || []).length || tickets.length !== (d.tickets || []).length) { clearSave(); return false; }
+      const R = d.lastResult;
+      S = {
+        mode: d.mode, seed: d.seed, level: d.level,
+        rng: makeRng(d.rngSeed, d.rngCalls),
+        myName: d.myName, oppName: d.oppName,
+        hands: { me: manoMe, opp: manoOpp },
+        rep: d.rep, burnout: d.burnout, rescueUsed: d.rescueUsed, pendingRescue: d.pendingRescue || null,
+        tickets, ticket: d.ticket, phase: d.phase, selected: null,
+        lastResult: R ? Object.assign({}, R, { myCard: carta(R.myCard), oppCard: carta(R.oppCard) }) : null,
+        log: d.log || [], over: d.over || null, plays: d.plays || [], stats: d.stats || newStats(),
+        points: d.points || 0, splashDone: !!d.splashDone
+      };
+      if (d.chapterId && MI.story && MI.story.finisher) {
+        S.story = { chapterId: d.chapterId, level: d.level, oppName: d.oppName, onFinish: MI.story.finisher(d.chapterId) };
+      }
+      if (d.match) { S.match = d.match; S.role = d.role; S.playerSeed = d.playerSeed; }
+      deckIndex = d.deckIndex || 0;
+      screen = d.screen || 'play';
+      return true;
+    } catch (e) { clearSave(); return false; }
+  }
+
   /* ---------- Creación de partidas ---------- */
   function newAiGame(opts) {
     const cfg = MI.data.config;
@@ -22,7 +118,7 @@ MI.game = (function () {
     const d = MI.match.deal(seed, MI.album.activeCards(), MI.data.challenges);
     const lk = byId();
     S = {
-      mode: 'ai', seed, rng: MI.util.rng(seed + '|play'), level: opts.level || cfg.arcade.aiLevel,
+      mode: 'ai', seed, rng: makeRng(seed + '|play'), level: opts.level || cfg.arcade.aiLevel,
       myName: myTag(), oppName: cfg.rival.name,
       hands: { me: d.hands.A.map((id) => lk.cards[id]), opp: d.hands.B.map((id) => lk.cards[id]) },
       rep: { me: cfg.points.startReputation, opp: cfg.points.startReputation },
@@ -41,7 +137,7 @@ MI.game = (function () {
   function newStoryGame(opts) {
     const cfg = MI.data.config;
     S = {
-      mode: 'ai', story: opts, seed: 'historia', rng: MI.util.rng(Math.random() * 1e9), level: opts.level,
+      mode: 'ai', story: opts, seed: 'historia', rng: makeRng('historia|' + Date.now() + '|' + Math.random()), level: opts.level,
       myName: myTag(), oppName: opts.oppName || cfg.rival.name,
       hands: { me: opts.hand.slice(), opp: opts.oppHand.slice() },
       rep: { me: cfg.points.startReputation, opp: cfg.points.startReputation },
@@ -59,7 +155,7 @@ MI.game = (function () {
     const playerSeed = Math.random().toString(36).slice(2, 10);
     const other = role === 'A' ? 'B' : 'A';
     S = {
-      mode: 'p2p', match, role, playerSeed, rng: MI.util.rng(match.seed + '|' + role + '|' + playerSeed),
+      mode: 'p2p', match, role, playerSeed, rng: makeRng(match.seed + '|' + role + '|' + playerSeed),
       myName: name, oppName: match.players[other].name || 'Rival (pendiente)',
       hands: { me: match.hands[role].map((id) => lk.cards[id]), opp: match.hands[other].map((id) => lk.cards[id]) },
       rep: { me: cfg.points.startReputation, opp: null },
@@ -452,10 +548,6 @@ MI.game = (function () {
         w.style.zIndex = z;
         w.style.pointerEvents = op ? 'auto' : 'none';
         w.classList.toggle('is-current', a === 0);
-        // La carta de delante es la que se envía: se marca como seleccionada para que
-        // herede el destello del perímetro y no quede duda de a quién se manda.
-        const carta = w.firstChild;
-        if (carta && carta.classList) carta.classList.toggle('selected', a === 0 && !w.classList.contains('is-burnout'));
       });
       const card = cards[deckIndex];
       const turns = S.burnout.me[card.id];
@@ -463,11 +555,6 @@ MI.game = (function () {
       meta.appendChild(el('strong', { text: card.name }));
       meta.appendChild(el('span', { class: 'small muted', text: (deckIndex + 1) + ' de ' + cards.length }));
       if (turns) meta.appendChild(el('span', { class: 'pill burnt', text: 'Quemado · vuelve en ' + turns + (turns === 1 ? ' ticket' : ' tickets') }));
-      // Dos datos que ya están impresos en el cromo, pero que en móvil no se leen:
-      // no calculan nada ni recomiendan a nadie, solo evitan el despiste.
-      if (ch.tech && card.expertise === ch.tech) meta.appendChild(el('span', { class: 'pill is-champ', text: 'Campeón de esta tecnología' }));
-      const kry = card.kryptonite || {};
-      if ((kry.tech && kry.tech === ch.tech) || (kry.skill && (ch.skills || {})[kry.skill])) meta.appendChild(el('span', { class: 'pill is-kry', text: 'Aquí está su criptonita' }));
       Array.from(dots.children).forEach((dot, i) => dot.classList.toggle('on', i === deckIndex));
       // El rescate se pide desde la carta quemada que se quiere recuperar.
       const poder = pendingPower();
@@ -600,7 +687,19 @@ MI.game = (function () {
       ? [el('button', { class: 'primary btn-enviar', id: 'send-btn', text: sendLabel(), disabled: sendBlocked() ? 'disabled' : null, onclick: play })]
       : [el('button', { class: 'primary ' + (lastOne ? 'btn-cerrar' : 'btn-siguiente'), text: lastOne ? (S.mode === 'ai' ? 'Ver resultado final' : (S.role === 'A' ? 'Terminar y exportar' : 'Resolver la partida')) : 'Siguiente ticket', onclick: next })]));
 
-    const log = el('div', { class: 'panel log' }, [el('h3', { text: 'Registro del sprint' }), ...(S.log.length ? S.log.map((e) => el('div', { class: 'entry ' + e.cls, html: e.html })) : [el('div', { class: 'entry', text: 'Aún no ha pasado nada. Todo en verde. Sospechoso.' })])]);
+    // Salida del sprint. Hace falta porque la partida ahora se recupera sola al volver:
+    // sin esto, quien quisiera empezar otra se quedaría atrapado en la anterior.
+    const abandonar = el('button', { class: 'ghost small-btn abandon', text: 'Abandonar el sprint', onclick: () => {
+      if (!confirm('¿Abandonar el sprint? Se pierde lo jugado y no se cobra nada.')) return;
+      const eraHistoria = !!S.story;
+      S = null; clearSave(); screen = 'setup';
+      if (eraHistoria) MI.app.go('story'); else render();
+    } });
+    const log = el('div', { class: 'panel log' }, [
+      el('h3', { text: 'Registro del sprint' }),
+      ...(S.log.length ? S.log.map((e) => el('div', { class: 'entry ' + e.cls, html: e.html })) : [el('div', { class: 'entry', text: 'Aún no ha pasado nada. Todo en verde. Sospechoso.' })]),
+      el('div', { class: 'row abandon-row' }, [abandonar])
+    ]);
     c.appendChild(el('div', { class: 'game' }, [left, log]));
   }
 
@@ -632,8 +731,8 @@ MI.game = (function () {
       renderPoints(S.stats.items, S.points, S.level),
       renderMvp(),
       el('div', { class: 'actions' }, S.story
-        ? [el('button', { class: 'primary', text: 'Volver a la oficina', onclick: () => { S = null; screen = 'setup'; MI.app.go('story'); } })]
-        : [el('button', { class: 'primary', text: 'Jugar otra vez', onclick: () => { S = null; screen = 'setup'; render(); } }), el('button', { text: 'Ver álbum', onclick: () => MI.app.go('album') })]),
+        ? [el('button', { class: 'primary', text: 'Volver a la oficina', onclick: () => { S = null; clearSave(); screen = 'setup'; MI.app.go('story'); } })]
+        : [el('button', { class: 'primary', text: 'Jugar otra vez', onclick: () => { S = null; clearSave(); screen = 'setup'; render(); } }), el('button', { text: 'Ver álbum', onclick: () => MI.app.go('album') })]),
       el('div', { class: 'panel log static' }, [el('h3', { text: 'Registro del sprint' }), ...S.log.map((e) => el('div', { class: 'entry ' + e.cls, html: e.html }))])
     ]));
   }
@@ -676,7 +775,7 @@ MI.game = (function () {
       el('div', { class: 'score', text: `Has acabado con ${S.rep.me} de reputación. Ahora le toca a tu rival.` }),
       el('p', { class: 'lead', style: { margin: '0 auto 18px' }, text: 'Comparte el enlace con tu rival. Tus jugadas van ofuscadas: no podrá verlas hasta que termine las suyas. Después te devolverá otro enlace con el resultado.' }),
       el('div', { class: 'actions' }, [el('button', { class: 'primary', text: 'Compartir enlace', onclick: (e) => shareMatch(S.match, e.currentTarget) }), el('button', { text: 'Descargar copia JSON', onclick: () => download(text, fname) })]),
-      el('div', { class: 'actions' }, [el('button', { text: 'Volver al inicio', onclick: () => { S = null; screen = 'setup'; render(); } })])
+      el('div', { class: 'actions' }, [el('button', { text: 'Volver al inicio', onclick: () => { S = null; clearSave(); screen = 'setup'; render(); } })])
     ]));
   }
 
@@ -717,15 +816,25 @@ MI.game = (function () {
       el('div', { class: 'actions' }, [
         role === 'B' ? el('button', { class: 'primary', text: 'Compartir resultado', onclick: (e) => shareMatch(m, e.currentTarget) }) : null,
         role === 'B' ? el('button', { text: 'Descargar copia JSON', onclick: () => download(text, fname) }) : null,
-        el('button', { text: 'Volver al inicio', onclick: () => { S = null; screen = 'setup'; render(); } })
+        el('button', { text: 'Volver al inicio', onclick: () => { S = null; clearSave(); screen = 'setup'; render(); } })
       ])
     ]));
   }
 
   function render(c) {
     if (c) container = c;
+    // Una sola vez por carga: si hay partida guardada, se recupera donde se dejó.
+    if (!S && !restoreTried) { restoreTried = true; restoreState(); }
     if (!S) screen = 'setup';
     ({ setup: renderSetup, play: renderPlay, end: renderEnd, export: renderExport, resolved: renderResolved })[screen](container);
+    saveState();
+  }
+
+  // El móvil no siempre da tiempo a nada al descartar la pestaña, pero visibilitychange
+  // sí llega. Es la última oportunidad de guardar antes de que se lleve la pestaña.
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveState(); });
+    window.addEventListener('pagehide', saveState);
   }
 
   function openShared(payload) {

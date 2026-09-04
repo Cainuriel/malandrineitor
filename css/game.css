@@ -480,12 +480,6 @@ button.primary.btn-cerrar:disabled { filter: grayscale(.55) brightness(.9); }
 /* Cuando no queda nadie disponible: mismo resultado, mejor contado. */
 .intern-note { margin-top: 6px; font-size: 12px; color: var(--warn); font-style: italic; }
 
-/* Datos del cromo destacados junto al mazo, según el ticket en curso. */
-.pill.is-champ { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 55%, transparent);
-  background: color-mix(in srgb, var(--accent) 10%, transparent); font-weight: 600; }
-.pill.is-kry { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 55%, transparent);
-  background: color-mix(in srgb, var(--bad) 8%, transparent); font-weight: 600; }
-
 /* Malandrín del sprint, en la pantalla final. */
 .mvp { max-width: 520px; margin: 18px auto; text-align: left; }
 .mvp-kicker { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
@@ -505,3 +499,9 @@ button.primary.btn-cerrar:disabled { filter: grayscale(.55) brightness(.9); }
   .card-share { flex-direction: column; align-items: flex-start; gap: 8px; }
   .card-share button { width: 100%; }
 }
+
+/* Salida del sprint, discreta y al final del registro: existe porque la partida se
+   recupera sola al volver, y sin ella no habría forma de empezar otra. */
+.abandon-row { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); justify-content: center; }
+.small-btn.abandon { color: var(--muted); }
+.small-btn.abandon:hover { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 50%, transparent); }

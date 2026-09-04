@@ -151,6 +151,22 @@ function check(ok, msg) { console.log((ok ? 'ok   ' : 'FALLO: ') + msg); if (!ok
           return !(t === b || b.contains(t));
         });
         check(!tapado, `${f.name} · nada tapa el botón de enviar`);
+    check(await page.locator('.small-btn.abandon').count() === 1, `${f.name} · se puede abandonar el sprint`);
+
+    // La partida sobrevive a que el navegador descarte la pestaña: se guarda una
+    // instantánea y se recupera al volver. Es el caso del móvil en segundo plano.
+    const antesDeIrse = await page.evaluate(() => {
+      const s = MI.game.state();
+      return { ticket: s.ticket, rep: s.rep.me, log: s.log.length, mano: s.hands.me.map((c) => c.id).join(','), capitulo: s.story && s.story.chapterId };
+    });
+    await page.goto(url + '#game'); await page.waitForTimeout(600);
+    const alVolver = await page.evaluate(() => {
+      const s = MI.game.state();
+      return s ? { ticket: s.ticket, rep: s.rep.me, log: s.log.length, mano: s.hands.me.map((c) => c.id).join(','), capitulo: s.story && s.story.chapterId } : null;
+    });
+    check(JSON.stringify(antesDeIrse) === JSON.stringify(alVolver), `${f.name} · la partida se recupera intacta tras cerrarse la pestaña`);
+    check(await page.locator('.deck-stage, .result').count() > 0, `${f.name} · y se vuelve a la pantalla de juego, no al inicio`);
+    check(await page.evaluate(() => typeof (MI.game.state().story || {}).onFinish) === 'function', `${f.name} · el cierre del sprint del modo historia se reconstruye`);
         await page.locator('.actions button.primary').evaluate((b) => b.click()); await page.waitForTimeout(600);
         check(await page.locator('.fx-stamp').count() > 0, `${f.name} · aparece el sello de resultado del ticket`);
         check(await page.locator('.slot.opp-reveal').count() === 1, `${f.name} · la carta del rival aparece al enviar`);

@@ -46,7 +46,7 @@ MI.album = (function () {
         .filter((c) => filter === 'all' || c.rarity === filter)
         .filter((c) => !q || (MI.story.discovered(c.id) && (c.name.toLowerCase().includes(q) || (c.title || '').toLowerCase().includes(q) || (techs[c.expertise] || {}).name.toLowerCase().includes(q))))
         .sort((a, b) => rarityRank(b) - rarityRank(a) || a.name.localeCompare(b.name))
-        .forEach((c) => grid.appendChild(MI.story.discovered(c.id) ? MI.card.render(c, { selectable: true, onSelect: openDetail }) : MI.card.renderHidden(c)));
+        .forEach((c) => grid.appendChild(MI.story.discovered(c.id) ? MI.card.render(c, { selectable: true, onSelect: (cd) => openDetail(cd, { share: true }) }) : MI.card.renderHidden(c)));
       if (!grid.children.length) grid.appendChild(el('p', { class: 'muted', text: q ? 'Ningún malandrín descubierto coincide con la búsqueda.' : 'Ningún malandrín coincide.' }));
     }
     fill();
@@ -78,7 +78,7 @@ MI.album = (function () {
   function openById(id) {
     const card = activeCards().find((c) => c.id === id);
     if (!card) { MI.app.toast('Ese malandrín no está en la plantilla.'); return false; }
-    openDetail(card, { shared: true });
+    openDetail(card, { share: true });
     return true;
   }
 
@@ -122,12 +122,12 @@ MI.album = (function () {
           opts.context ? el('p', { class: 'small', style: { color: 'var(--accent)' }, text: 'Ticket en curso: ' + opts.context.title + (opts.context.tech ? ' · tecnología ' + (techs[opts.context.tech] || {}).name : '') }) : null,
           el('p', { class: 'small muted', text: 'Las habilidades que no aparecen valen ' + cfg.skills.defaultValue + '.' }),
           table,
-          // Enlace directo a esta ficha: lo primero que hace cualquiera al ver el juego
-          // es buscarse, y lo segundo, enseñárselo a alguien.
-          el('div', { class: 'row card-share' }, [
+          // Enlace directo a esta ficha, solo desde el álbum: durante una partida
+          // estorba, y la ficha se abre ahí para decidir, no para presumir.
+          opts.share ? el('div', { class: 'row card-share' }, [
             el('button', { class: 'primary', text: 'Compartir esta ficha', onclick: (e) => { e.stopPropagation(); shareCard(card, e.currentTarget); } }),
             el('span', { class: 'small muted', text: 'Copia un enlace que abre el juego en esta carta.' })
-          ])
+          ]) : null
         ])
       ])
     ]);
